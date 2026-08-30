@@ -1,6 +1,17 @@
 """
 PlatformIO post-build script: fail when firmware.bin does not fit in the
-smallest app partition from partitions.csv.
+smallest app partition from partitions.csv, and warn well before that.
+
+The hard failure only fires at 100% full, which is too late to be useful when a
+merge is steadily adding apps -- by then the work is done and the only options
+are to undo it or repartition. So this also enforces a *headroom reserve*: drop
+below it and the build says so loudly, while there is still room to change
+course. See docs/merge/PORT_LEDGER.md for the arithmetic driving the default.
+
+  custom_flash_reserve_bytes   platformio.ini option (bytes). 0 disables.
+  CROSSINK_FLASH_FAIL_UNDER_RESERVE=1
+                               make the reserve a hard failure (for CI once the
+                               partition question is settled), not a warning.
 """
 
 import csv
@@ -96,11 +107,26 @@ def check_firmware_size(source, target, env):
         )
         env.Exit(1)
 
+    used_percent = (firmware_size / limit) * 100
     print(
         f'Firmware image fits OTA app partition: '
         f'{firmware_size} bytes <= {limit} bytes '
-        f'({remaining} bytes free)',
+        f'({remaining} bytes free, {used_percent:.1f}% used)',
     )
+
+    reserve_option = _get_project_option(env, 'custom_flash_reserve_bytes')
+    reserve = _parse_size(reserve_option) if reserve_option else 0
+    if reserve and remaining < reserve:
+        message = (
+            f'FLASH HEADROOM LOW: {remaining} bytes free, below the '
+            f'{reserve}-byte reserve ({rel_partition_file}: {labels}). '
+            f'Every further app competes for what is left -- see '
+            f'docs/merge/PORT_LEDGER.md before adding more.'
+        )
+        if os.environ.get('CROSSINK_FLASH_FAIL_UNDER_RESERVE') == '1':
+            print(message, file=sys.stderr)
+            env.Exit(1)
+        print(f'WARNING: {message}')
 
 
 try:
