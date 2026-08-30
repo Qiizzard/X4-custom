@@ -1,0 +1,8 @@
+{
+  "name": "RingBuffer",
+  "version": "1.0.0",
+  "description": "Lock-free single-producer/single-consumer framed byte ring. The only structure a radio callback or ISR is allowed to write into (docs/merge/RULESET.md rule 10).",
+  "keywords": "ring-buffer, spsc, isr, lock-free",
+  "frameworks": ["arduino", "native"],
+  "dependencies": {}
+}

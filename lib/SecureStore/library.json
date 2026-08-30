@@ -1,0 +1,8 @@
+{
+  "name": "SecureStore",
+  "version": "1.0.0",
+  "description": "AES-256-GCM + PBKDF2 authenticated encryption for at-rest data. The approved replacement for XOR-on-MAC obfuscation (docs/merge/RULESET.md rule 22).",
+  "keywords": "encryption, aes-gcm, pbkdf2, mbedtls",
+  "frameworks": ["arduino", "native"],
+  "dependencies": {}
+}

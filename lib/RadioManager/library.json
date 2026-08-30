@@ -1,0 +1,8 @@
+{
+  "name": "RadioManager",
+  "version": "1.0.0",
+  "description": "Single-owner arbitration for the shared 2.4 GHz antenna: acquire in onEnter(), shutdown() in onExit() (docs/merge/RULESET.md rules 7-9). Compiles to a no-radio stub for the simulator.",
+  "keywords": "wifi, radio, arbitration, esp32",
+  "frameworks": ["arduino", "native"],
+  "dependencies": {}
+}

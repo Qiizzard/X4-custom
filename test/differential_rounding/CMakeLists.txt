@@ -1,6 +1,9 @@
 add_executable(DifferentialRoundingTest
   DifferentialRoundingTest.cpp
   ${REPO_ROOT}/lib/EpdFont/EpdFont.cpp
+  # The family-level cases (fallback codepoints, blank space glyphs) live in
+  # EpdFontFamily.cpp; without it the target compiles and fails to link.
+  ${REPO_ROOT}/lib/EpdFont/EpdFontFamily.cpp
   ${REPO_ROOT}/lib/Utf8/Utf8.cpp
 )
 
