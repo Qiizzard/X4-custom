@@ -2,7 +2,7 @@ name: CI (build)
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**", "fix/**", "refactor/**", "chore/**"]
   pull_request:
 
 permissions:
@@ -64,12 +64,65 @@ jobs:
       - name: Run cppcheck
         run: pio check --fail-on-defect low --fail-on-defect medium --fail-on-defect high
 
+  # --- x4-merge gates ---------------------------------------------------
+  # Added on top of the upstream CrossInk CI, not in place of it: clang-format
+  # and cppcheck above are the base repo's own gates and stay exactly as they
+  # were. Everything below is what docs/merge/GOVERNANCE.md means by "no app
+  # merges without a budget PASS".
+
+  budget:
+    name: memory budget gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - run: pip install pyyaml
+
+      # The gate's own tests run first. A budget checker that silently stops
+      # checking is worse than no checker, because the checklist claims it ran.
+      - name: budget gate self-test
+        run: python3 tools/port/test_budget_check.py
+
+      - name: enforce app budgets (fails if any c3 app blows the ceiling)
+        run: python3 tools/port/budget_check.py
+
+  native-tests:
+    name: native unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      # CrossInk's existing GoogleTest suite (parsers, layout, hyphenation, ...)
+      # plus the merge foundations registered into it: test/ring_buffer covers
+      # the RULESET rule 10 primitive, test/secure_store the rule 22 crypto.
+      # SecureStore's mbedtls is fetched and pinned by test/secure_store's
+      # CMakeLists, so CI and a laptop test the same version the firmware links.
+      - name: configure
+        run: cmake -S test -B build/test -DCMAKE_BUILD_TYPE=Release
+
+      - name: build
+        run: cmake --build build/test -j"$(nproc)"
+
+      - name: run
+        run: ctest --test-dir build/test --output-on-failure
+
+
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        environment: [default, sticky]
+        environment: [default, sticky, simulator]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -96,6 +149,11 @@ jobs:
 
       - name: Install PlatformIO Core
         run: uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.19.zip
+
+      # The simulator target is a native SDL2 binary, not firmware.
+      - name: Install SDL2 for the simulator target
+        if: matrix.environment == 'simulator'
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
       - name: Build ${{ matrix.environment }} firmware
         run: |
@@ -127,6 +185,8 @@ jobs:
       - build
       - clang-format
       - cppcheck
+      - budget
+      - native-tests
     if: always()
     runs-on: ubuntu-latest
     steps:
