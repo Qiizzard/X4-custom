@@ -3,6 +3,7 @@
 #include "SimulatorSmokeTest.h"
 
 #include <HalStorage.h>
+#include <I18n.h>
 #include <Logging.h>
 
 #include <algorithm>
@@ -14,6 +15,8 @@
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "activities/ActivityManager.h"
+#include "activities/apps/AppLauncherActivity.h"
+#include "activities/apps/AppRegistry.h"
 #include "activities/reader/EpubReaderMenuActivity.h"
 #include "activities/reader/ReaderOptionsActivity.h"
 #include "components/UITheme.h"
@@ -33,6 +36,9 @@ enum class SmokeStep : uint8_t {
   FileBrowser,
   RecentBooks,
   Settings,
+  AppLauncher,
+  AppCategoryList,
+  AppScreens,
   ReaderOptions,
   ReaderMenu,
   Sleep,
@@ -124,6 +130,38 @@ class SimulatorSmokeTest {
     std::_Exit(2);
   }
 
+  // Index into the flattened (category, app) space the walker is currently at.
+  size_t smokeCategoryIndex = 0;
+  size_t smokeAppIndex = 0;
+
+  // Push the next registered app, or return false when every one has been
+  // rendered. Each call advances by one app so the queueStep()/settle machinery
+  // gets a chance to actually render it.
+  bool advanceThroughRegisteredApps() {
+    size_t categoryCount = 0;
+    const AppCategoryInfo* categories = appCategories(&categoryCount);
+
+    while (smokeCategoryIndex < categoryCount) {
+      size_t appCount = 0;
+      const AppEntry* apps = appsInCategory(categories[smokeCategoryIndex].category, &appCount);
+      if (apps == nullptr || smokeAppIndex >= appCount) {
+        ++smokeCategoryIndex;
+        smokeAppIndex = 0;
+        continue;
+      }
+      const AppEntry& entry = apps[smokeAppIndex];
+      ++smokeAppIndex;
+      auto activity = entry.create(renderer, mappedInputManager);
+      if (!activity) {
+        fail("App factory returned nullptr for %s", I18N.get(entry.title));
+      }
+      activityManager.replaceActivity(std::move(activity));
+      queueStep(I18N.get(entry.title), SmokeStep::AppScreens);
+      return true;
+    }
+    return false;
+  }
+
   static void renderCurrentStep(const char* name) {
     LOG_INF("SMOKE", "Rendering %s", name);
     if (activityManager.requestUpdateAndWait() != RequestUpdateResult::Rendered) {
@@ -182,9 +220,29 @@ class SimulatorSmokeTest {
         break;
 
       case SmokeStep::Settings:
-        activityManager.replaceActivity(std::make_unique<ReaderOptionsActivity>(renderer, mappedInputManager));
-        queueStep("Reader Options", SmokeStep::ReaderOptions);
+        activityManager.replaceActivity(std::make_unique<AppLauncherActivity>(renderer, mappedInputManager));
+        queueStep("Tools launcher", SmokeStep::AppLauncher);
         break;
+
+      case SmokeStep::AppLauncher:
+        // The Tools tile, which is the one with apps in it today.
+        activityManager.replaceActivity(
+            std::make_unique<AppLauncherActivity>(renderer, mappedInputManager, AppCategory::Tools));
+        queueStep("Tools category", SmokeStep::AppCategoryList);
+        break;
+
+      case SmokeStep::AppScreens:
+      case SmokeStep::AppCategoryList: {
+        // Walk every app in the registry, entering and rendering each one.
+        // Driven off the registry rather than a hardcoded list, so an app added
+        // later is covered here the moment it is registered -- this is the
+        // tripwire that catches an onEnter()/render() that crashes on entry.
+        if (!advanceThroughRegisteredApps()) {
+          activityManager.replaceActivity(std::make_unique<ReaderOptionsActivity>(renderer, mappedInputManager));
+          queueStep("Reader Options", SmokeStep::ReaderOptions);
+        }
+        break;
+      }
 
       case SmokeStep::ReaderOptions:
         activityManager.replaceActivity(

@@ -7,6 +7,8 @@
 #include <HalDisplay.h>
 #include <HalStorage.h>
 #include <I18n.h>
+#include <Logging.h>
+#include <Memory.h>
 #include <Serialization.h>
 #include <Utf8.h>
 #include <Xtc.h>
@@ -20,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "../apps/AppLauncherActivity.h"
 #include "../reader/BookReadingStats.h"
 #include "../reader/BookStatsActivity.h"
 #include "../reader/EpubReaderUtils.h"
@@ -58,6 +61,7 @@ enum class HomeMenuAction {
   ReadingStats,
   Bookmarks,
   FileTransfer,
+  Tools,
   Settings,
 };
 
@@ -275,6 +279,9 @@ void appendHomeMenuItems(HomeMenuEntries& items, bool hasOpdsServers, bool hasRe
   }
 
   items.push({tr(STR_FILE_TRANSFER), Transfer, HomeMenuAction::FileTransfer});
+  // The single entry point to every merged app. Reading stays the home screen;
+  // the tile grid is one press from it, never in front of it.
+  items.push({tr(STR_APP_LAUNCHER_TITLE), Settings, HomeMenuAction::Tools});
   items.push({tr(STR_SETTINGS_TITLE), Settings, HomeMenuAction::Settings});
 }
 
@@ -1448,6 +1455,9 @@ void HomeActivity::loop() {
           case HomeMenuAction::FileTransfer:
             onFileTransferOpen();
             break;
+          case HomeMenuAction::Tools:
+            onToolsOpen();
+            break;
           case HomeMenuAction::ContinueReading:
           case HomeMenuAction::Settings:
             break;
@@ -1657,6 +1667,9 @@ void HomeActivity::loop() {
         break;
       case HomeMenuAction::FileTransfer:
         onFileTransferOpen();
+        break;
+      case HomeMenuAction::Tools:
+        onToolsOpen();
         break;
       case HomeMenuAction::Settings:
         onSettingsOpen();
@@ -2112,6 +2125,17 @@ void HomeActivity::onContinueReading() {
 }
 
 void HomeActivity::onRecentsOpen() { activityManager.goToRecentBooks(); }
+
+void HomeActivity::onToolsOpen() {
+  // Pushed rather than replacing Home, so Back from the tile grid returns to
+  // the reading screen the user came from.
+  auto launcher = makeUniqueNoThrow<AppLauncherActivity>(renderer, mappedInput);
+  if (!launcher) {
+    LOG_ERR("HOME", "OOM opening the Tools launcher");
+    return;
+  }
+  activityManager.pushActivity(std::move(launcher));
+}
 
 void HomeActivity::onSettingsOpen() { activityManager.goToSettings(); }
 

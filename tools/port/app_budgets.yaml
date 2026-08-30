@@ -1,0 +1,163 @@
+# app_budgets.yaml -- declared RAM footprint for every app compiled into the
+# firmware. The budget gate (tools/port/budget_check.py) reads this on every PR.
+#
+# HOW TO FILL THIS IN (do not guess in anger -- measure):
+#   static_bytes     : always-resident cost -- file-scope globals, BSS, non-const
+#                      `static` members, RAM string tables. (const tables in
+#                      flash/DROM cost 0 here.)
+#   object_bytes     : sizeof(the Activity subclass) -- the heap allocation made
+#                      when the screen is pushed. Get it from a static_assert or
+#                      the .map file.
+#   peak_heap_bytes  : the MOST heap this app holds at once while running. 0 if none.
+#   tier             : c3 (must fit the base X4, enforced) | psram (X4 Pro only).
+#
+# Numbers below are first-pass estimates -- replace with measured values before
+# each app ships. The gate is only as honest as this file.
+#
+# WHAT A "PASS" HERE MEANS: that the *declared* budget fits the ceiling. It does
+# NOT mean the app exists. Most entries below were declared ahead of the port and
+# the app is not in the tree yet -- see docs/merge/PORT_LEDGER.md for what has
+# actually landed. Keep declaring budgets up front (it is the cheapest moment to
+# notice an app will not fit), but do not read a green gate as a shipped app.
+#
+# KNOWN GAP -- FLASH IS THE BINDING CONSTRAINT, AND THIS FILE DOES NOT MEASURE IT.
+# -e default currently links at 95.3% of the OTA app partition (291 KB free)
+# against 17.6% of RAM. Every remaining app competes for that flash, so this gate
+# would happily pass a change that cannot be flashed. Add a `flash_bytes` field
+# and a partition-aware ceiling before the launcher lands.
+
+apps:
+  # ---- Ported & wired into the Tools launcher (safe tier, no radio) ----
+  - name: Calculator          # ported by v1, moved into src/ and re-audited; measured sizeof
+    tier: c3
+    static_bytes: 0
+    object_bytes: 584
+    peak_heap_bytes: 0
+
+  - name: UnitConverter       # ported; nested vectors -> constexpr tables in flash; measured sizeof
+    tier: c3
+    static_bytes: 0
+    object_bytes: 616
+    peak_heap_bytes: 512
+
+  - name: Snake                 # ported; nit: reserve() the snake vector to its cap
+    tier: c3
+    static_bytes: 128
+    object_bytes: 256
+    peak_heap_bytes: 6144       # snake body vector at max board fill
+
+  - name: Minesweeper           # ported; nit: header uses std::string -> snprintf
+    tier: c3
+    static_bytes: 128
+    object_bytes: 512           # grid[10][16] in-object
+    peak_heap_bytes: 512
+
+  - name: Sudoku                # ported, cleanest of the batch
+    tier: c3
+    static_bytes: 128
+    object_bytes: 320           # board[9][9] + fixed[9][9] in-object
+    peak_heap_bytes: 0
+
+  - name: AppLauncher           # the tile grid; one instance per level (root, category)
+    tier: c3
+    static_bytes: 0             # the app table is constexpr -> flash, 0 DRAM
+    object_bytes: 2628          # dominated by FreeInkApp<32,4>'s interaction buffer
+    peak_heap_bytes: 1024       # ListItem vector, reserved to the row count
+
+  # ---- Batch 2 (safe tier, no radio) ----
+  - name: DiceRoller          # ported; vector -> fixed array, esp_random -> xorshift; measured sizeof
+    tier: c3
+    static_bytes: 0
+    object_bytes: 260
+    peak_heap_bytes: 0
+  - name: Countdown           # ported; repaint gated on the seconds digit; measured sizeof
+    tier: c3
+    static_bytes: 0
+    object_bytes: 252
+    peak_heap_bytes: 0
+  - name: MorseCode           # ported; std::string build -> caller buffers; measured sizeof
+    tier: c3
+    static_bytes: 0
+    object_bytes: 680
+    peak_heap_bytes: 512
+  - name: Cipher
+    tier: c3
+    static_bytes: 256
+    object_bytes: 512
+    peak_heap_bytes: 1024
+  - name: OtpGenerator
+    tier: c3
+    static_bytes: 128
+    object_bytes: 384
+    peak_heap_bytes: 256
+  - name: QrGenerator
+    tier: c3
+    static_bytes: 256
+    object_bytes: 512
+    peak_heap_bytes: 4096       # QR bitmap buffer
+  - name: Barcode
+    tier: c3
+    static_bytes: 128
+    object_bytes: 384
+    peak_heap_bytes: 1024
+  - name: Tetris
+    tier: c3
+    static_bytes: 128
+    object_bytes: 512           # board in-object
+    peak_heap_bytes: 0
+  - name: Maze
+    tier: c3
+    static_bytes: 128
+    object_bytes: 512
+    peak_heap_bytes: 2048       # maze grid
+  - name: GameOfLife
+    tier: c3
+    static_bytes: 128
+    object_bytes: 512
+    peak_heap_bytes: 2048       # cell grid (double-buffered)
+
+  # ---- Deferred: Clock uses <WiFi.h>/NTP -> radio tier (Phase 3), not safe tier ----
+  # - name: Clock  (needs RadioManager + NTP behind a capability, or strip NTP)
+
+  # ---- Phase 3 recon tier (forward-looking examples; radio, capped buffers) ----
+  - name: WifiScanner           # ported (radio tier), capped at MAX_NETWORKS=40 via RADIO
+    tier: c3
+    static_bytes: 512
+    object_bytes: 2048
+    peak_heap_bytes: 16384      # 40 entries * (2 std::string + fields); shrink with char[]
+
+  - name: BleScanner            # ported; devices capped 50, services capped 32 (MEM-008 fix)
+    tier: c3
+    static_bytes: 512
+    object_bytes: 2048
+    peak_heap_bytes: 24576      # capped device/service/char lists
+  - name: PacketMonitor         # ported; ISR-safe (callback -> RingBuffer -> loop), snap 256
+    tier: c3
+    static_bytes: 512
+    object_bytes: 9216          # macTable[256]*8 (2KB) + pcapQueue 24*260 (6.2KB) in-object
+    peak_heap_bytes: 2048       # PCAP streams to SD, not buffered in RAM
+
+  # ---- Comms tier ----
+  - name: MeshChat              # ported; fixed message ring + peers.reserve(20) (no callback alloc)
+    tier: c3
+    static_bytes: 256
+    object_bytes: 6144          # messages[20]*(name+text) + peers[20] fixed/reserved
+    peak_heap_bytes: 1024
+
+  # ---- Defense tier ----
+  - name: TrackerDetector       # ported; BLE results read synchronously, devices capped
+    tier: c3
+    static_bytes: 256
+    object_bytes: 2048
+    peak_heap_bytes: 8192       # capped tracked-device list
+  - name: DeauthDetector        # ported; IRAM_ATTR callback, fixed ring, counters only
+    tier: c3
+    static_bytes: 256
+    object_bytes: 1536
+    peak_heap_bytes: 0          # fixed ring buffer, no heap
+
+  - name: PacketCaptureFullFrame  # hypothetical full-frame (no snap) capture -> X4 Pro only
+    tier: psram
+    static_bytes: 512
+    object_bytes: 4096
+    peak_heap_bytes: 215040     # large full-frame ring; PSRAM only

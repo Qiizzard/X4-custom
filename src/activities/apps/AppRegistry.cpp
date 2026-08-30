@@ -1,0 +1,116 @@
+#include "AppRegistry.h"
+
+#include <Memory.h>
+
+#include "activities/Activity.h"
+#include "calculator/CalculatorActivity.h"
+#include "countdown/CountdownActivity.h"
+#include "dice_roller/DiceRollerActivity.h"
+#include "morse_code/MorseCodeActivity.h"
+#include "unit_converter/UnitConverterActivity.h"
+
+namespace {
+
+// One factory per app. makeUniqueNoThrow returns nullptr instead of aborting
+// when the heap cannot satisfy the allocation (rule 6); the launcher handles
+// the nullptr.
+template <typename T>
+std::unique_ptr<Activity> makeApp(GfxRenderer& renderer, MappedInputManager& mappedInput) {
+  return makeUniqueNoThrow<T>(renderer, mappedInput);
+}
+
+// THE TABLE. constexpr + static => flash, not DRAM.
+//
+// Order within a category is the order the launcher shows. Keep new rows
+// grouped by category; appsInCategory() scans linearly, which is free at this
+// size and keeps the table readable.
+constexpr AppCategoryInfo kCategories[] = {
+    {AppCategory::Tools, StrId::STR_APP_CAT_TOOLS}, {AppCategory::Games, StrId::STR_APP_CAT_GAMES},
+    {AppCategory::Recon, StrId::STR_APP_CAT_RECON}, {AppCategory::Defense, StrId::STR_APP_CAT_DEFENSE},
+    {AppCategory::Comms, StrId::STR_APP_CAT_COMMS},
+};
+
+static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
+              "kAppCategoryCount must match the category table");
+
+constexpr AppEntry kApps[] = {
+    // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_APP_CALCULATOR, &makeApp<CalculatorActivity>},
+    {AppCategory::Tools, StrId::STR_APP_UNIT_CONVERTER, &makeApp<UnitConverterActivity>},
+    {AppCategory::Tools, StrId::STR_APP_MORSE_CODE, &makeApp<MorseCodeActivity>},
+    {AppCategory::Tools, StrId::STR_APP_COUNTDOWN, &makeApp<CountdownActivity>},
+
+    // ---- Games ----
+    {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
+
+    // ---- Recon / Defense / Comms ----
+    // Empty until the radio tier lands. RadioManager is in the firmware and
+    // arbitration works, but no app uses it yet, and a tile that opens onto a
+    // screen claiming to scan when nothing does is exactly what rule 21 bans.
+    // See docs/merge/PORT_LEDGER.md.
+};
+
+constexpr size_t kAppCount = sizeof(kApps) / sizeof(kApps[0]);
+
+// appsInCategory() returns a pointer to the first row of a category plus a
+// count, which is only meaningful if each category is one contiguous run. That
+// is an easy invariant to break by adding a row in the wrong place, and the
+// symptom would be a launcher listing another tile's apps -- so it is checked
+// at compile time rather than trusted.
+constexpr bool categoriesAreContiguous() {
+  for (size_t i = 0; i < kAppCount; ++i) {
+    for (size_t j = i + 1; j < kAppCount; ++j) {
+      if (kApps[i].category != kApps[j].category) continue;
+      // Same category at i and j: every row between them must match too.
+      for (size_t k = i + 1; k < j; ++k) {
+        if (kApps[k].category != kApps[i].category) return false;
+      }
+    }
+  }
+  return true;
+}
+
+static_assert(categoriesAreContiguous(),
+              "AppRegistry: rows must be grouped by category. Move the new row "
+              "next to the others in its tile -- appsInCategory() returns a "
+              "first-row pointer plus a count and cannot express a gap.");
+
+// A row with no factory would look like an app and do nothing when selected.
+constexpr bool everyEntryHasAFactory() {
+  for (size_t i = 0; i < kAppCount; ++i) {
+    if (kApps[i].create == nullptr) return false;
+  }
+  return true;
+}
+
+static_assert(everyEntryHasAFactory(), "AppRegistry: every entry needs a factory");
+
+}  // namespace
+
+const AppCategoryInfo* appCategories(size_t* outCount) {
+  if (outCount != nullptr) *outCount = kAppCategoryCount;
+  return kCategories;
+}
+
+const AppEntry* appsInCategory(const AppCategory category, size_t* outCount) {
+  // The table is grouped by category, so a category is one contiguous run.
+  size_t first = 0;
+  bool found = false;
+  size_t count = 0;
+  for (size_t i = 0; i < kAppCount; ++i) {
+    if (kApps[i].category != category) continue;
+    if (!found) {
+      first = i;
+      found = true;
+    }
+    ++count;
+  }
+  if (outCount != nullptr) *outCount = count;
+  return found ? &kApps[first] : nullptr;
+}
+
+size_t appCountInCategory(const AppCategory category) {
+  size_t count = 0;
+  appsInCategory(category, &count);
+  return count;
+}
