@@ -1,0 +1,44 @@
+X4 merge firmware — attribution & provenance
+=============================================
+
+This firmware is a downstream merge built on the CrossPoint lineage.
+
+Base (MIT):
+  • CrossInk — https://github.com/uxjulia/crossink
+      A personal fork of CrossPoint Reader; the foundation of this firmware
+      (reader, HAL, UITheme, memory discipline, OTA/SD recovery).
+  • CrossPoint Reader — https://github.com/crosspoint-reader/crosspoint-reader
+      The upstream community firmware CrossInk forks. Tracked as an upstream
+      remote; changes are pulled downstream.
+
+Ported apps (MIT):
+  • biscuit — https://github.com/yattsu/biscuit
+      Copyright (c) 2025 Dave Allie. Individual apps are ported into
+      src/activities/apps/<slug>/ and re-audited against docs/merge/RULESET.md
+      before shipping.
+      In the tree today: Calculator, Unit Converter, Morse Code, Countdown,
+      Dice Roller.
+
+Design reference only — NO CODE INCLUDED (licence lane A / MIT):
+  • microreader — https://github.com/CidVonHighwind/microreader  (GPL v2)
+      Used as a quality/testing reference. Because GPL v2 cannot be combined
+      into this MIT tree, none of its source is copied here; its techniques are
+      reimplemented independently. If you switch to licence lane B (GPL v2 for
+      the whole firmware), update this file and LICENSE before importing any of
+      its code.
+
+How attribution is carried
+--------------------------
+Neither CrossInk nor biscuit puts a copyright header on individual source
+files, so there is no upstream header to preserve — saying otherwise would
+describe a practice that cannot be followed. Instead:
+
+  • Every ported file carries a short provenance comment naming its source
+    project, its licence, and its copyright holder.
+  • Every ported app directory carries a PORT_NOTES.md recording what the
+    original did, what the merge gate changed, and why.
+  • The MIT copyright notice and permission text required by the licence are
+    carried in LICENSE.merge, distributed with the firmware.
+
+Both CrossInk and biscuit are MIT and share the same copyright holder, so
+nothing here requires relicensing. See LICENSE.merge for the full terms.

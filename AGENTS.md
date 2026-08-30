@@ -112,8 +112,15 @@ Project: Open-source e-reader firmware for ESP32-C3 and ESP32-S3 devices.
   - `pio run -e simulator` for simulator-facing UI/reader work.
   - `pio run -e default` for the ESP32-C3 X3/X4 firmware.
   - `pio run -e sticky` for the ESP32-S3 Sticky firmware.
-  - `pio run -e x4-pro` for the ESP32-S3 X4 Pro firmware.
+  - `pio run -e x4-pro-simulator` for X4 Pro work. There is **no `x4-pro`
+    firmware env** in `platformio.ini` — only the simulator profile. The X4 Pro
+    is a supported *device* in the docs but has no build target here yet; do not
+    assume `-e x4-pro` exists.
   - `pio check -e default --fail-on-defect low --fail-on-defect medium --fail-on-defect high` for static analysis.
+    Note: PlatformIO's bundled cppcheck is x86_64-only, so this cannot run on an
+    Apple Silicon Mac without Rosetta. See `docs/merge/ENVIRONMENT.md`.
+  - ESP-IDF refuses any project path containing a space. If this checkout has
+    one, build `-e default` / `-e sticky` from a copy under a space-free path.
   - `find src lib include test -name "*.cpp" -o -name "*.h" | xargs clang-format -i` for formatting touched C++ files.
 - For crash debugging, check serial logs, internal heap with `ESP.getFreeHeap()` and `ESP.getMaxAllocHeap()`, task stack high-water marks, and whether cache files need clearing. On S3 targets, also inspect PSRAM free space and largest allocatable block; abundant PSRAM does not prove that internal-RAM or DMA-capable allocations can succeed.
 - Hardware verification should mention the concrete device path to test, expected UI/log behavior, and any cache reset needed.

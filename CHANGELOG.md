@@ -1,3 +1,167 @@
+## [Unreleased] — x4-merge v2
+
+The X4 merge builds a device firmware on top of CrossInk, pulling apps in from
+biscuit (MIT) through the gate in `docs/merge/`. microreader (GPL v2) is a
+reference only: none of its code is in this tree and none ever will be — the
+base is MIT.
+
+### Added
+
+- A **Tools launcher**, reached from Home. Reading stays the home screen; the
+  tile grid (Tools, Games, Recon, Defense, Comms) is one press from it, never in
+  front of it. It uses the same list, header and button-hint components as the
+  reader, so the launcher and every app inside it share the reader's typography
+  and button grammar.
+- **Calculator**, **Unit Converter**, **Morse Code**, **Countdown** and
+  **Dice Roller** — the first five apps, all offline, all operable on the
+  device's buttons.
+- Encrypted storage for anything on the SD card worth protecting: AES-256-GCM
+  with the key stretched from a passphrase by PBKDF2-HMAC-SHA256, so a stolen SD
+  card yields ciphertext rather than credentials. A wrong passphrase or an edited
+  file fails cleanly instead of returning plausible-looking rubbish, which is what
+  lets a duress PIN show a decoy vault that cannot be told apart from the real one.
+- Single-owner arbitration for the radio, so one screen can no longer leave WiFi
+  in a state that breaks the next screen's scan or download.
+- A fixed-size buffer for raw radio capture that drops and *counts* frames when it
+  fills, so a capture screen can report honestly how much it missed rather than
+  silently overwriting.
+- `docs/merge/PORT_LEDGER.md`: per-app status for the whole ~80-app scope, so
+  "what's left" is a file rather than something each session reconstructs.
+- `docs/merge/RADIO_MIGRATION.md`: the ordered plan for moving CrossInk's own
+  eight network screens behind the new radio arbitration, lowest-risk first, with
+  the OTA path explicitly last.
+
+### Changed
+
+- The simulator smoke test now walks the app registry, entering and rendering
+  every registered app on each run. Adding an app to the launcher adds it to the
+  crash tripwire automatically — nothing to remember, and no harness to update.
+- The firmware-size check now warns when free flash drops below a configurable
+  reserve, instead of only failing once the image no longer fits. The hard
+  failure comes too late to be useful when apps are being added steadily — by
+  then the only options are to undo the work or repartition. It warns today, at
+  251 KB free against a 256 KB reserve, which is exactly the intent.
+- CI now runs the merge's budget gate and native unit tests **in addition to**
+  CrossInk's own formatting and static-analysis checks, and builds the simulator
+  target alongside the device targets. The required-checks gate covers all five.
+- New apps are scaffolded into `src/activities/apps/`, which the firmware
+  actually compiles.
+
+### Fixed
+
+- Unit Converter could show a truncated number as if it were a result. A value
+  too wide for its field was cut rather than rounded — "1234567.89" becoming
+  "1234567" reads as a plausible answer. It now renders into scratch first and
+  publishes only what fits whole, dropping precision (and finally falling back
+  to a visible marker) rather than ever showing a fragment. Found by static
+  analysis, and there are now tests across every buffer width from 2 to 32 bytes.
+- Unit Converter's temperature scale, inherited from the source project, used
+  rounded constants (0.5556 / −17.7778). Converting °C to °F and back did not
+  return the value you started with. It now uses exact fractions and round-trips
+  cleanly; there is a test asserting it across −100 … +100 °C.
+- Pound and ounce now use their exact definitions, so 1 lb converts to exactly
+  16 oz rather than to five decimal places.
+- The app scaffolding template produced code that could not compile: it included
+  a header that does not exist and referenced UI strings that were never defined.
+  Every app generated from it would have failed on first build.
+- CI referenced a build target and a test script that do not exist in this
+  repository, so several jobs could only ever fail.
+- A unit-test target could not link because its build file omitted one of the
+  source files it tests. It had presumably been broken for a while, since no CI
+  job ran this suite before; the whole suite is now green (197 tests) and runs
+  on every push.
+
+### Attribution
+
+- Ported files now each carry a provenance comment naming their source project,
+  licence and copyright holder. `NOTICE` previously claimed every ported file
+  "keeps its upstream copyright header", which could not be true: neither
+  CrossInk nor biscuit puts a header on individual files. It now describes what
+  is actually done — per-file provenance comments, per-app `PORT_NOTES.md`, and
+  the MIT notice carried in `LICENSE.merge`.
+- `LICENSE.merge` credited "biscuit contributors" separately; both projects are
+  MIT with the same copyright holder, and it now says so precisely.
+
+### Documentation corrections
+
+Three v1 documents described work that was not in the tree. Corrected in place
+rather than restated, because a merge gate whose own records are aspirational
+cannot gate anything:
+
+- `GOVERNANCE.md`'s scope ledger claimed 21 gate-passed apps and three landed
+  foundation libraries. The tree contained neither: no `RadioManager`,
+  `RingBuffer` or `SecureStore`, and one app parked in a directory the firmware
+  does not compile. What v1 did deliver — the ruleset, checklist, port guide,
+  budget checker, PR template — is real, and is what this wave builds on.
+- `docs/merge/SECURITY.md` reported the credential-encryption, duress-PIN and
+  radio-callback findings as fixed and verified. They were not. Each entry now
+  states what is in the tree, what is not, and how to re-check it.
+- `docs/merge/ACCEPTANCE.md`'s v1 sections test apps that do not exist yet; they
+  are now labelled as criteria-for-later rather than a checklist to work through.
+- `docs/merge/RUNBOOK.md` described a bootstrap-and-apply-a-kit flow, a QEMU
+  smoke script, and a build target — none of which exist in this repository.
+  Rewritten against the commands that actually run.
+- `AGENTS.md` listed `pio run -e x4-pro` as a validation command. That build
+  target does not exist — only `x4-pro-simulator` does — so the X4 Pro is a
+  supported device with nothing to flash. The command list is corrected and the
+  missing target is recorded in `PORT_LEDGER.md`; the guide also now notes the
+  two environment constraints that cost real time to rediscover (no arm64
+  cppcheck, and ESP-IDF rejecting paths with spaces).
+
+### Decisions logged
+
+Judgement calls made against `GOVERNANCE.md`'s five-question bar, recorded here
+rather than asked, per the v2 brief:
+
+- **The reader's three planned upgrades were already implemented.** The
+  single-pass structural cache (including an inflated-HTML cache, so changing
+  font or size re-flows without re-reading the EPUB zip), Liang/TeX hyphenation
+  across ten languages with pattern tries in flash, and true bold/italic faces
+  are all present and tested in CrossInk. They are verified and left alone.
+  Rewriting working reader code carries a guaranteed downside and no upside. One
+  genuinely open item remains: confirming inline images and justification behave
+  identically through the cached path at every font size.
+- **The banned XOR credential obfuscation stays, for now, with a stated reason.**
+  WiFi and OPDS passwords must be readable unattended at boot, so they cannot be
+  keyed on a user passphrase; dropping `SecureStore` in would mean typing a PIN
+  before WiFi worked. The options and their trade-offs are written up in
+  `SECURITY.md`. Choosing one is a product decision. Until then the wording that
+  calls it encryption overclaims, and the doc says so.
+- **`SecureStore` is deliberately not compiled into the simulator.** The
+  simulator has no mbedtls, and stubbing crypto so a vault app appears to work on
+  a desktop is the security theatre the ruleset bans. It is covered instead by
+  host tests linking a pinned mbedtls.
+- **BLE apps are blocked, not deferred by preference.** This tree has no BLE
+  stack at all. Adding one is a real memory cost on the C3 and has to clear the
+  gate on its own merits.
+- **`SSID Channel` is out of scope**, despite appearing in the Comms tile:
+  encoding data into a broadcast SSID means transmitting a crafted beacon, which
+  is the offense boundary the brief draws.
+
+### Known constraint — the app scope does not currently fit
+
+Now measured rather than estimated. The launcher plus five apps cost 39,264
+bytes of flash: about 18 KB one-time for the launcher, and **~4 KB per app**.
+The firmware sits at 95.9% of its 6.4 MB partition with **251,744 bytes free**.
+
+Roughly 68 apps remain in scope. At 4 KB each that is ~272 KB — already over
+budget, and 4 KB is the average of the five *simplest* apps on the list. A chess
+engine, a packet-capture writer, a BLE stack and a hardware-vendor lookup table
+are all far larger.
+
+The likely resolution is a partition change: `partitions.csv` reserves 3.4 MB
+for a filesystem partition that nothing in this firmware mounts (settings,
+caches and books all live on the SD card), and reclaiming it would cover the
+whole scope comfortably. That is a change to the OTA layout, so it is
+deliberately **not** bundled into this wave — it needs its own change with the
+recovery path tested on real hardware first. Details and alternatives are in
+`docs/merge/PORT_LEDGER.md`.
+
+Memory, by contrast, is comfortable: 17.6% of RAM. The budget gate measures RAM
+only and would pass a change that cannot be flashed; it needs a flash column.
+
+---
+
 ## [v1.5.0] - 2026-08-08
 
 ### Added
