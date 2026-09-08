@@ -120,7 +120,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--book", default=str(DEFAULT_BOOK), help="EPUB fixture to copy into the isolated simulator fs_")
     parser.add_argument("--env", choices=("simulator", "sticky-simulator", "x4-pro-simulator"), default="simulator",
                         help="PlatformIO simulator environment to build and run")
-    parser.add_argument("--timeout", type=int, default=45, help="Seconds before the simulator run is treated as hung")
+    parser.add_argument("--timeout", type=int, default=90, help="Seconds before the simulator run is treated as hung")
     parser.add_argument("--page-turns", type=int, default=2, help="Number of EPUB page-forward taps to run")
     parser.add_argument("--theme", choices=sorted(THEMES), help="UI theme to use during the smoke test")
     parser.add_argument("--no-build", dest="build", action="store_false", help="Run the existing simulator binary")

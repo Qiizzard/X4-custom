@@ -43,7 +43,7 @@ No firmware work resumes until the scheduled wakeup.
 |---|---|---|
 | 1 | complete | Finish the corrected lifecycle soak: build current simulator once, run scripts/run_simulator_soak_test.py for five apps with 50 cycles and 600000-ms holds in isolated filesystems. Verify explicit PASS markers and cleanup; record actual coverage. The last runs were manually stopped, never passed. Fix only a blocking harness defect; checkpoint if a larger defect appears. |
 | 2 | complete | QR verification: retain passing entry/output/edit-cancel/exit smoke; add initial-cancel coverage and review the keyboard/QR transient budget. Measure what the simulator/compiler can establish, distinguish C3 estimates, and leave phone-scan/physical checks open. |
-| 3 | pending | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
+| 3 | complete | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
 | 4 | pending | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
 | 5 | pending | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
 | 6 | pending | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
@@ -100,3 +100,10 @@ this schedule does not declare them completed or permanently blocked.
   and QR-only smoke patch are in verification/BATCH_2_QR_2026-09-08.md and
   verification/BATCH_2_QR_SMOKE.patch. Firmware integration remains batch 7;
   QR stays wip. Next wakeup starts batch 3.
+
+- 2026-09-08 09:00 UTC wakeup: Batch 3 complete. Final simulator build and
+  eight-entry Cipher button script PASS; 14 Cipher host tests PASS. Resource
+  lifetimes reviewed; peak keyboard heap remains unmeasured. Evidence and
+  saved smoke patch: verification/BATCH_3_CIPHER_2026-09-08.md and
+  verification/BATCH_3_CIPHER_SMOKE.patch. Runner timeout raised to 90s.
+  Cipher remains wip; firmware integration remains batch 7. Next: batch 4.

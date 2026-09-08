@@ -1,0 +1,85 @@
+--- a/src/simulator/SimulatorSmokeTest.cpp
++++ b/src/simulator/SimulatorSmokeTest.cpp
+@@ -41,6 +41,7 @@
+   AppCategoryList,
+   AppScreens,
+   QrInput,
++  CipherInput,
+   ReaderOptions,
+   ReaderMenu,
+   Sleep,
+@@ -167,6 +168,9 @@
+         }
+         buildQrInputScript(initialCancel);
+         queueStep(I18N.get(entry.title), SmokeStep::QrInput);
++      } else if (entry.title == StrId::STR_APP_CIPHER) {
++        buildCipherInputScript();
++        queueStep(I18N.get(entry.title), SmokeStep::CipherInput);
+       } else {
+         queueStep(I18N.get(entry.title), SmokeStep::AppScreens);
+       }
+@@ -247,6 +251,7 @@
+         queueStep("Tools category", SmokeStep::AppCategoryList);
+         break;
+
++      case SmokeStep::CipherInput:
+       case SmokeStep::QrInput:
+         runReaderInputScript(SmokeStep::AppScreens);
+         break;
+@@ -389,6 +394,56 @@
+     addTap(MappedInputManager::Button::Back);
+     inputScript.push_back(render("Home after QR exit", 4));
+     inputScript.push_back(expect("Home"));
++  }
++
++  void buildCipherInputScript() {
++    inputScript.clear();
++    inputScript.reserve(512);
++    scriptIndex = 0;
++    const auto expect = [this](const char* name) {
++      inputScript.push_back(render(name, 4));
++      inputScript.push_back({ScriptActionType::AssertActivity, MappedInputManager::Button::Back, name, 0, 0, 0});
++    };
++    const auto submit = [this]() {
++      // From the initial digit-1 selection, wrap to the OK action.
++      addTap(MappedInputManager::Button::Up);
++      addTap(MappedInputManager::Button::Left);
++      addTap(MappedInputManager::Button::Confirm);
++    };
++    // Registry order: ROT13, Caesar, Vigenere, XOR encode/decode, Atbash,
++    // Base64 encode/decode. Some digit-1 inputs intentionally produce errors;
++    // this script checks navigation, while host tests check transform values.
++    for (int algorithm = 0; algorithm < 8; ++algorithm) {
++      const bool needsKey = algorithm >= 1 && algorithm <= 4;
++      expect("Cipher");
++      addTap(MappedInputManager::Button::Confirm);
++      expect("KeyboardEntry");
++      addTap(MappedInputManager::Button::Back);
++      expect("Cipher");  // Cancel input returns to algorithm selection.
++      addTap(MappedInputManager::Button::Confirm);
++      expect("KeyboardEntry");
++      addTap(MappedInputManager::Button::Confirm);  // Append digit 1.
++      submit();
++      if (needsKey) {
++        expect("KeyboardEntry");
++        addTap(MappedInputManager::Button::Back);
++        expect("Cipher");  // Cancel key returns to selection.
++        addTap(MappedInputManager::Button::Confirm);
++        expect("KeyboardEntry");
++        submit();  // Reuse the input retained after cancelling the key.
++        expect("KeyboardEntry");
++        addTap(MappedInputManager::Button::Confirm);
++        submit();
++      }
++      expect("Cipher");                             // Result (including invalid-input results).
++      addTap(MappedInputManager::Button::Confirm);  // Retry from result.
++      expect("KeyboardEntry");
++      addTap(MappedInputManager::Button::Back);
++      expect("Cipher");
++      addTap(MappedInputManager::Button::Down);
++    }
++    addTap(MappedInputManager::Button::Back);
++    expect("Home");
+   }
+
+   void buildReaderInputScript() {
