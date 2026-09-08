@@ -23,11 +23,12 @@
  *   - Element selectors: p, div, h1, etc.
  *   - Class selectors: .classname
  *   - Combined: element.classname
+ *   - Two-class compounds: .class1.class2, element.class1.class2 (order-independent)
  *   - Grouped: selector1, selector2 { }
  *   - Two-part descendant: ancestor subject (e.g. "div p", "section.chapter p")
  *
  * Not supported (silently ignored):
- *   - Three-or-more-part descendant selectors
+ *   - Three-or-more-class compound selectors, and three-or-more-part descendant selectors
  *   - Child/sibling combinators (>, +, ~)
  *   - Pseudo-classes and pseudo-elements
  *   - Media queries (content is skipped)
@@ -56,7 +57,7 @@ class CssParser {
 
   // Bump when CSS cache format or rules change; section caches are invalidated when this changes
   static constexpr uint32_t CSS_CACHE_MAGIC = 0x435843FF;  // bytes: 0xFF, "CXC"
-  static constexpr uint8_t CSS_CACHE_VERSION = 15;
+  static constexpr uint8_t CSS_CACHE_VERSION = 17;
 
   static constexpr size_t MAX_DESCENDANT_RULES = 100;
   static constexpr size_t CSS_INDEX_BYTES_PER_RULE = 8;
@@ -78,7 +79,8 @@ class CssParser {
 
   /**
    * Look up the style for an HTML element, considering tag name, class attributes, and ancestors.
-   * Applies CSS cascade: element style < descendant rules < class style < element.class style
+   * Applies CSS cascade: element style < descendant rules < class style < element.class style <
+   * two-class compound style (.a.b / element.a.b)
    *
    * @param tagName The HTML element name (e.g., "p", "div")
    * @param classAttr The class attribute value (may contain multiple space-separated classes)

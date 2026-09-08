@@ -14,6 +14,7 @@
 
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
+#include "SimulatorCssTest.h"
 #include "activities/ActivityManager.h"
 #include "activities/apps/AppLauncherActivity.h"
 #include "activities/apps/AppRegistry.h"
@@ -198,6 +199,9 @@ class SimulatorSmokeTest {
         }
         if (!SimulatorHomeKeyInput::verifyTimingContract()) {
           fail("Simulator Home key timing contract failed");
+        }
+        if (!verifySimulatorCssCacheContract()) {
+          fail("Compound CSS cache contract failed");
         }
         applyRequestedTheme();
         activityManager.goHome();

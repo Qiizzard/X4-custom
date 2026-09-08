@@ -236,6 +236,64 @@ bool tryInterpretBackgroundBlack(std::string_view value, bool& out) {
   return false;
 }
 
+// Splits a selector consisting of exactly two class parts and an optional
+// leading tag into its tag/class1/class2 components, in source order.
+// Returns false for anything else (0, 1, or 3+ dots) so callers fall back to
+// the existing bare-tag/single-class/tag.class handling for those selectors.
+bool splitTwoClassSelector(std::string_view selector, std::string_view& outTag, std::string_view& outClass1,
+                           std::string_view& outClass2) {
+  const size_t firstDot = selector.find('.');
+  if (firstDot == std::string_view::npos) return false;
+  const size_t secondDot = selector.find('.', firstDot + 1);
+  if (secondDot == std::string_view::npos) return false;
+  if (selector.find('.', secondDot + 1) != std::string_view::npos) return false;  // 3+ classes: unsupported here
+
+  outTag = selector.substr(0, firstDot);
+  outClass1 = selector.substr(firstDot + 1, secondDot - firstDot - 1);
+  outClass2 = selector.substr(secondDot + 1);
+  return !outClass1.empty() && !outClass2.empty();
+}
+
+// Case-insensitive ASCII "less than" used to canonically order the two class
+// names in a compound selector key, so the key doesn't depend on the order
+// classes were written in the CSS source or the HTML class="" attribute.
+bool classTokenLess(std::string_view a, std::string_view b) {
+  const size_t n = std::min(a.size(), b.size());
+  for (size_t i = 0; i < n; ++i) {
+    const char ca = asciiToLower(a[i]);
+    const char cb = asciiToLower(b[i]);
+    if (ca != cb) return ca < cb;
+  }
+  return a.size() < b.size();
+}
+
+// Writes the canonical two-class compound key ("[tag.]c1.c2", classes ordered
+// case-insensitively via classTokenLess) into `out`. Used both when storing a
+// compound rule at parse time and when probing for one at resolve time, so
+// the two sides always agree on the key regardless of source order. Returns
+// the key as a view into `out`, or an empty view if it wouldn't fit within
+// MAX_SELECTOR_LENGTH.
+std::string_view buildTwoClassKey(std::string_view tag, std::string_view classA, std::string_view classB,
+                                  std::array<char, MAX_SELECTOR_LENGTH>& out) {
+  if (classTokenLess(classB, classA)) {
+    const std::string_view tmp = classA;
+    classA = classB;
+    classB = tmp;
+  }
+  const size_t needed = tag.size() + 1 + classA.size() + 1 + classB.size();
+  if (needed > out.size()) return {};
+  size_t pos = 0;
+  memcpy(out.data() + pos, tag.data(), tag.size());
+  pos += tag.size();
+  out[pos++] = '.';
+  memcpy(out.data() + pos, classA.data(), classA.size());
+  pos += classA.size();
+  out[pos++] = '.';
+  memcpy(out.data() + pos, classB.data(), classB.size());
+  pos += classB.size();
+  return std::string_view(out.data(), pos);
+}
+
 }  // anonymous namespace
 
 // Transparent case-insensitive hash/equal. Bodies live here (rather than
@@ -654,6 +712,35 @@ bool CssParser::processRuleBlockWithStyle(std::string_view selectorGroup, const 
           return;
         }
 
+        // Two-class compound selectors (".a.b" / "tag.a.b") are normalized to a
+        // canonical key (classes ordered case-insensitively) before storage, so
+        // resolveStyle's compound-class lookup matches regardless of the order
+        // classes were written in the CSS source or the HTML class="" attribute.
+        std::string_view compTag, compClass1, compClass2;
+        if (splitTwoClassSelector(sel, compTag, compClass1, compClass2)) {
+          std::array<char, MAX_SELECTOR_LENGTH> keyBuf{};
+          const std::string_view key = buildTwoClassKey(compTag, compClass1, compClass2, keyBuf);
+          if (!key.empty()) {
+            if (rulesBySelector_.size() >= MAX_RULES) {
+              LOG_ERR("CSS", "Reached max rules limit, treating CSS parse as incomplete");
+              limitReached = true;
+              return;
+            }
+            auto compIt = rulesBySelector_.find(key);
+            if (compIt != rulesBySelector_.end()) {
+              compIt->second.applyOver(style);
+            } else {
+              if (!hasHeapForRuleGrowth()) {
+                limitReached = true;
+                return;
+              }
+              rulesBySelector_.emplace(std::string(key), style);
+            }
+            return;
+          }
+          // Key didn't fit MAX_SELECTOR_LENGTH; fall through to generic storage.
+        }
+
         // Skip if this would exceed the rule limit
         if (rulesBySelector_.size() >= MAX_RULES) {
           LOG_ERR("CSS", "Reached max rules limit, treating CSS parse as incomplete");
@@ -865,8 +952,8 @@ CssStyle CssParser::resolveStyle(std::string_view tagName, std::string_view clas
 
   if (classAttr.empty()) return result;
 
-  // TODO: Support combinations of classes (e.g. style on .class1.class2)
-  // 2. Apply class styles (medium priority).
+  // 2. Apply class styles (medium priority). Two-class compounds (.a.b) are
+  // handled separately below (step 4), at higher priority than a single class.
   forEachDelimitedToken(classAttr, isCssWhitespace, [&](std::string_view cls) {
     if (cls.size() + 1 > MAX_SELECTOR_LENGTH) return;
     std::array<char, MAX_SELECTOR_LENGTH> selector{};
@@ -877,7 +964,6 @@ CssStyle CssParser::resolveStyle(std::string_view tagName, std::string_view clas
     }
   });
 
-  // TODO: Support combinations of classes (e.g. style on p.class1.class2)
   // 3. Apply element.class styles (higher priority).
   forEachDelimitedToken(classAttr, isCssWhitespace, [&](std::string_view cls) {
     if (tagName.size() + 1 + cls.size() > MAX_SELECTOR_LENGTH) return;
@@ -889,6 +975,37 @@ CssStyle CssParser::resolveStyle(std::string_view tagName, std::string_view clas
       result.applyOver(matchedStyle);
     }
   });
+
+  // 4. Apply two-class compound selectors (".a.b", "tag.a.b") — highest
+  // priority. Covers the common real-world case of two classes stacked on one
+  // element (e.g. a drop-cap paragraph, a poetry stanza variant). Matching is
+  // order-independent: keys are canonicalized the same way at parse time (see
+  // buildTwoClassKey), so this matches regardless of how the classes were
+  // ordered in the stylesheet or in the element's class="" attribute.
+  // Selectors with three or more compounded classes remain unsupported.
+  {
+    constexpr size_t MAX_CLASS_TOKENS_FOR_COMPOUND = 8;
+    std::array<std::string_view, MAX_CLASS_TOKENS_FOR_COMPOUND> classTokens{};
+    size_t classTokenCount = 0;
+    forEachDelimitedToken(classAttr, isCssWhitespace, [&](std::string_view cls) {
+      if (classTokenCount < MAX_CLASS_TOKENS_FOR_COMPOUND) classTokens[classTokenCount++] = cls;
+    });
+    // Apply every bare compound before any tag-qualified compound. Mixing
+    // them per pair lets a later bare match override a more specific tag rule.
+    // Reuse one bounded key buffer; no heap scratch or second key array.
+    std::array<char, MAX_SELECTOR_LENGTH> keyBuf{};
+    for (const bool withTag : {false, true}) {
+      for (size_t i = 0; i < classTokenCount; ++i) {
+        for (size_t j = i + 1; j < classTokenCount; ++j) {
+          const std::string_view key =
+              buildTwoClassKey(withTag ? tagName : std::string_view{}, classTokens[i], classTokens[j], keyBuf);
+          if (!key.empty() && lookupRule(key, matchedStyle)) {
+            result.applyOver(matchedStyle);
+          }
+        }
+      }
+    }
+  }
 
   return result;
 }

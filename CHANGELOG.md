@@ -49,6 +49,10 @@ base is MIT.
 
 ### Fixed
 
+- EPUB two-class CSS selectors now match regardless of pair order. Tag-qualified
+  compound rules retain precedence over bare compounds; cache version 17
+  rebuilds earlier cached styles.
+
 - Unit Converter could show a truncated number as if it were a result. A value
   too wide for its field was cut rather than rounded — "1234567.89" becoming
   "1234567" reads as a plausible answer. It now renders into scratch first and

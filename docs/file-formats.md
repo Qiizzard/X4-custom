@@ -577,3 +577,15 @@ if (parsedSize != fileSize) {
     std::warning(std::format("Unparsed data detected: {} bytes remaining at offset 0x{:X}", fileSize - parsedSize, parsedSize));
 }
 ```
+
+## CSS rules cache version 17
+
+`css_rules.cache` uses version 17 for canonical two-class compound selector
+keys (`.a.b` and `tag.a.b`). The binary field layout is unchanged, but version
+15 keys can retain source class order and miss canonical lookups. Version
+17 also fixes tag-qualified compound precedence across multiple class pairs.
+The bump rejects version 15/16 rule caches. Dependent sections are removed
+after a complete CSS rebuild (or the existing eligible partial-rebuild path);
+a failed rebuild preserves old sections. When
+testing, clear the book’s `/.crosspoint/epub_<hash>/` directory and compare a
+cold parse with a reopen at each shipped font size.

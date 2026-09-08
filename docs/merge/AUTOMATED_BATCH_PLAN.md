@@ -45,7 +45,7 @@ No firmware work resumes until the scheduled wakeup.
 | 2 | complete | QR verification: retain passing entry/output/edit-cancel/exit smoke; add initial-cancel coverage and review the keyboard/QR transient budget. Measure what the simulator/compiler can establish, distinguish C3 estimates, and leave phone-scan/physical checks open. |
 | 3 | complete | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
 | 4 | complete | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
-| 5 | pending | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
+| 5 | complete | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
 | 6 | pending | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
 | 7 | pending | Review and locally commit verified work in coherent units (apps, CSS, navigation/SSID fixes, harness/docs as dependencies allow). Check formatting and relevant existing test/build evidence; rerun only checks invalidated by changes. Unverified implementations remain wip. Push the completed scoped commits. |
 | 8 | pending | Reconcile ledger, CHANGELOG, port notes and session report; record commit IDs, outstanding working-tree items, hardware checklist and decision list. Identify whether any further work is actually unblocked. If only hardware/product gates remain, pause this automation and notify once. |
@@ -115,3 +115,12 @@ this schedule does not declare them completed or permanently blocked.
   open; all three apps remain wip. Evidence/test patch published under
   verification/BATCH_4_BASIC_APPS*. Firmware integration remains batch 7.
   Next wakeup: batch 5.
+
+- 2026-09-08 19:05 UTC wakeup: Batch 5 complete. A new regression exposed
+  bare compounds overriding tag-qualified compounds across class pairs;
+  two-pass resolution fixes it. Cold/cache assertions and version-16
+  rejection PASS; cache version is now 17. Simulator smoke and C3 default
+  builds PASS (6,316,256-byte image; 237,344 bytes OTA headroom). Scoped CSS
+  implementation/tests/fixture source are committed directly in this batch;
+  app integration remains batch 7. Physical rendering checks remain open.
+  See verification/BATCH_5_CSS_2026-09-08.md. Next wakeup: batch 6.
