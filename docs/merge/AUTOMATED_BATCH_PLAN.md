@@ -42,7 +42,7 @@ No firmware work resumes until the scheduled wakeup.
 | Batch | Status | Bounded scope and exit criteria |
 |---|---|---|
 | 1 | complete | Finish the corrected lifecycle soak: build current simulator once, run scripts/run_simulator_soak_test.py for five apps with 50 cycles and 600000-ms holds in isolated filesystems. Verify explicit PASS markers and cleanup; record actual coverage. The last runs were manually stopped, never passed. Fix only a blocking harness defect; checkpoint if a larger defect appears. |
-| 2 | pending | QR verification: retain passing entry/output/edit-cancel/exit smoke; add initial-cancel coverage and review the keyboard/QR transient budget. Measure what the simulator/compiler can establish, distinguish C3 estimates, and leave phone-scan/physical checks open. |
+| 2 | complete | QR verification: retain passing entry/output/edit-cancel/exit smoke; add initial-cancel coverage and review the keyboard/QR transient budget. Measure what the simulator/compiler can establish, distinguish C3 estimates, and leave phone-scan/physical checks open. |
 | 3 | pending | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
 | 4 | pending | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
 | 5 | pending | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
@@ -93,3 +93,10 @@ this schedule does not declare them completed or permanently blocked.
 - 2026-09-06: User authorized pushing every completed batch. Batch 1
   publishes this queue and its verified evidence; the inherited uncommitted
   firmware implementation remains local pending scoped integration/review.
+
+- 2026-09-08 UTC: Batch 2 complete: simulator build and full smoke PASS,
+  including initial QR cancellation. Source-level QR heap/stack accounting
+  reviewed; keyboard peak and C3 runtime measurements remain open. Evidence
+  and QR-only smoke patch are in verification/BATCH_2_QR_2026-09-08.md and
+  verification/BATCH_2_QR_SMOKE.patch. Firmware integration remains batch 7;
+  QR stays wip. Next wakeup starts batch 3.
