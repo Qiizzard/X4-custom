@@ -44,7 +44,7 @@ No firmware work resumes until the scheduled wakeup.
 | 1 | complete | Finish the corrected lifecycle soak: build current simulator once, run scripts/run_simulator_soak_test.py for five apps with 50 cycles and 600000-ms holds in isolated filesystems. Verify explicit PASS markers and cleanup; record actual coverage. The last runs were manually stopped, never passed. Fix only a blocking harness defect; checkpoint if a larger defect appears. |
 | 2 | complete | QR verification: retain passing entry/output/edit-cancel/exit smoke; add initial-cancel coverage and review the keyboard/QR transient budget. Measure what the simulator/compiler can establish, distinguish C3 estimates, and leave phone-scan/physical checks open. |
 | 3 | complete | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
-| 4 | pending | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
+| 4 | complete | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
 | 5 | pending | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
 | 6 | pending | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
 | 7 | pending | Review and locally commit verified work in coherent units (apps, CSS, navigation/SSID fixes, harness/docs as dependencies allow). Check formatting and relevant existing test/build evidence; rerun only checks invalidated by changes. Unverified implementations remain wip. Push the completed scoped commits. |
@@ -107,3 +107,11 @@ this schedule does not declare them completed or permanently blocked.
   saved smoke patch: verification/BATCH_3_CIPHER_2026-09-08.md and
   verification/BATCH_3_CIPHER_SMOKE.patch. Runner timeout raised to 90s.
   Cipher remains wip; firmware integration remains batch 7. Next: batch 4.
+
+- 2026-09-08 14:05 UTC wakeup: Batch 4 complete. Simulator build and full
+  smoke PASS, including actual Game of Life block/wrapped-blinker/restart
+  assertions and Clock/OTP/Game of Life button paths. Resource lifetimes
+  reviewed. RTC, entropy, physical display and C3 runtime-memory gates stay
+  open; all three apps remain wip. Evidence/test patch published under
+  verification/BATCH_4_BASIC_APPS*. Firmware integration remains batch 7.
+  Next wakeup: batch 5.

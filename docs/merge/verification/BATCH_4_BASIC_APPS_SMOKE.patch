@@ -1,0 +1,169 @@
+--- a/src/simulator/SimulatorSmokeTest.cpp
++++ b/src/simulator/SimulatorSmokeTest.cpp
+@@ -15,6 +15,7 @@
+ #include "CrossPointSettings.h"
+ #include "MappedInputManager.h"
+ #include "SimulatorCssTest.h"
++#include "SimulatorGameOfLifeTest.h"
+ #include "activities/ActivityManager.h"
+ #include "activities/apps/AppLauncherActivity.h"
+ #include "activities/apps/AppRegistry.h"
+@@ -42,6 +43,7 @@
+   AppScreens,
+   QrInput,
+   CipherInput,
++  BasicAppInput,
+   ReaderOptions,
+   ReaderMenu,
+   Sleep,
+@@ -171,6 +173,10 @@
+       } else if (entry.title == StrId::STR_APP_CIPHER) {
+         buildCipherInputScript();
+         queueStep(I18N.get(entry.title), SmokeStep::CipherInput);
++      } else if (entry.title == StrId::STR_APP_CLOCK || entry.title == StrId::STR_APP_OTP_GENERATOR ||
++                 entry.title == StrId::STR_APP_GAME_OF_LIFE) {
++        buildBasicAppInputScript(entry.title);
++        queueStep(I18N.get(entry.title), SmokeStep::BasicAppInput);
+       } else {
+         queueStep(I18N.get(entry.title), SmokeStep::AppScreens);
+       }
+@@ -219,6 +225,9 @@
+         if (!verifySimulatorCssCacheContract()) {
+           fail("Compound CSS cache contract failed");
+         }
++        if (!verifySimulatorGameOfLifeRules(renderer, mappedInputManager)) {
++          fail("Game of Life rules contract failed");
++        }
+         applyRequestedTheme();
+         activityManager.goHome();
+         queueStep("Home", SmokeStep::Home);
+@@ -251,6 +260,7 @@
+         queueStep("Tools category", SmokeStep::AppCategoryList);
+         break;
+
++      case SmokeStep::BasicAppInput:
+       case SmokeStep::CipherInput:
+       case SmokeStep::QrInput:
+         runReaderInputScript(SmokeStep::AppScreens);
+@@ -446,6 +456,34 @@
+     expect("Home");
+   }
+
++  void buildBasicAppInputScript(StrId title) {
++    inputScript.clear();
++    inputScript.reserve(24);
++    scriptIndex = 0;
++    const char* name = title == StrId::STR_APP_CLOCK           ? "Clock"
++                       : title == StrId::STR_APP_OTP_GENERATOR ? "OtpGenerator"
++                                                               : "GameOfLife";
++    const auto expect = [this](const char* activity) {
++      inputScript.push_back(render(activity, 4));
++      inputScript.push_back({ScriptActionType::AssertActivity, MappedInputManager::Button::Back, activity, 0, 0, 0});
++    };
++    expect(name);
++    if (title != StrId::STR_APP_CLOCK) {
++      addTap(MappedInputManager::Button::Confirm);
++      expect(name);
++      if (title == StrId::STR_APP_OTP_GENERATOR) {
++        addTap(MappedInputManager::Button::Down);
++        expect(name);
++      }
++      addTap(MappedInputManager::Button::Up);
++      expect(name);
++      addTap(MappedInputManager::Button::Confirm);
++      expect(name);
++    }
++    addTap(MappedInputManager::Button::Back);
++    expect("Home");
++  }
++
+   void buildReaderInputScript() {
+     inputScript.clear();
+     scriptIndex = 0;
+--- a/src/activities/apps/game_of_life/GameOfLifeActivity.h
++++ b/src/activities/apps/game_of_life/GameOfLifeActivity.h
+@@ -19,6 +19,9 @@
+   void render(RenderLock&&) override;
+
+  private:
++#ifdef SIMULATOR
++  friend bool verifySimulatorGameOfLifeRules(GfxRenderer&, MappedInputManager&);
++#endif
+   // Fixed, compile-time grid size (rules 1/2: nothing here grows). Bit-packed,
+   // 1 bit per cell, row-major, so the whole board is small and cheap to flip
+   // between two ping-pong buffers each generation. 64 x 128 = 8192 cells =
+--- /dev/null
++++ b/src/simulator/SimulatorGameOfLifeTest.h
+@@ -0,0 +1,6 @@
++#pragma once
++#ifdef SIMULATOR
++class GfxRenderer;
++class MappedInputManager;
++bool verifySimulatorGameOfLifeRules(GfxRenderer& renderer, MappedInputManager& input);
++#endif
+--- /dev/null
++++ b/src/simulator/SimulatorGameOfLifeTest.cpp
+@@ -0,0 +1,63 @@
++#ifdef SIMULATOR
++#include "SimulatorGameOfLifeTest.h"
++
++#include <Logging.h>
++#include <Memory.h>
++
++#include <cstring>
++
++#include "activities/apps/game_of_life/GameOfLifeActivity.h"
++
++bool verifySimulatorGameOfLifeRules(GfxRenderer& renderer, MappedInputManager& input) {
++  // Isolated test instance: heap storage keeps the activity and boards off
++  // the caller's stack. No onEnter(), rendering, or global activity changes.
++  auto app = makeUniqueNoThrow<GameOfLifeActivity>(renderer, input);
++  if (!app) return false;
++  app->current = makeUniqueNoThrow<uint8_t[]>(app->kBufferBytes);
++  app->next = makeUniqueNoThrow<uint8_t[]>(app->kBufferBytes);
++  if (!app->current || !app->next) return false;
++  app->boardReady = true;
++  const auto clear = [&]() {
++    std::memset(app->current.get(), 0, app->kBufferBytes);
++    app->generation = 0;
++    app->liveCount = 0;
++  };
++  const auto population = [&]() {
++    uint32_t total = 0;
++    for (size_t i = 0; i < app->kBufferBytes; ++i) {
++      total += static_cast<uint32_t>(__builtin_popcount(app->current[i]));
++    }
++    return total;
++  };
++  clear();
++  app->setCellAt(app->current.get(), 10, 10, true);
++  app->setCellAt(app->current.get(), 11, 10, true);
++  app->setCellAt(app->current.get(), 10, 11, true);
++  app->setCellAt(app->current.get(), 11, 11, true);
++  app->step();
++  if (app->generation != 1 || app->liveCount != 4 || population() != 4 || !app->cellAt(app->current.get(), 10, 10) ||
++      !app->cellAt(app->current.get(), 11, 10) || !app->cellAt(app->current.get(), 10, 11) ||
++      !app->cellAt(app->current.get(), 11, 11))
++    return false;
++
++  clear();
++  // Horizontal blinker spanning x=63/0 becomes vertical across y=127/0.
++  app->setCellAt(app->current.get(), 63, 0, true);
++  app->setCellAt(app->current.get(), 0, 0, true);
++  app->setCellAt(app->current.get(), 1, 0, true);
++  app->step();
++  if (app->generation != 1 || app->liveCount != 3 || population() != 3 || !app->cellAt(app->current.get(), 0, 127) ||
++      !app->cellAt(app->current.get(), 0, 0) || !app->cellAt(app->current.get(), 0, 1))
++    return false;
++  app->step();
++  if (app->generation != 2 || app->liveCount != 3 || population() != 3 || !app->cellAt(app->current.get(), 63, 0) ||
++      !app->cellAt(app->current.get(), 0, 0) || !app->cellAt(app->current.get(), 1, 0))
++    return false;
++
++  app->rngState = 1;
++  app->seedRandom();
++  if (app->generation != 0 || app->liveCount != population() || app->liveCount == 0) return false;
++  LOG_INF("SMOKE", "Game of Life block, wrapped blinker and restart counters passed");
++  return true;
++}
++#endif
