@@ -7,6 +7,11 @@ base is MIT.
 
 ### Added
 
+- QR Generator, Cipher Tools, Clock, OTP Generator and Game of Life are
+  available in Tools/Games. These ports remain **wip** pending their documented
+  device and resource checks. Cipher is explicitly a toy; simulator Clock/OTP
+  show unavailable capabilities instead of fabricated RTC/entropy results.
+
 - A **Tools launcher**, reached from Home. Reading stays the home screen; the
   tile grid (Tools, Games, Recon, Defense, Comms) is one press from it, never in
   front of it. It uses the same list, header and button-hint components as the
@@ -48,6 +53,9 @@ base is MIT.
   actually compiles.
 
 ### Fixed
+
+- Cipher Tools handles very large Caesar shifts without integer overflow and
+  clears partial output after malformed hex/Base64 decoding.
 
 - EPUB two-class CSS selectors now match regardless of pair order. Tag-qualified
   compound rules retain precedence over bare compounds; cache version 17

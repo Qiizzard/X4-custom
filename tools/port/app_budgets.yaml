@@ -83,21 +83,21 @@ apps:
     static_bytes: 0
     object_bytes: 680
     peak_heap_bytes: 512
-  - name: Cipher
+  - name: Cipher                # ported; std::string -> Cipher.h pure functions on char[]; 16 host tests
     tier: c3
-    static_bytes: 256
-    object_bytes: 512
-    peak_heap_bytes: 1024
-  - name: OtpGenerator
+    static_bytes: 0              # no static/global members, same as every other ported app
+    object_bytes: 664  # measured C3 factory allocation, 2026-09-05
+    peak_heap_bytes: 1024       # unverified shared-keyboard peak; see batch 3 evidence
+  - name: OtpGenerator          # ported; esp_random -> mbedtls_ctr_drbg (hardware only; simulator reports unavailable)
     tier: c3
-    static_bytes: 128
-    object_bytes: 384
-    peak_heap_bytes: 256
-  - name: QrGenerator
+    static_bytes: 0
+    object_bytes: 832  # measured C3 factory allocation, 2026-09-05
+    peak_heap_bytes: 256        # unverified hardware crypto-context peak; see batch 4 evidence
+  - name: QrGenerator            # ported; reuses existing src/util/QrUtils.h, no new QR implementation
     tier: c3
-    static_bytes: 256
-    object_bytes: 512
-    peak_heap_bytes: 4096       # QR bitmap buffer
+    static_bytes: 0
+    object_bytes: 488  # measured C3 factory allocation, 2026-09-05
+    peak_heap_bytes: 4096       # unverified estimate incl. shared keyboard; see batch 2 evidence
   - name: Barcode
     tier: c3
     static_bytes: 128
@@ -116,11 +116,17 @@ apps:
   - name: GameOfLife
     tier: c3
     static_bytes: 128
-    object_bytes: 512
+    object_bytes: 252  # measured C3 factory allocation, 2026-09-05
     peak_heap_bytes: 2048       # cell grid (double-buffered)
 
-  # ---- Deferred: Clock uses <WiFi.h>/NTP -> radio tier (Phase 3), not safe tier ----
-  # - name: Clock  (needs RadioManager + NTP behind a capability, or strip NTP)
+  - name: Clock                  # ported; offline-only against HalClock (no WiFi/NTP in the app itself,
+                                  # resolving the v1 <WiFi.h> objection -- see docs/merge/PORT_LEDGER.md and
+                                  # ClockActivity.h). Standard simulator HalClock reports isAvailable()==false, so
+                                  # the smoke test exercises the "no RTC" fallback path, not the happy path.
+    tier: c3
+    static_bytes: 0
+    object_bytes: 312  # measured C3 factory allocation, 2026-09-05
+    peak_heap_bytes: 0
 
   # ---- Phase 3 recon tier (forward-looking examples; radio, capped buffers) ----
   - name: WifiScanner           # ported (radio tier), capped at MAX_NETWORKS=40 via RADIO

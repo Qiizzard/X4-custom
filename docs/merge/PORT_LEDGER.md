@@ -48,10 +48,10 @@ coherent, working subset.
 | Unit Converter | `done` | Tables moved to flash; temperature constants corrected to exact fractions (biscuit's rounded values did not round-trip). 13 host tests. |
 | Morse Code | `done` | Encode/decode split out Arduino-free; refuses to truncate rather than emit a wrong message. 15 host tests. |
 | Countdown | `done` | Repaint gated on the seconds digit; holds the device awake only while actually running. |
-| Clock | `blocked` | v1 rejected it for pulling in `<WiFi.h>` for NTP. Ship offline-only against the RTC, or gate NTP behind `RADIO`. |
-| QR Generator | `todo` | `ricmoo/QRCode` is already a dependency. |
-| Cipher Tools (ROT13/Caesar/Vigenère/XOR) | `todo` | Label it a **toy**, not protection — rule 21. It must not look like SecureStore. |
-| OTP Generator | `todo` | |
+| Clock | `wip` | Offline `HalClock` app, registered. C3 object measured at 312 bytes (2026-09-05). Simulator exercises only the unavailable-RTC fallback. Still needs populated-RTC date/time/offset verification. See `src/activities/apps/clock/PORT_NOTES.md` and the dated session report for current build and soak evidence. |
+| QR Generator | `wip` | Registered keyboard/QR shell. C3 object measured at 488 bytes. Keyboard object allocation now checked. **Corrected from done:** prior ~100-second soak did not meet the 10-minute gate, and registry/entry soak remains on KeyboardEntry, not QR output. Scripted keyboard entry/output/edit-cancel/exit now pass. Initial cancellation also passes (batch 2). Phone scanning and transient keyboard/QR runtime allocation budget remain unverified; see verification/BATCH_2_QR_2026-09-08.md. See its PORT_NOTES and session report. |
+| Cipher Tools (ROT13/Caesar/Vigenère/XOR/Atbash/Base64) | `wip` | Registered toy cipher tool; 16 host tests pass as part of the 246-test suite. C3 object measured at 664 bytes; keyboard allocations checked and algorithm labels translated. **Corrected from done:** earlier soak was only ~100 seconds; batch 3 now covers interactive input/key/result navigation, cancel and retry in simulator; physical UI and peak keyboard memory remain unverified. The current entry-screen soak is separate evidence. See its PORT_NOTES and session report. |
+| OTP Generator | `wip` | Registered one-time-pad codebook generator, not a TOTP authenticator. C3 object measured at 832 bytes including mbedtls contexts. **Corrected from done:** simulator only exercises RNG-unavailable fallback; it does not test real page generation, entropy or hardware memory cleanup. Hardware generation/reseed and peak allocation checks remain. See its PORT_NOTES and session report. |
 
 ## Tools → Security & crypto
 
@@ -105,7 +105,7 @@ coherent, working subset.
 | Sudoku | `todo` | |
 | Tetris | `todo` | |
 | Maze | `todo` | |
-| Game of Life | `todo` | |
+| Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |
 | Voronoi | `todo` | Watch the per-frame cost on a 160 MHz core. |
 | Matrix Rain | `todo` | E-ink refresh cost — cap the frame rate or it is a battery bug. |
 | Chess (with bot) | `todo` | Largest of the tile: search depth is a RAM/CPU budget question, not a feature question. |

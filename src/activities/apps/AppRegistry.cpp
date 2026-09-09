@@ -4,9 +4,14 @@
 
 #include "activities/Activity.h"
 #include "calculator/CalculatorActivity.h"
+#include "cipher/CipherActivity.h"
+#include "clock/ClockActivity.h"
 #include "countdown/CountdownActivity.h"
 #include "dice_roller/DiceRollerActivity.h"
+#include "game_of_life/GameOfLifeActivity.h"
 #include "morse_code/MorseCodeActivity.h"
+#include "otp_generator/OtpGeneratorActivity.h"
+#include "qr_generator/QrGeneratorActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
 
 namespace {
@@ -39,9 +44,14 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_UNIT_CONVERTER, &makeApp<UnitConverterActivity>},
     {AppCategory::Tools, StrId::STR_APP_MORSE_CODE, &makeApp<MorseCodeActivity>},
     {AppCategory::Tools, StrId::STR_APP_COUNTDOWN, &makeApp<CountdownActivity>},
+    {AppCategory::Tools, StrId::STR_APP_CLOCK, &makeApp<ClockActivity>},
+    {AppCategory::Tools, StrId::STR_APP_QR_GENERATOR, &makeApp<QrGeneratorActivity>},
+    {AppCategory::Tools, StrId::STR_APP_CIPHER, &makeApp<CipherActivity>},
+    {AppCategory::Tools, StrId::STR_APP_OTP_GENERATOR, &makeApp<OtpGeneratorActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
+    {AppCategory::Games, StrId::STR_APP_GAME_OF_LIFE, &makeApp<GameOfLifeActivity>},
 
     // ---- Recon / Defense / Comms ----
     // Empty until the radio tier lands. RadioManager is in the firmware and
