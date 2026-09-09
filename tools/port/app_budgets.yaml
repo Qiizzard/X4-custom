@@ -43,13 +43,13 @@ apps:
     object_bytes: 616
     peak_heap_bytes: 512
 
-  - name: Snake                 # ported; nit: reserve() the snake vector to its cap
+  - name: Snake                 # wip; fixed-capacity body allocation
     tier: c3
     static_bytes: 128
-    object_bytes: 256
-    peak_heap_bytes: 6144       # snake body vector at max board fill
+    object_bytes: 512           # conservative estimate, runtime validation deferred
+    peak_heap_bytes: 6144       # fixed 1536 * 4-byte body storage
 
-  - name: Minesweeper           # ported; nit: header uses std::string -> snprintf
+  - name: Minesweeper           # wip; fixed grid and bounded local reveal queue
     tier: c3
     static_bytes: 128
     object_bytes: 512           # grid[10][16] in-object

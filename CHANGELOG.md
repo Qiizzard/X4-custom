@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Snake, Minesweeper and Tetris in Games (2026-09-09); implementation ports
+  remain **wip** while comprehensive gameplay and hardware testing is deferred.
+
 - A documented partition/recovery proposal, kept separate from the unchanged
   shipping partition table. It is not an activated firmware configuration.
 

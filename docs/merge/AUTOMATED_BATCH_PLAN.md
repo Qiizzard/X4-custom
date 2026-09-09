@@ -5,7 +5,53 @@ roughly half the account's five-hour Codex allowance. This is a best-effort
 usage target, not a guaranteed quota reservation or 2.5 hours of runtime.
 No firmware work resumes until the scheduled wakeup.
 
-## Execution rules
+## User direction — feature ports first (2026-09-09 UTC)
+
+This section supersedes the earlier verification-first queue and per-app
+verification cadence. Port the approved Biscuit features in larger coherent
+batches; run the comprehensive tests together after the implementation waves.
+Do not spend another scheduled run reconciling old evidence before porting.
+The historical queue/log below is retained only as history.
+
+- Each eligible run ports several related features where feasible, with one
+  compile sanity check for the batch. Defer host suites, simulator interaction
+  scripts, soaks, performance measurements and exhaustive reviews to the final
+  validation phase. Do not claim any deferred test passed.
+- Commit and push each porting batch to the existing origin branch; keep all
+  new ports marked wip/unverified until final validation. Record only a compact
+  list of implemented features, limitations and next targets.
+- Physical partition/recovery and SecureStore hardware gates apply to release
+  validation, not a blanket halt on source implementation. Keep shipping
+  partitions unchanged; do not flash or activate a proposed table. Respect C3
+  memory limits, HAL boundaries, translations and real security semantics while
+  porting. Do not copy a second full framebuffer or fake missing capabilities.
+- Preserve the approved PORT_LEDGER scope; skip genuinely unresolved product
+  choices and unsupported hardware without stalling other features. No new
+  offensive/capture scope is authorized by this change of testing order.
+- Preserve the five-hour cadence and existing approximate allowance limits:
+  defer at starting usage >40% or weekly >=90%; target <=40 percentage points
+  of work plus 10 checkpointing, stop at +50 or 85% total. If the window resets,
+  checkpoint. Never buy/redeem credits. Do not overlap other active work.
+
+## Active implementation queue
+
+| Wave | Status | Work |
+|---|---|---|
+| P1 | in progress | Snake, Minesweeper and Tetris source ports integrated (wip). Next: Sudoku and Maze; continue other approved games in later chunks as capacity permits. |
+| P2 | pending | Offline creative tools: Barcode, Etch-A-Sketch with C3-safe drawing storage, Key Copier charts; register existing file browser rather than rewrite it. |
+| P3 | pending | Event Logger, Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
+| P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
+| P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
+| P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
+| V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
+
+Start with the real source in ../biscuit-reference. P1 continues at the next eligible scheduled wakeup with Sudoku and Maze.
+Porting is separate from the deferred V1 verification phase.
+
+## Historical execution rules (superseded where conflicting above)
+
 
 - Read AGENTS.md, PORT_LEDGER.md and SESSION_REPORT_2026-09-05.md, then inspect
   git status. Preserve the inherited uncommitted work. Do not redo verified
@@ -147,3 +193,16 @@ this schedule does not declare them completed or permanently blocked.
   updated.bin delivered from batch 7, checksum/hash validation PASS. Shipping
   partitions unchanged. Batch 8 final remaining-actionable-work audit stays
   pending; this delivery does not certify hardware gates or complete scope.
+
+- 2026-09-09 user changed priority: feature-porting waves now precede combined
+  testing. Remaining old batch 8 documentation audit is superseded. Current
+  window usage was 93%, so no new port started during this workflow update.
+
+- 2026-09-09 10:08 UTC wakeup, P1 chunk: ported Snake, Minesweeper and
+  Tetris into Games with bounded storage and translated labels; all remain
+  wip/unverified. Final C3 default compile sanity PASS (27.493s) after fixing
+  a translation-format rejection and completing layout adjustments. Log:
+  `/tmp/x4-p1-games-build-final.log`. Image 6,328,768 bytes, stock OTA free
+  space 224,832 bytes (reserve warning remains). No host/simulator/soak or
+  hardware tests run. Usage observed 4% → 31%, weekly 55% → 59%; no reset.
+  Next wakeup resumes P1 with Sudoku and Maze; comprehensive testing stays V1.

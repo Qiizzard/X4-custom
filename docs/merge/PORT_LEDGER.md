@@ -100,10 +100,10 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | Dice Roller | `done` | Fixed array instead of a per-frame `push_back` vector; `esp_random` replaced with an in-object PRNG so it builds for the simulator too. |
-| Snake | `todo` | |
-| Minesweeper | `todo` | |
+| Snake | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
+| Minesweeper | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
 | Sudoku | `todo` | |
-| Tetris | `todo` | |
+| Tetris | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
 | Maze | `todo` | |
 | Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |
 | Voronoi | `todo` | Watch the per-frame cost on a 160 MHz core. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-09, batch 7):
+Latest verified full working-snapshot image (2026-09-09, P1 games chunk):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,316,352 |
+| Firmware image (`firmware.bin`) | 6,328,768 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 237,248 |
+| Free space | 224,832 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 24,896 |
+| Shortfall against reserve | 37,312 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
@@ -222,14 +222,17 @@ byte sizes and the delta; keep any shared-dependency costs explicit. Such
 deltas are configuration-specific and not additive across apps. No invented
 `flash_bytes` values are added to the RAM manifest in this batch.
 
-## Next, in order — verification audit 2026-09-05
+## Historical verification order — audit 2026-09-05
+
+The active feature-first queue in AUTOMATED_BATCH_PLAN.md supersedes this
+ordering as of 2026-09-09. These checks remain deferred release validation.
 
 The intake ledger contained 12 `done`, 2 `wip`, 60 `todo`, 11 `base`, and
 4 `blocked` rows (including foundations and reader rows, not just apps).
 QR Generator, Cipher Tools and OTP Generator are restored to `wip`: the
 previous 100-second holds did not satisfy the required ten minutes, and
 entry-screen tests do not verify their main interactive/hardware paths.
-The current counts are 9 `done`, 5 `wip`, 60 `todo`, 11 `base`, 4 `blocked`.
+The current counts are 9 `done`, 8 `wip`, 57 `todo`, 11 `base`, 4 `blocked`.
 Prior `done` rows are retained as historical gate records, not newly certified.
 
 1. Complete the five current ports' physical and resource checks in PORT_NOTES.

@@ -9,9 +9,12 @@
 #include "countdown/CountdownActivity.h"
 #include "dice_roller/DiceRollerActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
+#include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
+#include "snake/SnakeActivity.h"
+#include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
 
 namespace {
@@ -52,6 +55,10 @@ constexpr AppEntry kApps[] = {
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
     {AppCategory::Games, StrId::STR_APP_GAME_OF_LIFE, &makeApp<GameOfLifeActivity>},
+
+    {AppCategory::Games, StrId::STR_APP_SNAKE, &makeApp<SnakeActivity>},
+    {AppCategory::Games, StrId::STR_APP_MINESWEEPER, &makeApp<MinesweeperActivity>},
+    {AppCategory::Games, StrId::STR_APP_TETRIS, &makeApp<TetrisActivity>},
 
     // ---- Recon / Defense / Comms ----
     // Empty until the radio tier lands. RadioManager is in the firmware and
