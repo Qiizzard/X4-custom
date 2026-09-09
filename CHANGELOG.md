@@ -7,6 +7,11 @@ base is MIT.
 
 ### Added
 
+- Simulator button regression checks for the new apps, known-pattern Game of
+  Life tests, and an opt-in 50-cycle/ten-minute lifecycle runner with real
+  allocator measurements and retained logs. Entry-screen soaks do not prove
+  full interactive or hardware correctness.
+
 - QR Generator, Cipher Tools, Clock, OTP Generator and Game of Life are
   available in Tools/Games. These ports remain **wip** pending their documented
   device and resource checks. Cipher is explicitly a toy; simulator Clock/OTP

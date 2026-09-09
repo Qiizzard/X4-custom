@@ -101,6 +101,7 @@ inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return ESP_SLEEP_
 
 #include "simulator/SimulatorHomeKeyInput.h"
 #include "simulator/SimulatorSmokeTest.h"
+#include "simulator/SimulatorSoakTest.h"
 #endif
 #include "images/LoadingIcon.h"
 #include "util/ButtonNavigator.h"
@@ -1223,6 +1224,7 @@ void loop() {
 
 #ifdef SIMULATOR
   runSimulatorSmokeTestTick();
+  runSimulatorSoakTestTick();
 #endif
 
   const unsigned long loopDuration = millis() - loopStartTime;

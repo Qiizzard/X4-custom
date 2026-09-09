@@ -15,6 +15,7 @@
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "SimulatorCssTest.h"
+#include "SimulatorGameOfLifeTest.h"
 #include "activities/ActivityManager.h"
 #include "activities/apps/AppLauncherActivity.h"
 #include "activities/apps/AppRegistry.h"
@@ -40,6 +41,9 @@ enum class SmokeStep : uint8_t {
   AppLauncher,
   AppCategoryList,
   AppScreens,
+  QrInput,
+  CipherInput,
+  BasicAppInput,
   ReaderOptions,
   ReaderMenu,
   Sleep,
@@ -134,6 +138,7 @@ class SimulatorSmokeTest {
   // Index into the flattened (category, app) space the walker is currently at.
   size_t smokeCategoryIndex = 0;
   size_t smokeAppIndex = 0;
+  bool qrInitialCancelCovered = false;
 
   // Push the next registered app, or return false when every one has been
   // rendered. Each call advances by one app so the queueStep()/settle machinery
@@ -157,7 +162,24 @@ class SimulatorSmokeTest {
         fail("App factory returned nullptr for %s", I18N.get(entry.title));
       }
       activityManager.replaceActivity(std::move(activity));
-      queueStep(I18N.get(entry.title), SmokeStep::AppScreens);
+      if (entry.title == StrId::STR_APP_QR_GENERATOR) {
+        const bool initialCancel = !qrInitialCancelCovered;
+        if (initialCancel) {
+          qrInitialCancelCovered = true;
+          --smokeAppIndex;  // Reopen this app for the full input script next.
+        }
+        buildQrInputScript(initialCancel);
+        queueStep(I18N.get(entry.title), SmokeStep::QrInput);
+      } else if (entry.title == StrId::STR_APP_CIPHER) {
+        buildCipherInputScript();
+        queueStep(I18N.get(entry.title), SmokeStep::CipherInput);
+      } else if (entry.title == StrId::STR_APP_CLOCK || entry.title == StrId::STR_APP_OTP_GENERATOR ||
+                 entry.title == StrId::STR_APP_GAME_OF_LIFE) {
+        buildBasicAppInputScript(entry.title);
+        queueStep(I18N.get(entry.title), SmokeStep::BasicAppInput);
+      } else {
+        queueStep(I18N.get(entry.title), SmokeStep::AppScreens);
+      }
       return true;
     }
     return false;
@@ -203,6 +225,9 @@ class SimulatorSmokeTest {
         if (!verifySimulatorCssCacheContract()) {
           fail("Compound CSS cache contract failed");
         }
+        if (!verifySimulatorGameOfLifeRules(renderer, mappedInputManager)) {
+          fail("Game of Life rules contract failed");
+        }
         applyRequestedTheme();
         activityManager.goHome();
         queueStep("Home", SmokeStep::Home);
@@ -233,6 +258,12 @@ class SimulatorSmokeTest {
         activityManager.replaceActivity(
             std::make_unique<AppLauncherActivity>(renderer, mappedInputManager, AppCategory::Tools));
         queueStep("Tools category", SmokeStep::AppCategoryList);
+        break;
+
+      case SmokeStep::BasicAppInput:
+      case SmokeStep::CipherInput:
+      case SmokeStep::QrInput:
+        runReaderInputScript(SmokeStep::AppScreens);
         break;
 
       case SmokeStep::AppScreens:
@@ -340,6 +371,117 @@ class SimulatorSmokeTest {
   void addTap(MappedInputManager::Button button) {
     inputScript.push_back(press(button));
     inputScript.push_back(release(button));
+  }
+
+  void buildQrInputScript(bool initialCancel) {
+    inputScript.clear();
+    inputScript.reserve(32);
+    scriptIndex = 0;
+    const auto expect = [](const char* name) -> ScriptAction {
+      return {ScriptActionType::AssertActivity, MappedInputManager::Button::Back, name, 0, 0, 0};
+    };
+    inputScript.push_back(expect("KeyboardEntry"));
+    if (initialCancel) {
+      addTap(MappedInputManager::Button::Back);
+      inputScript.push_back(render("Home after initial QR cancellation", 4));
+      inputScript.push_back(expect("Home"));
+      return;
+    }
+    // The builtin keyboard starts at digit 1. Up wraps to the action row;
+    // Left wraps from its first key to OK. Drive the actual button API.
+    addTap(MappedInputManager::Button::Confirm);
+    addTap(MappedInputManager::Button::Up);
+    addTap(MappedInputManager::Button::Left);
+    addTap(MappedInputManager::Button::Confirm);
+    inputScript.push_back(render("QR output after keyboard entry", 4));
+    inputScript.push_back(expect("QrGenerator"));
+    addTap(MappedInputManager::Button::Confirm);
+    inputScript.push_back(render("QR edit keyboard", 4));
+    inputScript.push_back(expect("KeyboardEntry"));
+    addTap(MappedInputManager::Button::Back);
+    inputScript.push_back(render("QR output retained after cancel", 4));
+    inputScript.push_back(expect("QrGenerator"));
+    addTap(MappedInputManager::Button::Back);
+    inputScript.push_back(render("Home after QR exit", 4));
+    inputScript.push_back(expect("Home"));
+  }
+
+  void buildCipherInputScript() {
+    inputScript.clear();
+    inputScript.reserve(512);
+    scriptIndex = 0;
+    const auto expect = [this](const char* name) {
+      inputScript.push_back(render(name, 4));
+      inputScript.push_back({ScriptActionType::AssertActivity, MappedInputManager::Button::Back, name, 0, 0, 0});
+    };
+    const auto submit = [this]() {
+      // From the initial digit-1 selection, wrap to the OK action.
+      addTap(MappedInputManager::Button::Up);
+      addTap(MappedInputManager::Button::Left);
+      addTap(MappedInputManager::Button::Confirm);
+    };
+    // Registry order: ROT13, Caesar, Vigenere, XOR encode/decode, Atbash,
+    // Base64 encode/decode. Some digit-1 inputs intentionally produce errors;
+    // this script checks navigation, while host tests check transform values.
+    for (int algorithm = 0; algorithm < 8; ++algorithm) {
+      const bool needsKey = algorithm >= 1 && algorithm <= 4;
+      expect("Cipher");
+      addTap(MappedInputManager::Button::Confirm);
+      expect("KeyboardEntry");
+      addTap(MappedInputManager::Button::Back);
+      expect("Cipher");  // Cancel input returns to algorithm selection.
+      addTap(MappedInputManager::Button::Confirm);
+      expect("KeyboardEntry");
+      addTap(MappedInputManager::Button::Confirm);  // Append digit 1.
+      submit();
+      if (needsKey) {
+        expect("KeyboardEntry");
+        addTap(MappedInputManager::Button::Back);
+        expect("Cipher");  // Cancel key returns to selection.
+        addTap(MappedInputManager::Button::Confirm);
+        expect("KeyboardEntry");
+        submit();  // Reuse the input retained after cancelling the key.
+        expect("KeyboardEntry");
+        addTap(MappedInputManager::Button::Confirm);
+        submit();
+      }
+      expect("Cipher");                             // Result (including invalid-input results).
+      addTap(MappedInputManager::Button::Confirm);  // Retry from result.
+      expect("KeyboardEntry");
+      addTap(MappedInputManager::Button::Back);
+      expect("Cipher");
+      addTap(MappedInputManager::Button::Down);
+    }
+    addTap(MappedInputManager::Button::Back);
+    expect("Home");
+  }
+
+  void buildBasicAppInputScript(StrId title) {
+    inputScript.clear();
+    inputScript.reserve(24);
+    scriptIndex = 0;
+    const char* name = title == StrId::STR_APP_CLOCK           ? "Clock"
+                       : title == StrId::STR_APP_OTP_GENERATOR ? "OtpGenerator"
+                                                               : "GameOfLife";
+    const auto expect = [this](const char* activity) {
+      inputScript.push_back(render(activity, 4));
+      inputScript.push_back({ScriptActionType::AssertActivity, MappedInputManager::Button::Back, activity, 0, 0, 0});
+    };
+    expect(name);
+    if (title != StrId::STR_APP_CLOCK) {
+      addTap(MappedInputManager::Button::Confirm);
+      expect(name);
+      if (title == StrId::STR_APP_OTP_GENERATOR) {
+        addTap(MappedInputManager::Button::Down);
+        expect(name);
+      }
+      addTap(MappedInputManager::Button::Up);
+      expect(name);
+      addTap(MappedInputManager::Button::Confirm);
+      expect(name);
+    }
+    addTap(MappedInputManager::Button::Back);
+    expect("Home");
   }
 
   void buildReaderInputScript() {
@@ -464,9 +606,9 @@ class SimulatorSmokeTest {
     LOG_INF("SMOKE", "Running reader input script with %d page turn(s)", turns);
   }
 
-  void runReaderInputScript() {
+  void runReaderInputScript(SmokeStep nextStep = SmokeStep::Done) {
     if (scriptIndex >= inputScript.size()) {
-      step = SmokeStep::Done;
+      step = nextStep;
       return;
     }
 
@@ -515,7 +657,7 @@ class SimulatorSmokeTest {
         if (!activityManager.isCurrentActivityNamed(action.label)) fail("Expected current activity: %s", action.label);
         break;
       case ScriptActionType::Render:
-        queueStep(action.label, SmokeStep::ReaderInput, action.settleFrames);
+        queueStep(action.label, step, action.settleFrames);
         break;
     }
   }
