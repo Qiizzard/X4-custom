@@ -46,7 +46,7 @@ No firmware work resumes until the scheduled wakeup.
 | 3 | complete | Cipher verification: script key/input/result/cancel paths through the existing simulator input harness, retain host transform tests, review keyboard lifetime/budget. Fix only findings in this app and leave genuinely unverified hardware behavior open. |
 | 4 | complete | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
 | 5 | complete | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
-| 6 | pending | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
+| 6 | complete | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
 | 7 | pending | Review and locally commit verified work in coherent units (apps, CSS, navigation/SSID fixes, harness/docs as dependencies allow). Check formatting and relevant existing test/build evidence; rerun only checks invalidated by changes. Unverified implementations remain wip. Push the completed scoped commits. |
 | 8 | pending | Reconcile ledger, CHANGELOG, port notes and session report; record commit IDs, outstanding working-tree items, hardware checklist and decision list. Identify whether any further work is actually unblocked. If only hardware/product gates remain, pause this automation and notify once. |
 
@@ -124,3 +124,11 @@ this schedule does not declare them completed or permanently blocked.
   implementation/tests/fixture source are committed directly in this batch;
   app integration remains batch 7. Physical rendering checks remain open.
   See verification/BATCH_5_CSS_2026-09-08.md. Next wakeup: batch 6.
+
+- 2026-09-09 00:06 UTC wakeup: Batch 6 complete. Rechecked 6,316,256-byte
+  image / 6,553,600-byte smallest app slot (237,344 free; 24,800 below reserve).
+  Corrected stale missing-gate prose and misleading app-count extrapolation;
+  documented controlled image-delta planning without invented per-app budgets.
+  Existing flash gate passes five new boundary subcases. No firmware or
+  partition changes. See verification/BATCH_6_FLASH_2026-09-09.md.
+  Next wakeup: batch 7, scoped integration of the remaining verified work.

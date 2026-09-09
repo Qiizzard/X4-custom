@@ -20,11 +20,14 @@
 # actually landed. Keep declaring budgets up front (it is the cheapest moment to
 # notice an app will not fit), but do not read a green gate as a shipped app.
 #
-# KNOWN GAP -- FLASH IS THE BINDING CONSTRAINT, AND THIS FILE DOES NOT MEASURE IT.
-# -e default currently links at 95.3% of the OTA app partition (291 KB free)
-# against 17.6% of RAM. Every remaining app competes for that flash, so this gate
-# would happily pass a change that cannot be flashed. Add a `flash_bytes` field
-# and a partition-aware ceiling before the launcher lands.
+# FLASH: this manifest measures declared RAM, not the linked firmware image.
+# PlatformIO already runs scripts/check_firmware_size.py against the smallest
+# configured app slot. It fails on overflow and warns below the 256 KiB reserve;
+# CROSSINK_FLASH_FAIL_UNDER_RESERVE=1 makes the reserve a hard failure.
+# Batch 5 snapshot: 6,316,256-byte image / 6,553,600-byte slot, 237,344 bytes free.
+# See docs/merge/verification/BATCH_6_FLASH_2026-09-09.md.
+# Per-app deltas require controlled before/after builds; object-file averages
+# are not additive flash budgets. Keep the recovery/expansion gate.
 
 apps:
   # ---- Ported & wired into the Tools launcher (safe tier, no radio) ----

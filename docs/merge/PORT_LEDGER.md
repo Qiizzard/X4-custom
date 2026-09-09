@@ -179,51 +179,48 @@ verify, so it is recorded here rather than guessed at.
 
 ---
 
-## The flash budget — measured, and it does not add up
+## The flash budget — current gate and measured headroom
 
-This is the finding that should shape every following session.
+Latest verified full working-snapshot image (2026-09-08, batch 5):
 
-| | Bytes |
-|---|---|
-| Firmware before this wave | 6,262,592 |
-| Firmware after (launcher + 5 apps + 30 i18n keys) | 6,301,856 |
-| **Delta** | **+39,264** |
-| OTA app partition | 6,553,600 |
-| **Free** | **251,744** |
+| Quantity | Bytes |
+|---|---:|
+| Firmware image (`firmware.bin`) | 6,316,256 |
+| Smallest configured OTA app slot | 6,553,600 |
+| Free space | 237,344 |
+| Warning reserve | 262,144 |
+| Shortfall against reserve | 24,800 |
 
-Broken down from the object files:
+The image fits, but the low-headroom warning remains. This measurement
+includes the inherited local app work; it is not a measurement of a clean
+published commit or evidence that every app is ready to ship.
 
-| Component | Flash |
-|---|---|
-| `AppLauncherActivity` + `AppRegistry` | 18,264 B (one-time; already paid) |
-| 5 apps | 20,093 B → **~4 KB per app** |
-| 30 i18n keys × 28 languages | ~1 KB marginal (strings dedupe well) |
+`scripts/check_firmware_size.py` is already wired into PlatformIO. It compares
+the complete image to the smallest app partition in the configured CSV,
+fails on overflow, and warns below `custom_flash_reserve_bytes` (256 KiB).
+`CROSSINK_FLASH_FAIL_UNDER_RESERVE=1` makes that reserve a hard failure.
+The RAM manifest is a separate estimate gate; it does not substitute for
+this linked-image check. See verification/BATCH_6_FLASH_2026-09-09.md.
 
-**The arithmetic:** ~68 apps remain in scope. At the measured ~4 KB each that is
-**~272 KB against 251 KB free** — and that average is from the five *smallest,
-simplest* apps in the whole list. Chess with a bot, a PCAP writer, a BLE stack,
-and Vendor Lookup's OUI table (which is hundreds of KB on its own) are all far
-above it. **The ~80-app scope does not fit the current partition table.**
+Historical launcher-wave measurements were 6,262,592 → 6,301,856 bytes
+(+39,264 including launcher, registry, five apps and translations). The
+old ~4 KB/app object-file average is planning context only. Shared code,
+linker garbage collection, constants, alignment and configuration mean
+neither that average nor summed object sizes predict total firmware growth.
+The remaining scope is not demonstrated to fit; no claim that a proposed
+partition guarantees it fits should be inferred from that average.
 
-Three ways out, in the order they should be considered:
+Before further app expansion, resolve the documented physical partition/
+stock-recovery gate or choose a bounded optional-build/scope alternative.
+Shipping partitions remain unchanged. A proposed partition is not permission
+to activate it, and passing an image-size check is not recovery verification.
 
-1. **Repartition.** `partitions.csv` gives 3,538,944 B to a `spiffs` partition
-   that **nothing in this firmware mounts** — settings, caches and books all
-   live on the SD card under `.crosspoint`. Reclaiming it would give each OTA
-   slot roughly 1.7 MB more, which comfortably covers the full scope.
-   **This is a rule 23 change**: a device running the old table that takes an
-   OTA built against a new one is exactly the brick this project promises not to
-   ship. It needs its own change, with the stock-`update.bin` rollback tested on
-   real hardware before anything else lands on top of it.
-2. **Make tiles build-time optional.** A `-D` per tile lets a build carry the
-   apps its owner wants. Cheap, but it fragments "what does the firmware do".
-3. **Cut scope.** The honest fallback if 1 is rejected: the tile list is a wish,
-   251 KB is a fact.
-
-Do not port another twenty apps and discover this at app sixty. Add a
-`flash_bytes` column to `app_budgets.yaml` and make the gate partition-aware
-first — the budget checker currently measures RAM only, where there is plenty of
-headroom (17.6%), and would happily pass a change that cannot be flashed.
+For a useful per-app estimate after those gates clear, build before/after
+images with identical compiler, dependency versions, target, partition table
+and flags, varying only the reviewed app integration. Record both hashes and
+byte sizes and the delta; keep any shared-dependency costs explicit. Such
+deltas are configuration-specific and not additive across apps. No invented
+`flash_bytes` values are added to the RAM manifest in this batch.
 
 ## Next session starts here
 
