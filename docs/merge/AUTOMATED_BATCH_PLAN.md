@@ -47,7 +47,7 @@ No firmware work resumes until the scheduled wakeup.
 | 4 | complete | Review the remaining Clock/OTP/Game of Life evidence and resource lifetimes. Complete small host/simulator checks that require no device manipulation; record RTC, entropy and physical control checks precisely. Do not fake populated RTC or real OTP randomness to close a gate. |
 | 5 | complete | Review the inherited compound-CSS fix, version-16 invalidation, fixture and cold/cache assertions. Add a focused missing regression only if needed, validate relevant builds and update cache/hardware instructions. No engine rewrite or runtime-font expansion. |
 | 6 | complete | Close off-device flash-budget bookkeeping: reconcile actual full-image gate with stale documentation; add tested per-app flash attribution/planning support only if it is useful and clearly distinguishes estimates from linked image size. Keep shipping partitions unchanged. |
-| 7 | pending | Review and locally commit verified work in coherent units (apps, CSS, navigation/SSID fixes, harness/docs as dependencies allow). Check formatting and relevant existing test/build evidence; rerun only checks invalidated by changes. Unverified implementations remain wip. Push the completed scoped commits. |
+| 7 | complete | Review and locally commit verified work in coherent units (apps, CSS, navigation/SSID fixes, harness/docs as dependencies allow). Check formatting and relevant existing test/build evidence; rerun only checks invalidated by changes. Unverified implementations remain wip. Push the completed scoped commits. |
 | 8 | pending | Reconcile ledger, CHANGELOG, port notes and session report; record commit IDs, outstanding working-tree items, hardware checklist and decision list. Identify whether any further work is actually unblocked. If only hardware/product gates remain, pause this automation and notify once. |
 
 These batches have different real costs. A difficult batch may span several
@@ -132,3 +132,12 @@ this schedule does not declare them completed or permanently blocked.
   Existing flash gate passes five new boundary subcases. No firmware or
   partition changes. See verification/BATCH_6_FLASH_2026-09-09.md.
   Next wakeup: batch 7, scoped integration of the remaining verified work.
+
+- 2026-09-09 05:07 UTC wakeup: Batch 7 complete. Integrated app ports
+  (99ca9764), harness/tests (3c70ae7a), and Home/SSID/comment fixes (8994be8e).
+  Review caught and fixed Caesar signed overflow and partial malformed-decode
+  output, with failing-then-passing regressions. 246 host tests, 16 UBSan
+  Cipher tests, full simulator smoke, C3 build and budget checks PASS.
+  Image 6,316,352 bytes; 237,248 OTA bytes free. All apps remain wip for
+  documented gates. See verification/BATCH_7_INTEGRATION_2026-09-09.md.
+  Next wakeup: batch 8 documentation reconciliation and remaining-gate audit.
