@@ -10,8 +10,8 @@
  * Credential obfuscation utilities using the ESP32's unique hardware MAC address.
  *
  * XOR-based obfuscation with the 6-byte eFuse MAC as key. Not cryptographically
- * secure, but prevents casual reading of credentials on the SD card and ties
- * obfuscated data to the specific device (cannot be decoded on another chip or PC).
+ * secure. It only obscures credentials from a plain-text viewer. Anyone who
+ * knows the MAC can decode the data on any computer; the MAC is not a secret.
  *
  */
 namespace obfuscation {

@@ -59,6 +59,11 @@ base is MIT.
 
 ### Fixed
 
+- Home menu navigation counts the Tools entry so all menu items remain reachable.
+- WiFi scan results use a bounded, terminated SSID copy available on both build
+  platforms. The credential-obfuscation comment now correctly states that a
+  known device MAC can decode the data on another computer; storage is unchanged.
+
 - Cipher Tools handles very large Caesar shifts without integer overflow and
   clears partial output after malformed hex/Base64 decoding.
 
