@@ -37,8 +37,8 @@ The historical queue/log below is retained only as history.
 
 | Wave | Status | Work |
 |---|---|---|
-| P1 | in progress | Snake, Minesweeper and Tetris source ports integrated (wip). Next: Sudoku and Maze; continue other approved games in later chunks as capacity permits. |
-| P2 | pending | Offline creative tools: Barcode, Etch-A-Sketch with C3-safe drawing storage, Key Copier charts; register existing file browser rather than rewrite it. |
+| P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
+| P2 | next | Offline creative tools: Barcode, Etch-A-Sketch with C3-safe drawing storage, Key Copier charts; register existing file browser rather than rewrite it. |
 | P3 | pending | Event Logger, Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
 | P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
@@ -47,7 +47,7 @@ The historical queue/log below is retained only as history.
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P1 continues at the next eligible scheduled wakeup with Sudoku and Maze.
+Start with the real source in ../biscuit-reference. P2 is next at the next eligible scheduled wakeup.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -206,3 +206,13 @@ this schedule does not declare them completed or permanently blocked.
   space 224,832 bytes (reserve warning remains). No host/simulator/soak or
   hardware tests run. Usage observed 4% → 31%, weekly 55% → 59%; no reset.
   Next wakeup resumes P1 with Sudoku and Maze; comprehensive testing stays V1.
+
+- 2026-09-09 15:09 UTC wakeup, P1 final chunk: ported Sudoku and Maze
+  into Games; both wip/unverified. Sudoku generation/solver are bounded and
+  nonrecursive; Maze shares generation/BFS/path storage. C3 default compile
+  sanity PASS (81.510s) after renaming a type that collided with Storage macro.
+  Log: `/tmp/x4-p1b-build-final.log`. Image 6,338,624 bytes; unchanged OTA slot
+  has 214,976 bytes free (reserve warning). No host/simulator/soak/hardware
+  tests run. Usage observed 9% → 29%, weekly 61% → 64%, no reset. P1 source
+  implementation complete; V1 validation remains deferred. Next: P2 offline
+  creative tools. Other approved games remain scheduled in P7.

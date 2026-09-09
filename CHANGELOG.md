@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Sudoku and Maze in Games (2026-09-09), with bounded solver/storage work;
+  both remain **wip** pending consolidated gameplay and hardware testing.
+
 - Snake, Minesweeper and Tetris in Games (2026-09-09); implementation ports
   remain **wip** while comprehensive gameplay and hardware testing is deferred.
 

@@ -55,10 +55,10 @@ apps:
     object_bytes: 512           # grid[10][16] in-object
     peak_heap_bytes: 512
 
-  - name: Sudoku                # ported, cleanest of the batch
+  - name: Sudoku                # wip; iterative solver, bounded generation
     tier: c3
     static_bytes: 128
-    object_bytes: 320           # board[9][9] + fixed[9][9] in-object
+    object_bytes: 768           # conservative estimate incl. solver arrays; runtime checks deferred
     peak_heap_bytes: 0
 
   - name: AppLauncher           # the tile grid; one instance per level (root, category)
@@ -108,11 +108,11 @@ apps:
     static_bytes: 128
     object_bytes: 512           # board in-object
     peak_heap_bytes: 0
-  - name: Maze
+  - name: Maze                # wip; one fallible lifecycle Storage allocation
     tier: c3
     static_bytes: 128
-    object_bytes: 512
-    peak_heap_bytes: 2048       # maze grid
+    object_bytes: 512          # conservative estimate
+    peak_heap_bytes: 12302     # grid + visited + parents + shared work buffer
   - name: GameOfLife
     tier: c3
     static_bytes: 128

@@ -102,9 +102,9 @@ coherent, working subset.
 | Dice Roller | `done` | Fixed array instead of a per-frame `push_back` vector; `esp_random` replaced with an in-object PRNG so it builds for the simulator too. |
 | Snake | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
 | Minesweeper | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
-| Sudoku | `todo` | |
+| Sudoku | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
 | Tetris | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
-| Maze | `todo` | |
+| Maze | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
 | Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |
 | Voronoi | `todo` | Watch the per-frame cost on a 160 MHz core. |
 | Matrix Rain | `todo` | E-ink refresh cost — cap the frame rate or it is a battery bug. |
@@ -185,11 +185,11 @@ Latest verified full working-snapshot image (2026-09-09, P1 games chunk):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,328,768 |
+| Firmware image (`firmware.bin`) | 6,338,624 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 224,832 |
+| Free space | 214,976 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 37,312 |
+| Shortfall against reserve | 47,168 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
@@ -232,7 +232,7 @@ The intake ledger contained 12 `done`, 2 `wip`, 60 `todo`, 11 `base`, and
 QR Generator, Cipher Tools and OTP Generator are restored to `wip`: the
 previous 100-second holds did not satisfy the required ten minutes, and
 entry-screen tests do not verify their main interactive/hardware paths.
-The current counts are 9 `done`, 8 `wip`, 57 `todo`, 11 `base`, 4 `blocked`.
+The current counts are 9 `done`, 10 `wip`, 55 `todo`, 11 `base`, 4 `blocked`.
 Prior `done` rows are retained as historical gate records, not newly certified.
 
 1. Complete the five current ports' physical and resource checks in PORT_NOTES.
