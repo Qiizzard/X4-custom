@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Etch-A-Sketch with a compact drawing grid and BMP export, plus a Tools
+  shortcut to the existing file browser (2026-09-09). The new drawing port
+  and launcher route await consolidated testing.
+
 - Sudoku and Maze in Games (2026-09-09), with bounded solver/storage work;
   both remain **wip** pending consolidated gameplay and hardware testing.
 

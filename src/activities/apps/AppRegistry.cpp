@@ -3,11 +3,13 @@
 #include <Memory.h>
 
 #include "activities/Activity.h"
+#include "activities/home/FileBrowserActivity.h"
 #include "calculator/CalculatorActivity.h"
 #include "cipher/CipherActivity.h"
 #include "clock/ClockActivity.h"
 #include "countdown/CountdownActivity.h"
 #include "dice_roller/DiceRollerActivity.h"
+#include "etch_a_sketch/EtchASketchActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
 #include "maze/MazeActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
@@ -53,6 +55,9 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_QR_GENERATOR, &makeApp<QrGeneratorActivity>},
     {AppCategory::Tools, StrId::STR_APP_CIPHER, &makeApp<CipherActivity>},
     {AppCategory::Tools, StrId::STR_APP_OTP_GENERATOR, &makeApp<OtpGeneratorActivity>},
+
+    {AppCategory::Tools, StrId::STR_APP_ETCH, &makeApp<EtchASketchActivity>},
+    {AppCategory::Tools, StrId::STR_BROWSE_FILES, &makeApp<FileBrowserActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},

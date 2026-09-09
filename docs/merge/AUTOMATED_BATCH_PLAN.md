@@ -38,7 +38,7 @@ The historical queue/log below is retained only as history.
 | Wave | Status | Work |
 |---|---|---|
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
-| P2 | next | Offline creative tools: Barcode, Etch-A-Sketch with C3-safe drawing storage, Key Copier charts; register existing file browser rather than rewrite it. |
+| P2 | in progress | Etch-A-Sketch source port and existing file-browser registration integrated. Next: Barcode and Key Copier charts. Full validation deferred. |
 | P3 | pending | Event Logger, Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
 | P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
@@ -216,3 +216,11 @@ this schedule does not declare them completed or permanently blocked.
   tests run. Usage observed 9% → 29%, weekly 61% → 64%, no reset. P1 source
   implementation complete; V1 validation remains deferred. Next: P2 offline
   creative tools. Other approved games remain scheduled in P7.
+
+- 2026-09-09 20:09 UTC wakeup, P2 chunk: integrated Etch-A-Sketch with a
+  4800-byte drawing and checked BMP export, and registered the existing file
+  browser in Tools. Drawing is wip; new browser launcher route unverified.
+  C3 default compile sanity PASS (135.556s), `/tmp/x4-p2a-build.log`. Image
+  6,342,288 bytes, stock OTA headroom 211,312 bytes (reserve warning remains).
+  No host/simulator/soak/hardware tests run. Usage observed 11% → 29%, weekly
+  67% → 70%; no reset. Next wakeup continues P2: Barcode and Key Copier charts.

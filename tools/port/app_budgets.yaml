@@ -170,3 +170,9 @@ apps:
     static_bytes: 512
     object_bytes: 4096
     peak_heap_bytes: 215040     # large full-frame ring; PSRAM only
+
+  - name: EtchASketch          # wip; lower-resolution logical drawing, no extra display framebuffer
+    tier: c3
+    static_bytes: 0
+    object_bytes: 512          # conservative estimate; runtime validation deferred
+    peak_heap_bytes: 5824      # 4800 drawing + 1024 estimated HAL file transient
