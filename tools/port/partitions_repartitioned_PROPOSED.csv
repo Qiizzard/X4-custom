@@ -1,0 +1,17 @@
+# PROPOSED repartitioned table -- NOT active, NOT wired into platformio.ini.
+# See docs/merge/PARTITION_DECISION.md for the analysis and the hardware
+# test that must pass before this replaces the live partitions.csv (rule 23).
+#
+# Reclaims the spiffs partition (nothing in this firmware mounts it -- see
+# PARTITION_DECISION.md) and gives every reclaimed byte to the two OTA app
+# slots, split evenly. nvs/otadata/coredump are untouched; app0/app1 each
+# grow by 0x1B0000 (1,769,472 bytes, ~1.7 MB), and the whole table still
+# ends at 16 MB with app1 ending where coredump starts. The bootloader/table
+# region below 0x9000 is reserved; listed partitions do not overlap.
+#
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+app0,     app,  ota_0,   0x10000, 0x7F0000,
+app1,     app,  ota_1,   0x800000,0x7F0000,
+coredump, data, coredump,0xFF0000,0x10000,

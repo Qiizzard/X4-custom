@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- A documented partition/recovery proposal, kept separate from the unchanged
+  shipping partition table. It is not an activated firmware configuration.
+
 - Simulator button regression checks for the new apps, known-pattern Game of
   Life tests, and an opt-in 50-cycle/ten-minute lifecycle runner with real
   allocator measurements and retained logs. Entry-screen soaks do not prove
@@ -58,6 +61,9 @@ base is MIT.
   actually compiles.
 
 ### Fixed
+
+- QR/Cipher keyboard activity allocations check failure; Game of Life releases
+  partially allocated boards. Shared UI allocation limits remain documented.
 
 - Home menu navigation counts the Tools entry so all menu items remain reachable.
 - WiFi scan results use a bounded, terminated SSID copy available on both build

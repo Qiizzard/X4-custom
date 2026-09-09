@@ -110,3 +110,25 @@ removed or "simplified".
    came apart.
 4. Tag, attach the `-e default` and `-e sticky` `.bin`s.
 5. Note the base (CrossInk) and the credits per `NOTICE`.
+
+## Reproducible app lifecycle soak
+
+After building `simulator`, run:
+
+```sh
+python3 scripts/run_simulator_soak_test.py --jobs 5 --output-dir /tmp/x4-soak-logs
+```
+
+Each process gets its own disposable `fs_`, runs 50 cycles and a 600000-ms
+hold, and checks heap after exit. macOS uses `malloc_zone_statistics`; glibc
+Linux uses `mallinfo2`. A 4096-byte tolerance bounds allocator noise and
+also limits sensitivity: smaller leaks can escape this check. QR remains on
+KeyboardEntry, Cipher on algorithm selection, OTP on unavailable RNG, Clock
+on unavailable RTC, and Game of Life on its initial board. Main-path and
+hardware checks remain separate. Static analysis stays deferred to CI here.
+
+The opt-in soak harness disables auto-sleep in memory for its test process.
+The default ten-minute inactivity timer otherwise interrupts the hold before
+it finishes, because the opening/closing cycles precede that hold. This does
+not persist a setting or change normal firmware behavior. Initial interrupted
+runs were discarded; they are not passes.

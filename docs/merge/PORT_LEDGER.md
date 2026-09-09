@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-08, batch 5):
+Latest verified full working-snapshot image (2026-09-09, batch 7):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,316,256 |
+| Firmware image (`firmware.bin`) | 6,316,352 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 237,344 |
+| Free space | 237,248 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 24,800 |
+| Shortfall against reserve | 24,896 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
@@ -222,31 +222,45 @@ byte sizes and the delta; keep any shared-dependency costs explicit. Such
 deltas are configuration-specific and not additive across apps. No invented
 `flash_bytes` values are added to the RAM manifest in this batch.
 
-## Next session starts here
+## Next, in order — verification audit 2026-09-05
 
-The launcher and the first app batch are in. The next unit of work is
-**resolving the flash budget above**, then continuing down the tiles.
+The intake ledger contained 12 `done`, 2 `wip`, 60 `todo`, 11 `base`, and
+4 `blocked` rows (including foundations and reader rows, not just apps).
+QR Generator, Cipher Tools and OTP Generator are restored to `wip`: the
+previous 100-second holds did not satisfy the required ten minutes, and
+entry-screen tests do not verify their main interactive/hardware paths.
+The current counts are 9 `done`, 5 `wip`, 60 `todo`, 11 `base`, 4 `blocked`.
+Prior `done` rows are retained as historical gate records, not newly certified.
 
-1. **Settle the partition question above.** Everything else is blocked on it.
-2. **Continue the Tools tile**: QR Generator (`ricmoo/QRCode` is already a
-   dependency), Cipher Tools, OTP Generator, then Clock against the RTC.
-3. **Then Games**, which are self-contained and need no new subsystems.
-4. **Then the radio tier**, which starts with the `RADIO_MIGRATION.md` work
-   rather than with an app.
+1. Complete the five current ports' physical and resource checks in PORT_NOTES.
+   QR/Cipher button paths and Game of Life step/restart/counter contracts now
+   pass in the simulator. Phone decoding, physical display/input, RTC-equipped
+   device behavior, actual OTP entropy and C3 peak allocations remain open.
+2. Reader: compare images, justification, margins and line spacing at every
+   shipped font size, cold versus cached, on the physical X4. Simulator CSS
+   assertions verify rule lookup only, not e-ink typography.
+3. Security order remains Authenticator → TOTP QR → Password Manager →
+   Medical Card → Stego Notes. Before a SecureStore consumer ships, complete
+   ACCEPTANCE.md's C3 KDF timing and 50-cycle crypto memory gate. Medical
+   Card's emergency accessibility is a product decision; do not invent it.
+4. Complete PARTITION_DECISION.md's five-step physical recovery gate before
+   expanding the app set. The shipping table remains unchanged. The initial
+   build in this audit had 238,064 bytes free, below the 262,144-byte reserve;
+   see the session report for the final build measurement.
+5. Radio migration remains one call site at a time, ClockSync first and OTA
+   last, with per-site physical teardown/next-screen checks. No migration
+   or hardware verification is claimed by this audit.
+6. Resume remaining tiles in their existing order after these dependencies
+   clear. `todo` still means unfinished, not permanently rejected. Network
+   apps depend on radio migration; BLE apps require a separate scope decision.
 
-**Adding an app now costs one row.** `src/activities/apps/AppRegistry.cpp` holds
-a `constexpr` table of `{category, StrId, factory}`; add the row, add
-`STR_APP_*` to `lib/I18n/translations/english.yaml` (English only — the
-generator falls back for the other 27), and the launcher, the smoke test and the
-budget gate all pick it up. The simulator smoke test walks the registry, so a
-new app is entered and rendered on every CI run without touching the harness.
-
-**Before starting, read the flash arithmetic below.** It is now measured, and
-it changes the plan.
-
-**Build note (macOS):** ESP-IDF refuses any project path containing a space, so
-`-e default` cannot build from this checkout in place. Copy to a space-free path
-to verify. `-e simulator` and the `ctest` suite build fine where they are.
+`scripts/check_firmware_size.py` already checks the actual image against the
+smallest configured app partition and warns below the reserve (commit
+`f5b4ea1a`). The RAM manifest is an estimate/planning gate, not a compiled-app
+inventory; controlled per-app image deltas are the planning method once
+the expansion gates clear, not an unimplemented replacement for the image gate.
+Use a space-free copy for device builds on this Mac, per AGENTS.md. The
+previous successful spaced-path report does not override that instruction.
 
 ## Explicitly out of scope — do not port, do not reimplement
 
@@ -260,3 +274,11 @@ transmits a spoofed AP, injects keystrokes into another device, or harvests
 credentials.** An app that would do any of those is out even if it appears
 somewhere in the scope table under a friendlier name — `SSID Channel` above is
 exactly that case.
+
+## Batch 1 verification — 2026-09-06
+
+All five current wip ports passed the full 50-cycle / ten-minute entry-screen
+lifecycle soak; final cleanup passed within 4096 bytes of Home baseline.
+Evidence: `verification/BATCH_1_SOAK_2026-09-06.md`. This supersedes the
+interrupted-run checkpoint, not the separate interaction/hardware gates.
+All five app statuses remain wip.

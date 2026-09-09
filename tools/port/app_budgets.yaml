@@ -24,7 +24,7 @@
 # PlatformIO already runs scripts/check_firmware_size.py against the smallest
 # configured app slot. It fails on overflow and warns below the 256 KiB reserve;
 # CROSSINK_FLASH_FAIL_UNDER_RESERVE=1 makes the reserve a hard failure.
-# Batch 5 snapshot: 6,316,256-byte image / 6,553,600-byte slot, 237,344 bytes free.
+# Batch 7 snapshot: 6,316,352-byte image / 6,553,600-byte slot, 237,248 bytes free.
 # See docs/merge/verification/BATCH_6_FLASH_2026-09-09.md.
 # Per-app deltas require controlled before/after builds; object-file averages
 # are not additive flash budgets. Keep the recovery/expansion gate.

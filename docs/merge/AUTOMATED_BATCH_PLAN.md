@@ -141,3 +141,9 @@ this schedule does not declare them completed or permanently blocked.
   Image 6,316,352 bytes; 237,248 OTA bytes free. All apps remain wip for
   documented gates. See verification/BATCH_7_INTEGRATION_2026-09-09.md.
   Next wakeup: batch 8 documentation reconciliation and remaining-gate audit.
+
+- 2026-09-09 manual delivery: user requested GitHub synchronization and a test
+  binary. Remaining relevant documentation reconciled and pushed; X3/X4
+  updated.bin delivered from batch 7, checksum/hash validation PASS. Shipping
+  partitions unchanged. Batch 8 final remaining-actionable-work audit stays
+  pending; this delivery does not certify hardware gates or complete scope.

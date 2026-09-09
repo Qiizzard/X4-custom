@@ -56,3 +56,16 @@ presented as a converter result), so it earns its place before a PR.
 
 If you hit an environment wall that costs more than a few minutes, add a row
 here. The point of this file is that nobody pays for the same discovery twice.
+
+## Verification run, 2026-09-05
+
+- Host is Darwin arm64. PlatformIO is at `~/.platformio/penv/bin/pio`; CMake
+  and CTest are under `~/.platformio/packages/tool-cmake/bin/`.
+- The inherited `build/test` cache refers to a former Linux session path.
+  Use a fresh build directory; do not assume its old executables are native.
+- C3 build succeeds from `/tmp/x4-batch5-firmware`, with the committed
+  PlatformIO configuration and normal package downloads; no URL swaps or
+  SDK-header workarounds were required. The build requires access to the
+  shared PlatformIO package cache. Temporary build directories may be removed.
+- The soak harness now supports native macOS allocator statistics. A
+  100-second hold is insufficient regardless of whether its trend is flat.
