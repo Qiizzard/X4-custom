@@ -38,8 +38,8 @@ The historical queue/log below is retained only as history.
 | Wave | Status | Work |
 |---|---|---|
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
-| P2 | in progress | Etch-A-Sketch source port and existing file-browser registration integrated. Next: Barcode and Key Copier charts. Full validation deferred. |
-| P3 | pending | Event Logger, Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
+| P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
+| P3 | next | Event Logger, Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
 | P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
@@ -47,7 +47,7 @@ The historical queue/log below is retained only as history.
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P2 is next at the next eligible scheduled wakeup.
+Start with the real source in ../biscuit-reference. P3 is next at the next eligible scheduled wakeup.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -224,3 +224,13 @@ this schedule does not declare them completed or permanently blocked.
   6,342,288 bytes, stock OTA headroom 211,312 bytes (reserve warning remains).
   No host/simulator/soak/hardware tests run. Usage observed 11% → 29%, weekly
   67% → 70%; no reset. Next wakeup continues P2: Barcode and Key Copier charts.
+
+- 2026-09-10 P2 final chunk: integrated Barcode (Code 128B, Code 39,
+  EAN-13) and reference-only Key Bitting Charts; both wip/unverified. Barcode
+  input/label buffers bounded, unsupported/over-wide payloads rejected, and
+  mismatched Code 128 symbol widths corrected against the linked reference.
+  C3 compile sanity PASS (202.452s), `/tmp/x4-p2b-build.log`. Image 6,351,808
+  bytes, unchanged OTA headroom 201,792 bytes; reserve warning remains.
+  No host/decoder/simulator/soak/hardware tests run. Usage observed 0% → 33%,
+  weekly 78% → 83%, no reset. P2 source implementation complete. Next: P3
+  Event Logger, Flashcards and Habit Tracker. Full validation remains V1.

@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Barcode Generator (Code 128B, Code 39, EAN-13) and schematic Key Bitting
+  Charts in Tools (2026-09-10). Both remain **wip** pending consolidated tests.
+
 - Etch-A-Sketch with a compact drawing grid and BMP export, plus a Tools
   shortcut to the existing file browser (2026-09-09). The new drawing port
   and launcher route await consolidated testing.

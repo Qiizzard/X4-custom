@@ -4,6 +4,7 @@
 
 #include "activities/Activity.h"
 #include "activities/home/FileBrowserActivity.h"
+#include "barcode/BarcodeActivity.h"
 #include "calculator/CalculatorActivity.h"
 #include "cipher/CipherActivity.h"
 #include "clock/ClockActivity.h"
@@ -11,6 +12,7 @@
 #include "dice_roller/DiceRollerActivity.h"
 #include "etch_a_sketch/EtchASketchActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
+#include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
@@ -58,6 +60,9 @@ constexpr AppEntry kApps[] = {
 
     {AppCategory::Tools, StrId::STR_APP_ETCH, &makeApp<EtchASketchActivity>},
     {AppCategory::Tools, StrId::STR_BROWSE_FILES, &makeApp<FileBrowserActivity>},
+
+    {AppCategory::Tools, StrId::STR_APP_BARCODE, &makeApp<BarcodeActivity>},
+    {AppCategory::Tools, StrId::STR_APP_KEY_CHARTS, &makeApp<KeyCopierActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},

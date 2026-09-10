@@ -90,8 +90,8 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | Etch-A-Sketch | `wip` | P2 source port: 4800-byte logical drawing, checked BMP export. Full tests deferred. |
-| Barcode Generator | `todo` | |
-| Key Copier | `todo` | Bitting charts only. Nothing that reads or emits a credential. |
+| Barcode Generator | `wip` | Code 128B/Code 39/EAN-13 source port with bounded input. Compile sanity only; full validation deferred. |
+| Key Copier | `wip` | Reference charts only, exposed as Key Bitting Charts. No key capture/import/save or calibrated dimensions. Validation deferred. |
 | WiFi QR Share | `todo` | Renders a stored password as a QR. Confirm the vault gate before it can. |
 | File Browser | `base` | Existing FileBrowserActivity registered in Tools during P2; preserves base book-browser behavior. New launcher route awaits V1 interaction checks. |
 
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-09, P2 drawing/browser chunk):
+Latest verified full working-snapshot image (2026-09-10, P2 Barcode/charts chunk):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,342,288 |
+| Firmware image (`firmware.bin`) | 6,351,808 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 211,312 |
+| Free space | 201,792 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 50,832 |
+| Shortfall against reserve | 60,352 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
@@ -232,7 +232,7 @@ The intake ledger contained 12 `done`, 2 `wip`, 60 `todo`, 11 `base`, and
 QR Generator, Cipher Tools and OTP Generator are restored to `wip`: the
 previous 100-second holds did not satisfy the required ten minutes, and
 entry-screen tests do not verify their main interactive/hardware paths.
-The current counts are 9 `done`, 11 `wip`, 54 `todo`, 11 `base`, 4 `blocked`.
+The current counts are 9 `done`, 13 `wip`, 52 `todo`, 11 `base`, 4 `blocked`.
 Prior `done` rows are retained as historical gate records, not newly certified.
 
 1. Complete the five current ports' physical and resource checks in PORT_NOTES.

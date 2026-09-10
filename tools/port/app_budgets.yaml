@@ -98,11 +98,11 @@ apps:
     static_bytes: 0
     object_bytes: 488  # measured C3 factory allocation, 2026-09-05
     peak_heap_bytes: 4096       # unverified estimate incl. shared keyboard; see batch 2 evidence
-  - name: Barcode
+  - name: Barcode              # wip; fixed payload, shared keyboard
     tier: c3
-    static_bytes: 128
-    object_bytes: 384
-    peak_heap_bytes: 1024
+    static_bytes: 0
+    object_bytes: 512          # conservative estimate
+    peak_heap_bytes: 4096      # shared keyboard transient estimate; V1 measurement pending
   - name: Tetris
     tier: c3
     static_bytes: 128
@@ -176,3 +176,9 @@ apps:
     static_bytes: 0
     object_bytes: 512          # conservative estimate; runtime validation deferred
     peak_heap_bytes: 5824      # 4800 drawing + 1024 estimated HAL file transient
+
+  - name: KeyCopier            # wip; charts only, flash metadata
+    tier: c3
+    static_bytes: 0
+    object_bytes: 384          # conservative estimate
+    peak_heap_bytes: 0
