@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Event Logger in Tools (2026-09-10): save and browse short SD notes with
+  explicitly labeled uptime timestamps. Port remains wip pending V1 testing.
+
 - Barcode Generator (Code 128B, Code 39, EAN-13) and schematic Key Bitting
   Charts in Tools (2026-09-10). Both remain **wip** pending consolidated tests.
 

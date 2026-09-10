@@ -78,7 +78,7 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| Event Logger | `todo` | Rule 8: debounce SD writes. |
+| Event Logger | `wip` | Bounded 50-note ring, explicit-submit append, uptime timestamps. P3 compile only; V1 tests deferred. |
 | Flashcards | `todo` | |
 | Habit Tracker | `todo` | |
 | Breadcrumb Trail | `todo` | No GPS on this hardware — decide what it actually records before porting. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-10, P2 Barcode/charts chunk):
+Latest verified full working-snapshot image (2026-09-10, P3 Event Logger chunk):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,351,808 |
+| Firmware image (`firmware.bin`) | 6,356,528 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 201,792 |
+| Free space | 197,072 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 60,352 |
+| Shortfall against reserve | 65,072 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
@@ -232,7 +232,7 @@ The intake ledger contained 12 `done`, 2 `wip`, 60 `todo`, 11 `base`, and
 QR Generator, Cipher Tools and OTP Generator are restored to `wip`: the
 previous 100-second holds did not satisfy the required ten minutes, and
 entry-screen tests do not verify their main interactive/hardware paths.
-The current counts are 9 `done`, 13 `wip`, 52 `todo`, 11 `base`, 4 `blocked`.
+The current counts are 9 `done`, 14 `wip`, 51 `todo`, 11 `base`, 4 `blocked`.
 Prior `done` rows are retained as historical gate records, not newly certified.
 
 1. Complete the five current ports' physical and resource checks in PORT_NOTES.

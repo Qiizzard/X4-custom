@@ -182,3 +182,9 @@ apps:
     static_bytes: 0
     object_bytes: 384          # conservative estimate
     peak_heap_bytes: 0
+
+  - name: EventLogger         # wip; bounded recent-entry ring
+    tier: c3
+    static_bytes: 0
+    object_bytes: 512         # conservative estimate
+    peak_heap_bytes: 14792    # 6600 ring + 8192 estimated keyboard/HAL transient
