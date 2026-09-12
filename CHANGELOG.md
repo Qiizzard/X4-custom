@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Flashcards in Tools (2026-09-12): bounded SD decks, flip/grade controls and
+  session results. Port remains wip pending consolidated testing.
+
 - Event Logger in Tools (2026-09-10): save and browse short SD notes with
   explicitly labeled uptime timestamps. Port remains wip pending V1 testing.
 

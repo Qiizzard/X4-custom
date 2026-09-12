@@ -39,7 +39,7 @@ The historical queue/log below is retained only as history.
 |---|---|---|
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
-| P3 | in progress | Event Logger integrated (wip). Next: Flashcards, Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
+| P3 | in progress | Event Logger and Flashcards integrated (wip). Next: Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
 | P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
@@ -242,3 +242,10 @@ this schedule does not declare them completed or permanently blocked.
   host/simulator/soak/hardware tests run. Usage observed 40% → 70%, weekly
   84% → 89%; no reset. Stopping this chunk; next eligible run continues P3
   with Flashcards and Habit Tracker. Existing local unrelated files preserved.
+
+- 2026-09-12 11:01 UTC wakeup, P3 checkpoint: Flashcards integrated (wip),
+  bounded to 16 deck names and 32 cards with session grading. C3 compile
+  sanity PASS (143.760s), `/tmp/x4-p3b-build.log`. Image 6,361,984 bytes;
+  stock OTA headroom 191,616 bytes, reserve warning remains. No host/parser/
+  simulator/soak/hardware tests run. Usage observed 17% → 35%, weekly 3% → 6%;
+  no reset. Next eligible run: Habit Tracker. Existing unrelated files preserved.

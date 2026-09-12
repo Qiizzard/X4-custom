@@ -12,6 +12,7 @@
 #include "dice_roller/DiceRollerActivity.h"
 #include "etch_a_sketch/EtchASketchActivity.h"
 #include "event_logger/EventLoggerActivity.h"
+#include "flashcards/FlashcardActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
 #include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
@@ -66,6 +67,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_KEY_CHARTS, &makeApp<KeyCopierActivity>},
 
     {AppCategory::Tools, StrId::STR_APP_EVENT_LOGGER, &makeApp<EventLoggerActivity>},
+
+    {AppCategory::Tools, StrId::STR_APP_FLASHCARDS, &makeApp<FlashcardActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
