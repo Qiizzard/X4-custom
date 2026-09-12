@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Habit Tracker (2026-09-12): persistent checks, explicit sessions and
+  finished-session streaks. The port remains wip pending V1 validation.
+
 - Flashcards in Tools (2026-09-12): bounded SD decks, flip/grade controls and
   session results. Port remains wip pending consolidated testing.
 

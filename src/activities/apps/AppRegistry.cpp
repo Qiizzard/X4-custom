@@ -14,6 +14,7 @@
 #include "event_logger/EventLoggerActivity.h"
 #include "flashcards/FlashcardActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
+#include "habit_tracker/HabitTrackerActivity.h"
 #include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
@@ -69,6 +70,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_EVENT_LOGGER, &makeApp<EventLoggerActivity>},
 
     {AppCategory::Tools, StrId::STR_APP_FLASHCARDS, &makeApp<FlashcardActivity>},
+
+    {AppCategory::Tools, StrId::STR_APP_HABITS, &makeApp<HabitTrackerActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},

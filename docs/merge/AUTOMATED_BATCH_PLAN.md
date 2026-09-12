@@ -39,15 +39,15 @@ The historical queue/log below is retained only as history.
 |---|---|---|
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
-| P3 | in progress | Event Logger and Flashcards integrated (wip). Next: Habit Tracker and other approved offline tracking tools; do not invent GPS/location data. |
-| P4 | pending | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
+| P4 | next | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P3 is next at the next eligible scheduled wakeup.
+Start with the real source in ../biscuit-reference. P4 is next at the next eligible scheduled wakeup.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -249,3 +249,12 @@ this schedule does not declare them completed or permanently blocked.
   stock OTA headroom 191,616 bytes, reserve warning remains. No host/parser/
   simulator/soak/hardware tests run. Usage observed 17% → 35%, weekly 3% → 6%;
   no reset. Next eligible run: Habit Tracker. Existing unrelated files preserved.
+
+- 2026-09-12 16:02 UTC wakeup, P3 checkpoint: Habit Tracker integrated
+  (wip), explicit sessions, bounded habits, debounced alternating save slots.
+  Final C3 compile PASS (128.802s), `/tmp/x4-p3c-build-final.log`; reran after
+  a final translation key missed initial generation. Image 6,367,552 bytes;
+  stock OTA free 186,048 bytes, reserve warning remains. No host/simulator/
+  soak/hardware tests run. Usage 0% → 47%, weekly 6% → 14%, no reset.
+  P3 actionable source work complete; unresolved location/network apps stay
+  gated. Next: P4 SecureStore consumers. Full validation remains V1.

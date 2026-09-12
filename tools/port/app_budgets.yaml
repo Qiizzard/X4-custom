@@ -194,3 +194,9 @@ apps:
     static_bytes: 0
     object_bytes: 512         # conservative estimate
     peak_heap_bytes: 10756    # 9732 deck buffers + 1024 estimated HAL transient
+
+  - name: HabitTracker        # wip; fixed habits plus encoded record in object
+    tier: c3
+    static_bytes: 0
+    object_bytes: 1536        # conservative estimate
+    peak_heap_bytes: 8192     # estimated shared keyboard/HAL transient, unverified
