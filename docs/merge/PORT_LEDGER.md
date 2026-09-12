@@ -59,7 +59,7 @@ coherent, working subset.
 |---|---|---|
 | Authenticator (offline TOTP) | `todo` | Seeds are secrets: store via `SecureStore`. |
 | TOTP QR | `todo` | |
-| Password Manager | `todo` | `SecureStore`'s first real consumer. |
+| Password Manager | `todo` | P4 encrypted SD adapter checkpoint in secure_vault; records, secure input, editing and app lifecycle remain. No vault UI registered. |
 | Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
 | Stego Notes | `todo` | Steganography is concealment, not encryption. Must say so, or wrap the payload in `SecureStore`. |
 

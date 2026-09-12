@@ -40,7 +40,7 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | next | Authenticator/TOTP QR, Password Manager, Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | in progress | Encrypted file adapter checkpoint integrated; next: bounded vault records and secure input/lifecycle for Password Manager, then Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
@@ -258,3 +258,13 @@ this schedule does not declare them completed or permanently blocked.
   soak/hardware tests run. Usage 0% → 47%, weekly 6% → 14%, no reset.
   P3 actionable source work complete; unresolved location/network apps stay
   gated. Next: P4 SecureStore consumers. Full validation remains V1.
+
+- 2026-09-12 21:03 UTC wakeup, P4 checkpoint: added bounded encrypted SD
+  file adapter using SecureStore and HalStorage, no registered vault UI yet.
+  Exclusive create preserves existing paths; failed valid-buffer loads wipe
+  plaintext and scratch. Consumer records, secure keyboard lifetime, editing
+  and lock/exit behavior remain next. C3 compile PASS (123.344s),
+  `/tmp/x4-p4a-build.log`; adapter source compiled, unused adapter discarded
+  at link (image unchanged: 6,367,552 bytes, headroom 186,048). No runtime
+  crypto/file, host, simulator, soak or hardware tests run. Usage observed
+  20% → 41%, weekly 18% → 21%, no reset. P4 remains in progress.
