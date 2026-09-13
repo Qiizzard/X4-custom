@@ -40,7 +40,7 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | in progress | Password Manager and Authenticator/TOTP QR source integrated (wip); next: Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | in progress | Password Manager and Authenticator/TOTP QR source integrated (wip); Stego Notes encrypted BMP helper checkpoint added; next: its file-selection/input/reveal UI; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
@@ -296,3 +296,12 @@ this schedule does not declare them completed or permanently blocked.
   runtime crypto, simulator, soak or hardware tests run. Usage observed
   0% → 28%, weekly 38% → 42%, no reset. Next eligible run: Stego Notes;
   Medical Card still needs access policy. Existing unrelated files preserved.
+
+- 2026-09-13 18:28 UTC wakeup, P4 checkpoint: encrypted BMP trailer hide/reveal
+  helper implemented, bounded notes/carriers, exclusive new output, original
+  preserved. Stego Notes UI is still next; no new app exposed. Final C3 compile
+  PASS (34.504s), `/tmp/x4-p4e-build-final.log`; recompiled after correcting
+  file-size checks to the 64-bit HAL API. Unused helper is discarded at link;
+  image remains 6,382,192 bytes, OTA free 171,408 bytes. No host/runtime crypto/
+  simulator/soak/hardware tests run. Usage observed 39% → 54%, weekly 44% → 46%,
+  no reset. Unrelated files preserved; hardware/product gates remain open.

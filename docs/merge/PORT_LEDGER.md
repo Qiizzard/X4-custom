@@ -61,7 +61,7 @@ coherent, working subset.
 | TOTP QR | `wip` | Shared encrypted Authenticator accounts; reveals code-only QR, never seed. Phone/rollover/lifecycle validation deferred. |
 | Password Manager | `wip` | Eight-entry encrypted vault in Tools: create/unlock, add/replace/delete, timed reveal and idle lock. Compile sanity only; recovery, crypto and lifecycle gates open. See secure_vault/PORT_NOTES.md. |
 | Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
-| Stego Notes | `todo` | Steganography is concealment, not encryption. Must say so, or wrap the payload in `SecureStore`. |
+| Stego Notes | `todo` | Encrypted BMP trailer helper checkpoint in stego_notes; no app UI yet. Concealment is discoverable; note uses SecureStore. Integration and validation remain. |
 
 ## Tools → Network *(all `blocked` on the legacy radio migration)*
 
