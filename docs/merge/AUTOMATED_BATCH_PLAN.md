@@ -40,14 +40,14 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | in progress | Password Manager and Authenticator/TOTP QR source integrated (wip); Stego Notes encrypted BMP helper checkpoint added; next: its file-selection/input/reveal UI; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P4 is next at the next eligible scheduled wakeup.
+Start with the real source in ../biscuit-reference. P5 radio migration is next at the next eligible scheduled wakeup.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -305,3 +305,12 @@ this schedule does not declare them completed or permanently blocked.
   image remains 6,382,192 bytes, OTA free 171,408 bytes. No host/runtime crypto/
   simulator/soak/hardware tests run. Usage observed 39% → 54%, weekly 44% → 46%,
   no reset. Unrelated files preserved; hardware/product gates remain open.
+
+- 2026-09-13 23:29 UTC wakeup, P4 checkpoint: Stego Notes registered in Tools
+  (wip), bounded file selection, masked chunked note input, confirmed key,
+  exclusive new BMP output and timed reveal/secret wiping. One C3 compile
+  sanity PASS (135.161s), `/tmp/x4-p4f-build.log`; image 6,389,472 bytes,
+  stock OTA free 164,128 bytes (reserve warning). No host/runtime crypto,
+  simulator, soak or device tests run. Usage observed 2% → 19%, weekly
+  48% → 51%, no reset. P4 actionable source ports complete; Medical Card
+  access policy and hardware gates remain open. Next: P5 radio migration.

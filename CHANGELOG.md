@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Stego Notes (2026-09-13): select a drawing, compose a bounded encrypted note
+  into a new BMP, and unlock notes with timed reveal. Experimental; runtime
+  crypto, file failure and device validation remain deferred.
+
 - Authenticator and TOTP QR (2026-09-13): shared encrypted accounts, six-digit
   SHA-1 codes and code-only QR display. System clock sync is available on
   devices without an RTC. Ports remain wip pending consolidated validation.

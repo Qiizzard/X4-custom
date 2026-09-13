@@ -23,6 +23,7 @@
 #include "qr_generator/QrGeneratorActivity.h"
 #include "secure_vault/PasswordManagerActivity.h"
 #include "snake/SnakeActivity.h"
+#include "stego_notes/StegoNotesActivity.h"
 #include "sudoku/SudokuActivity.h"
 #include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
@@ -85,6 +86,8 @@ constexpr AppEntry kApps[] = {
 
     {AppCategory::Tools, StrId::STR_TOTP_APP, &makeAuthenticator},
     {AppCategory::Tools, StrId::STR_TOTP_QR_APP, &makeTotpQr},
+
+    {AppCategory::Tools, StrId::STR_STEGO_APP, &makeApp<StegoNotesActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
