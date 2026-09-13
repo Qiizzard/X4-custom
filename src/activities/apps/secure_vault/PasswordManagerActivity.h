@@ -1,12 +1,16 @@
 #pragma once
 // UI flow adapted from Biscuit, MIT, Copyright (c) 2025 Dave Allie.
+#include <qrcode.h>
+
 #include "PasswordRecords.h"
+#include "Totp.h"
 #include "activities/Activity.h"
 
 class PasswordManagerActivity final : public Activity {
  public:
-  PasswordManagerActivity(GfxRenderer& renderer, MappedInputManager& input)
-      : Activity("PasswordManager", renderer, input) {}
+  enum class Mode { Passwords, Authenticator, TotpQr };
+  PasswordManagerActivity(GfxRenderer& renderer, MappedInputManager& input, Mode mode = Mode::Passwords)
+      : Activity("SecureVault", renderer, input), mode(mode) {}
   ~PasswordManagerActivity() override;
   void onEnter() override;
   void onExit() override;
@@ -17,6 +21,19 @@ class PasswordManagerActivity final : public Activity {
  private:
   enum class Screen { Locked, List, Detail, Delete, Save, Error };
   enum class Input { Unlock, Create, ConfirmKey, Title, Username, Password };
+  const Mode mode;
+  Totp totp;
+  char code[7]{};
+  uint8_t qrModules[56]{};  // QR version 1: ceil(21*21/8), no second framebuffer
+  QRCode qr{};
+  uint64_t codeCounter = 0;
+  unsigned long lastClockPoll = 0;
+  bool codeValid = false;
+  const char* path() const;
+  const char* nextPath() const;
+  const char* previousPath() const;
+  bool unlockTotp();
+  void refreshCode();
   Screen screen = Screen::Locked;
   Input inputStep = Input::Unlock;
   PasswordRecords records;

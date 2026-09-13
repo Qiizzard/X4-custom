@@ -102,3 +102,45 @@ record/input lifecycle suites. Hardware recovery and crypto gates stay open.
 Compile evidence: C3 default PASS (152.050s), `/tmp/x4-p4c-build.log`,
 2026-09-13 UTC. Consumer is now linked: firmware 6,378,976 bytes, 174,624
 bytes free in stock OTA slot, below the reserve. No runtime tests performed.
+
+## Authenticator / TOTP QR integration (2026-09-13, wip/unverified)
+
+Both Tools entries share eight encrypted accounts in `totp.bin`, `totp.next`,
+and `totp.previous` under `/crossink/vaults/`. They reuse the vault lifecycle
+and save policy above. The authenticated TVR1 tag separates TOTP payloads from
+PVR1 password records; usernames must be empty. No plaintext Biscuit imports.
+Seeds accept 16–63 unpadded Base32 characters (case insensitive), valid symbol
+counts and zero trailing unused bits. Whitespace, padding and invalid characters
+are rejected rather than silently removed. Only SHA-1, six digits, 30 seconds
+are supported; no provisioning-URI import, other algorithms or custom periods.
+
+Confirm reveals the current code for ten seconds; TOTP QR encodes only that
+six-digit code, never an enrollment URI or seed. Both lock after 60 seconds
+idle. Polling checks UTC four times per second, recomputes at counter changes,
+and does not extend the idle/reveal timers. TOTP follows UTC, not display zone.
+HalClock returns UTC only after successful NTP sync during the current boot;
+a failed new sync invalidates readiness. Simulator readiness is false. Settings
+> System > Device now exposes clock sync without requiring an external RTC;
+RTC persistence flags are written only on RTC-equipped devices. Sync after each
+boot, then use offline. NTP is not authenticated time, and drift/physical display
+refresh can affect code validity near a boundary. No fake uptime-derived codes.
+
+The shared activity adds a small digest context, seven-byte code and 56-byte
+version-1 QR module buffer. HMAC context allocation is checked once per unlock,
+reused for code changes and freed/zeroized on lock. Temporary key/message/digest
+arrays total 68 bytes; no repeated application heap allocation per code/frame.
+The existing QR encoder uses bounded version-1 stack scratch (including 26-byte
+codewords and 56-byte function grid), not a second framebuffer. QR and secret
+input both use fixed buffers. Device stack/heap peaks remain unmeasured.
+
+V1 must cover RFC TOTP vectors, strict Base32 errors, wrong keys/domain tags,
+create/edit/delete/reopen from both launchers, sync failure/reboot/time jumps,
+code rollover/phone QR decoding, expiry/lock/cancel/Home cleanup and save fault
+injection. On X3/X4, sync in Settings, add a disposable SHA-1/6/30 account in
+Authenticator, compare against another authenticator, then open the same vault
+in TOTP QR and scan the code. Check both views refuse codes after reboot until
+resync. No cache reset needed. Crypto/recovery/hardware gates remain open.
+
+Compile evidence: C3 default PASS (209.579s), `/tmp/x4-p4d-build.log`,
+2026-09-13. Image 6,382,192 bytes; stock OTA free 171,408 bytes, reserve
+warning remains. No runtime, host, simulator, soak or device checks performed.

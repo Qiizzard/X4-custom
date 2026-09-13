@@ -8,6 +8,7 @@ extern HalClock halClock;  // Singleton
 
 class HalClock {
   bool _available = false;
+  bool _systemTimeSynced = false;
   mutable Rtc _sdkRtc;
   mutable uint8_t _cachedHour = 0;
   mutable uint8_t _cachedMinute = 0;
@@ -73,6 +74,10 @@ class HalClock {
 
   // Sync the ESP32 system clock without requiring an external RTC.
   bool syncSystemTimeFromNTP();
+
+  // UTC seconds only after successful NTP sync in this boot. Never use the
+  // minute-resolution RTC cache or a plausible but unsynced system clock.
+  bool getSyncedUnixTime(uint64_t& seconds) const;
 
  private:
   bool getDate(uint16_t& year, uint8_t& month, uint8_t& day, uint8_t& hour, uint8_t& minute) const;

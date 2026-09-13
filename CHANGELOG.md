@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Authenticator and TOTP QR (2026-09-13): shared encrypted accounts, six-digit
+  SHA-1 codes and code-only QR display. System clock sync is available on
+  devices without an RTC. Ports remain wip pending consolidated validation.
+
 - Password Manager (2026-09-13): encrypted SD vault, eight entries, create/unlock,
   replace/delete, timed reveal and idle locking. Experimental; use test
   credentials while crypto, recovery and lifecycle validation remain open.

@@ -282,6 +282,7 @@ bool HalClock::syncFromNTP() {
 }
 
 bool HalClock::syncSystemTimeFromNTP() {
+  _systemTimeSynced = false;
   if (WiFi.status() != WL_CONNECTED) {
     LOG_ERR("CLK", "WiFi not connected, cannot sync NTP");
     return false;
@@ -314,5 +315,15 @@ bool HalClock::syncSystemTimeFromNTP() {
     return false;
   }
 
+  _systemTimeSynced = true;
+  return true;
+}
+
+bool HalClock::getSyncedUnixTime(uint64_t& seconds) const {
+  seconds = 0;
+  if (!_systemTimeSynced) return false;
+  const time_t now = time(nullptr);
+  if (now < 1577836800) return false;
+  seconds = static_cast<uint64_t>(now);
   return true;
 }

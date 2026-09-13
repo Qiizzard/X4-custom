@@ -57,8 +57,8 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| Authenticator (offline TOTP) | `todo` | Seeds are secrets: store via `SecureStore`. |
-| TOTP QR | `todo` | |
+| Authenticator (offline TOTP) | `wip` | Eight encrypted accounts, SHA-1/6/30 codes after per-boot NTP sync; shares vault lifecycle. Runtime crypto/time validation deferred. |
+| TOTP QR | `wip` | Shared encrypted Authenticator accounts; reveals code-only QR, never seed. Phone/rollover/lifecycle validation deferred. |
 | Password Manager | `wip` | Eight-entry encrypted vault in Tools: create/unlock, add/replace/delete, timed reveal and idle lock. Compile sanity only; recovery, crypto and lifecycle gates open. See secure_vault/PORT_NOTES.md. |
 | Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
 | Stego Notes | `todo` | Steganography is concealment, not encryption. Must say so, or wrap the payload in `SecureStore`. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-13 UTC, P4 Password Manager integration):
+Latest verified full working-snapshot image (2026-09-13 UTC, P4 Authenticator/TOTP QR integration):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,378,976 |
+| Firmware image (`firmware.bin`) | 6,382,192 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 174,624 |
+| Free space | 171,408 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 87,520 |
+| Shortfall against reserve | 90,736 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

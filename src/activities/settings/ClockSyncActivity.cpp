@@ -66,7 +66,8 @@ void ClockSyncActivity::runSync() {
     return;
   }
 
-  const bool ok = halClock.syncFromNTP();
+  const bool hasRtc = halClock.isAvailable();
+  const bool ok = hasRtc ? halClock.syncFromNTP() : halClock.syncSystemTimeFromNTP();
   if (!ok) {
     state = FAILED;
     requestUpdate();
@@ -74,9 +75,11 @@ void ClockSyncActivity::runSync() {
   }
 
   // Mark as synced so the auto-sync hook stops firing on future WiFi connects.
-  SETTINGS.clockHasBeenSynced = 1;
-  SETTINGS.clockDateHasBeenSynced = 1;
-  SETTINGS.saveToFile();
+  if (hasRtc) {
+    SETTINGS.clockHasBeenSynced = 1;
+    SETTINGS.clockDateHasBeenSynced = 1;
+    SETTINGS.saveToFile();
+  }
 
   // Read the freshly synced time back for the user-facing confirmation.
   char buf[9];

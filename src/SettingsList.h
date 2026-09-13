@@ -1174,8 +1174,8 @@ inline std::vector<SettingInfo> buildSystemDeviceSettingsList(const std::vector<
     addSettingByName(settings, allSettings, StrId::STR_CLOCK_UTC_OFFSET);
     addSettingByName(settings, allSettings, StrId::STR_DATE_FORMAT);
     addSettingByName(settings, allSettings, StrId::STR_DATE_SEPARATOR);
-    settings.push_back(SettingInfo::Action(StrId::STR_CLOCK_SYNC_NOW, SettingAction::ClockSync));
   }
+  settings.push_back(SettingInfo::Action(StrId::STR_CLOCK_SYNC_NOW, SettingAction::ClockSync));
   return settings;
 }
 

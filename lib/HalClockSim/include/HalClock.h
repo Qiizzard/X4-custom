@@ -10,6 +10,10 @@ extern HalClock halClock;
 
 class HalClock {
  public:
+  bool getSyncedUnixTime(uint64_t& seconds) const {
+    seconds = 0;
+    return false;
+  }
   enum DateFormat : uint8_t {
     MONTH_DAY_YEAR_LONG = 0,
     DAY_MONTH_YEAR_LONG = 1,

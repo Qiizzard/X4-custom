@@ -40,7 +40,7 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | in progress | Password Manager create/unlock/edit/save and lock/exit source integrated (wip); next: Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | in progress | Password Manager and Authenticator/TOTP QR source integrated (wip); next: Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
@@ -287,3 +287,12 @@ this schedule does not declare them completed or permanently blocked.
   crypto, simulator, soak or hardware tests run. Usage observed 1% → 18%,
   weekly 34% → 36%, no reset. Next eligible run: Authenticator/TOTP QR.
   Recovery UI and hardware crypto gates remain open; unrelated files preserved.
+
+- 2026-09-13 P4 checkpoint: Authenticator and TOTP QR integrated (wip),
+  shared encrypted eight-account vault, strict Base32, fixed SHA-1/6/30 codes,
+  code-only QR, per-boot synced-time gate and RTC-less Settings sync path.
+  One C3 compile sanity PASS (209.579s), `/tmp/x4-p4d-build.log`; image
+  6,382,192 bytes, stock OTA free 171,408 bytes (reserve warning). No host,
+  runtime crypto, simulator, soak or hardware tests run. Usage observed
+  0% → 28%, weekly 38% → 42%, no reset. Next eligible run: Stego Notes;
+  Medical Card still needs access policy. Existing unrelated files preserved.

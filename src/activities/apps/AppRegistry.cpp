@@ -37,6 +37,13 @@ std::unique_ptr<Activity> makeApp(GfxRenderer& renderer, MappedInputManager& map
   return makeUniqueNoThrow<T>(renderer, mappedInput);
 }
 
+std::unique_ptr<Activity> makeAuthenticator(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::Authenticator);
+}
+std::unique_ptr<Activity> makeTotpQr(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::TotpQr);
+}
+
 // THE TABLE. constexpr + static => flash, not DRAM.
 //
 // Order within a category is the order the launcher shows. Keep new rows
@@ -75,6 +82,9 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_HABITS, &makeApp<HabitTrackerActivity>},
 
     {AppCategory::Tools, StrId::STR_VAULT_APP, &makeApp<PasswordManagerActivity>},
+
+    {AppCategory::Tools, StrId::STR_TOTP_APP, &makeAuthenticator},
+    {AppCategory::Tools, StrId::STR_TOTP_QR_APP, &makeTotpQr},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},
