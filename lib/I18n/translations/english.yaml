@@ -959,3 +959,7 @@ STR_HABIT_ADD: "+ Add habit"
 STR_HABIT_STREAK: "Finished-session streak: %lu  Best: %lu"
 STR_HABIT_EDIT: "Edit"
 STR_HABIT_CORRUPT: "Invalid save files. Repair SD data. Back exits."
+
+STR_SECRET_CHOOSE: "Up/Down: choose a character"
+STR_SECRET_EDIT: "Right: add    Left: delete"
+STR_SECRET_JUMP: "Page Forward: jump 10 characters"

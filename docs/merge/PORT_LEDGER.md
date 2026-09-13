@@ -59,7 +59,7 @@ coherent, working subset.
 |---|---|---|
 | Authenticator (offline TOTP) | `todo` | Seeds are secrets: store via `SecureStore`. |
 | TOTP QR | `todo` | |
-| Password Manager | `todo` | P4 encrypted SD adapter checkpoint in secure_vault; records, secure input, editing and app lifecycle remain. No vault UI registered. |
+| Password Manager | `todo` | P4 encrypted SD adapter, records and fixed-buffer input checkpoints in secure_vault; app integration, editing and lifecycle remain. No vault UI registered. |
 | Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
 | Stego Notes | `todo` | Steganography is concealment, not encryption. Must say so, or wrap the payload in `SecureStore`. |
 
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-12, P3 Habit Tracker chunk):
+Latest verified full working-snapshot image (2026-09-13 UTC, P4 records/input checkpoint):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,367,552 |
+| Firmware image (`firmware.bin`) | 6,367,872 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 186,048 |
+| Free space | 185,728 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 76,096 |
+| Shortfall against reserve | 76,416 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

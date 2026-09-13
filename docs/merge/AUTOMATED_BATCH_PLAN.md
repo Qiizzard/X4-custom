@@ -40,7 +40,7 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | in progress | Encrypted file adapter checkpoint integrated; next: bounded vault records and secure input/lifecycle for Password Manager, then Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | in progress | Encrypted file adapter, bounded records and fixed-buffer secret-entry checkpoints integrated; next: Password Manager create/unlock/edit/save and lock/exit integration, then Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
@@ -268,3 +268,13 @@ this schedule does not declare them completed or permanently blocked.
   at link (image unchanged: 6,367,552 bytes, headroom 186,048). No runtime
   crypto/file, host, simulator, soak or hardware tests run. Usage observed
   20% → 41%, weekly 18% → 21%, no reset. P4 remains in progress.
+
+- 2026-09-13 02:04 UTC wakeup, P4 checkpoint: fixed eight-record password
+  model/codec and fixed-buffer secret-entry child activity implemented. No
+  Password Manager screen registered yet. Next: create/unlock/edit/save and
+  lock/exit integration with encrypted file adapter. C3 compile PASS
+  (165.926s), `/tmp/x4-p4b-build.log`; image 6,367,872 bytes, unchanged OTA
+  headroom 185,728 bytes (reserve warning). New source files compiled;
+  unused components are not evidence of a working vault. No host/runtime
+  crypto/input/simulator/soak/hardware tests run. Usage 20% → 42%, weekly
+  25% → 29%, no reset. P4 remains in progress.
