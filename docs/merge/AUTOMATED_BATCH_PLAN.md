@@ -40,7 +40,7 @@ The historical queue/log below is retained only as history.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
-| P4 | in progress | Encrypted file adapter, bounded records and fixed-buffer secret-entry checkpoints integrated; next: Password Manager create/unlock/edit/save and lock/exit integration, then Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
+| P4 | in progress | Password Manager create/unlock/edit/save and lock/exit source integrated (wip); next: Authenticator/TOTP QR and Stego Notes using real SecureStore; Medical Card only after its access policy is defined. Keep hardware crypto gates unverified. |
 | P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
@@ -278,3 +278,12 @@ this schedule does not declare them completed or permanently blocked.
   unused components are not evidence of a working vault. No host/runtime
   crypto/input/simulator/soak/hardware tests run. Usage 20% → 42%, weekly
   25% → 29%, no reset. P4 remains in progress.
+
+- 2026-09-13 07:04 UTC wakeup, P4 checkpoint: Password Manager integrated
+  in Tools (wip): create/repeat key, unlock, add/replace/delete, encrypted
+  previous-file retention, timed reveal and idle/cancel/exit wiping. One C3
+  compile sanity PASS (152.050s), `/tmp/x4-p4c-build.log`; image 6,378,976
+  bytes, stock OTA free 174,624 bytes (reserve warning). No host, runtime
+  crypto, simulator, soak or hardware tests run. Usage observed 1% → 18%,
+  weekly 34% → 36%, no reset. Next eligible run: Authenticator/TOTP QR.
+  Recovery UI and hardware crypto gates remain open; unrelated files preserved.

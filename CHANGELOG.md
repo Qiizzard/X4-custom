@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Password Manager (2026-09-13): encrypted SD vault, eight entries, create/unlock,
+  replace/delete, timed reveal and idle locking. Experimental; use test
+  credentials while crypto, recovery and lifecycle validation remain open.
+
 - Habit Tracker (2026-09-12): persistent checks, explicit sessions and
   finished-session streaks. The port remains wip pending V1 validation.
 

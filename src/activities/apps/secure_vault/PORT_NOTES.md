@@ -1,9 +1,8 @@
 # P4 encrypted file adapter — implementation checkpoint, unverified
 
 EncryptedVaultFile connects the existing SecureStore implementation to HalStorage.
-It is not yet a registered app or a complete Password Manager. UI, record format,
-editing/replacement/recovery and passphrase-entry lifetime handling remain P4 work.
-Do not expose this as a usable vault before those pieces exist.
+Password Manager is now registered as an experimental Tools app. The following
+adapter and input sections describe its foundations; current integration is below.
 
 The caller supplies disjoint buffers (maximum 4096-byte plaintext and 4156-byte
 blob), holds the passphrase only for an operation, and wipes successful plaintext
@@ -49,8 +48,57 @@ Only accepted submission copies plaintext into that buffer. Cancel/exit and
 destruction wipe the draft. Hardware display remanence is not covered by RAM
 wiping, and there is no claim of tamper-resistant memory or physical security.
 
-Still missing: actual Password Manager activity, create/unlock confirmation,
-revision save/recovery policy, integration of input cancellation with vault
-locking, record editing and display lifetime. No new app is registered yet.
+At this earlier checkpoint the consumer was not registered; integration follows.
 V1 must exercise record malformed input/limits/replacement/deletion and input
 cancel/delete/timeout/forced exits, plus consumer lifecycle before release.
+
+## Password Manager integration (2026-09-13, wip/unverified)
+
+Tools now exposes create/repeat-passphrase, unlock, eight-entry listing,
+add/replace/delete confirmation, and password reveal hidden again after ten
+seconds. Adapted from Biscuit PasswordManager/PasswordDetail (MIT, Dave Allie,
+2025); its obfuscated JSON store is deliberately replaced by SecureStore.
+No import of that insecure format, password generator or passphrase change UI.
+
+Use test credentials only until V1 and hardware gates clear. Passphrases are
+8–64 printable ASCII characters; record limits are as above. All fields use
+fixed masked input; replace re-enters all three fields. Up/Down selects rows,
+Confirm opens/reveals, Page Forward edits, Page Back deletes, Up returns from
+detail to list. Back locks and discards a pending edit; from locked/error it
+exits. Input cancellation/timeout locks the parent. Unlocked main screens lock
+after 60 seconds idle. Frontlight overlays are disabled in vault/input so they
+cannot suspend the idle checks. Global Home destroys child then parent.
+
+The activity has approximately 3.8 KB of fixed secret/model/buffer storage,
+allocated by the fallible app factory, not on the task stack or globally.
+Secret input uses one small fallible child activity. Crypto contexts allocate
+as described in SecureStore; peak/KDF timings remain unmeasured. The master
+passphrase remains only in the unlocked activity to encrypt edits. Records,
+entry/draft, key and encoded buffers are wiped on lock/failure/exit/destruction.
+Secret input now also serializes changes against rendering. No plaintext is
+passed through KeyboardResult or logs. Exit clears the RAM framebuffer; RAM
+wiping and redraw do not guarantee physical e-ink erasure or tamper resistance.
+
+Files live under `/crossink/vaults/`: `passwords.bin` is primary. For edits,
+`passwords.next` is exclusively created, encrypted, synced and closed first.
+Then any old `passwords.previous` is removed, the primary renamed to previous,
+and next renamed to primary. One prior encrypted version remains, including
+potentially deleted entries: deletion is not secure erasure. There is no
+claim of FAT rename atomicity, rollback protection, or crash-proof durability.
+Any save error locks; next present or primary missing with previous present
+blocks normal entry. No automatic fallback, overwrite, cleanup, or recovery UI.
+Preserve these files for explicit recovery; do not treat an older backup as
+current without checking it. Wrong keys/corruption also fail closed; exit and
+reopen to retry. SecureStore simulator crypto remains unavailable, not faked.
+
+Hardware verification (not run): on X3/X4, Tools > Password Manager, create
+with test passphrase, add an entry, lock/reopen/unlock and verify its values;
+replace/delete and repeat. Check wrong key, cancel/timeout/Home exits, ten-second
+reveal masking, SD removal/write failure, and interrupted saves with all three
+files preserved. Check physical display clearing, C3 KDF time, heap and stack
+high-water marks. No cache reset is needed. V1 also needs fault injection and
+record/input lifecycle suites. Hardware recovery and crypto gates stay open.
+
+Compile evidence: C3 default PASS (152.050s), `/tmp/x4-p4c-build.log`,
+2026-09-13 UTC. Consumer is now linked: firmware 6,378,976 bytes, 174,624
+bytes free in stock OTA slot, below the reserve. No runtime tests performed.

@@ -21,6 +21,7 @@
 #include "morse_code/MorseCodeActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
+#include "secure_vault/PasswordManagerActivity.h"
 #include "snake/SnakeActivity.h"
 #include "sudoku/SudokuActivity.h"
 #include "tetris/TetrisActivity.h"
@@ -72,6 +73,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_FLASHCARDS, &makeApp<FlashcardActivity>},
 
     {AppCategory::Tools, StrId::STR_APP_HABITS, &makeApp<HabitTrackerActivity>},
+
+    {AppCategory::Tools, StrId::STR_VAULT_APP, &makeApp<PasswordManagerActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},

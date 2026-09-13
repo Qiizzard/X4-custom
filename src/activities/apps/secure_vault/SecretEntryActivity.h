@@ -15,6 +15,7 @@ class SecretEntryActivity final : public Activity {
         destination(destination),
         capacity(capacity),
         minimum(minimum) {}
+  bool allowFrontlightPanelGesture() const override { return false; }
   ~SecretEntryActivity() override;
   void onEnter() override;
   void onExit() override;

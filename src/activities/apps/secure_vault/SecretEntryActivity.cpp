@@ -37,6 +37,7 @@ void SecretEntryActivity::onExit() {
   Activity::onExit();
 }
 void SecretEntryActivity::loop() {
+  RenderLock lock;
   if (!ready) return;
   if (millis() - lastInput >= 60000) {
     cancel();
