@@ -127,7 +127,8 @@ bool RadioManager::foreignRadioActive() {
 }
 
 bool RadioManager::stationConnected(const char* owner) const {
-  return owner && owner_ == owner && mode_ == Mode::WifiStation && WiFi.status() == WL_CONNECTED;
+  return owner && owner_ == owner && mode_ == Mode::WifiStation && WiFi.status() == WL_CONNECTED &&
+         WiFi.localIP() != IPAddress(0, 0, 0, 0);
 }
 
 bool RadioManager::acquire(const Mode mode, const char* owner) {

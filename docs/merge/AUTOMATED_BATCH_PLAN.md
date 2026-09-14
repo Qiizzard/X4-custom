@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync and FontDownload ownership source integrated (wip); next KOReaderSync, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload and KOReaderSync ownership source integrated (wip); next CrossPointWebServer/AP mode, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -324,3 +324,12 @@ this schedule does not declare them completed or permanently blocked.
   simulator, network, soak or hardware tests run. Usage observed 15% → 41%,
   weekly 55% → 59%, no reset. Next: KOReaderSync; picker and remaining radio
   migrations still pending. OTA/recovery and unrelated files unchanged.
+
+- 2026-09-14 09:32 UTC wakeup, P5 checkpoint: KOReaderSync station ownership
+  integrated (wip), owner-checked early/exit release, station/IP preflight and
+  fallible picker; existing reader reboot and TLS/EPUB flow retained. One C3
+  compile sanity PASS (31.696s), `/tmp/x4-p5b-build.log`; image 6,392,080
+  bytes, stock OTA free 161,520 bytes (reserve warning). No host, simulator,
+  live sync/network, soak or hardware tests run. Usage observed 18% → 38%,
+  weekly 63% → 66%, no reset. Next: CrossPointWebServer/AP ownership mode.
+  Unrelated files, OTA/recovery code and shipping partitions preserved.

@@ -4,8 +4,8 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
-#include <WiFi.h>
-#include <esp_wifi.h>
+#include <Memory.h>
+#include <RadioManager.h>
 
 #include <algorithm>
 #include <cassert>
@@ -27,9 +27,9 @@
 #include "components/TouchHeaderBackButton.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
-#include "network/WifiUtils.h"
 
 namespace {
+constexpr char kRadioOwner[] = "koreader_sync";
 constexpr int RESULT_LOCAL_PAGE_Y_OFFSET = 200;
 constexpr int RESULT_ACTION_MARGIN_TOP = 20;
 constexpr int RESULT_ACTION_HEIGHT = 48;
@@ -84,13 +84,26 @@ void syncTimeWithNTP() {
 #endif
 }
 
-void wifiOff() {
-  WiFi.disconnect(false);
-  delay(100);
-  WiFi.mode(WIFI_OFF);
-  delay(100);
-}
 }  // namespace
+
+bool KOReaderSyncActivity::releaseRadio() {
+  if (!radioOwned) return true;
+  if (!RADIO.shutdown(kRadioOwner)) return false;
+  radioOwned = false;
+  return true;
+}
+
+bool KOReaderSyncActivity::requireStation() {
+  if (radioOwned && RADIO.stationConnected(kRadioOwner)) return true;
+  LOG_ERR("KOSync", "Sync requires an owned station connection");
+  {
+    RenderLock lock(*this);
+    state = SYNC_FAILED;
+    statusMessage = tr(STR_CONNECTION_FAILED);
+  }
+  requestUpdate();
+  return false;
+}
 
 void KOReaderSyncActivity::ensureEpubLoaded() {
   if (!epub) {
@@ -194,6 +207,7 @@ void KOReaderSyncActivity::onWifiSelectionComplete(const bool success) {
     return;
   }
 
+  if (!requireStation()) return;
   sdFontSystem.releaseForNetwork(renderer);
 
   {
@@ -216,6 +230,7 @@ void KOReaderSyncActivity::onWifiSelectionComplete(const bool success) {
 }
 
 void KOReaderSyncActivity::performSync() {
+  if (!requireStation()) return;
   const DocumentMatchMethod primaryMethod = primaryMatchMethod;
   remoteMatchMethod = primaryMethod;
   documentHash = calculateDocumentHashForMethod(epubPath, primaryMethod);
@@ -236,7 +251,7 @@ void KOReaderSyncActivity::performSync() {
   }
   if (requestUpdateAndWait() != RequestUpdateResult::Rendered) {
     LOG_ERR("KOSync", "Fetch progress screen could not be rendered synchronously; aborting sync");
-    wifiOff();
+    releaseRadio();
     {
       RenderLock lock(*this);
       state = SYNC_FAILED;
@@ -451,6 +466,7 @@ void KOReaderSyncActivity::performSync() {
 }
 
 void KOReaderSyncActivity::performUpload() {
+  if (!requireStation()) return;
   {
     RenderLock lock(*this);
     state = UPLOADING;
@@ -458,7 +474,7 @@ void KOReaderSyncActivity::performUpload() {
   }
   if (requestUpdateAndWait() != RequestUpdateResult::Rendered) {
     LOG_ERR("KOSync", "Upload progress screen could not be rendered synchronously; aborting upload");
-    wifiOff();
+    releaseRadio();
     {
       RenderLock lock(*this);
       state = SYNC_FAILED;
@@ -521,8 +537,8 @@ void KOReaderSyncActivity::performUpload() {
 
   const auto result = KOReaderSyncClient::updateProgress(progress);
 
-  // Drop the radio while user reads the result; full teardown happens at silent reboot.
-  wifiOff();
+  // Release ownership while the user reads the result; retain the reader reboot.
+  releaseRadio();
 
   if (result != KOReaderSyncClient::OK) {
     {
@@ -572,28 +588,35 @@ void KOReaderSyncActivity::onEnter() {
     return;
   }
 
-  // Past this point every path uses WiFi.
   sdFontSystem.releaseLoadedFont(renderer);
+  radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+  if (!radioOwned) {
+    state = SYNC_FAILED;
+    statusMessage = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    requestUpdate();
+    return;  // No owned radio or network allocations: do not reboot another session.
+  }
   wifiActivated = true;
 
-  // Check if already connected (e.g. from settings page auth)
-  if (hasActiveStationWifiConnection()) {
-    onWifiSelectionComplete(true);
+  // The legacy picker operates within this parent's station hold. A successful
+  // connection stays up for TLS; cancellation and parent exit both clean up.
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, true);
+  if (!picker) {
+    LOG_ERR("KOSync", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
+    releaseRadio();
+    state = SYNC_FAILED;
+    statusMessage = tr(STR_MEMORY_ERROR);
+    requestUpdate();
     return;
   }
-
-  // Launch WiFi selection subactivity
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput, true, true),
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
 void KOReaderSyncActivity::onExit() {
   Activity::onExit();
 
-  if (wifiActivated) {
-    wifiOff();
-    silentRestartToReader();
-  }
+  if (wifiActivated && releaseRadio()) silentRestartToReader();
 }
 
 void KOReaderSyncActivity::render(RenderLock&&) {

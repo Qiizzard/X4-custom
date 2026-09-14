@@ -80,6 +80,7 @@ class RadioManager {
   // Activity-facing release: a failed acquire must never tear down another owner.
   // Use the identical static owner pointer passed to acquire().
   bool shutdown(const char* owner);
+  // Connected with a nonzero station IP; excludes association before DHCP.
   bool stationConnected(const char* owner) const;
 
   bool isHeld() const { return mode_ != Mode::Off; }

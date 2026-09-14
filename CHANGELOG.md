@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- KOReader sync (2026-09-14) now reserves its radio session, releases it on
+  upload/error/exit paths and retains the reader restart flow. Network and
+  device validation remains deferred.
+
 - Clock sync and font downloads (2026-09-14) now reserve their radio session
   and release through RadioManager. Busy foreign sessions stay intact. Device
   and network lifecycle validation remains deferred.

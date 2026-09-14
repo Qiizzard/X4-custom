@@ -105,11 +105,12 @@ class KOReaderSyncActivity final : public Activity {
   unsigned long autoReturnAt = 0;
   static constexpr unsigned long AUTO_RETURN_DELAY_MS = 1200;
 
-  // Tracks whether this session activated WiFi. Set in onEnter past the credentials
-  // check; checked in onExit to decide whether to silent-reboot. Can't rely on
-  // WiFi.getMode() because performUpload() calls esp_wifi_stop() on the way out,
-  // which makes WiFi.getMode() return WIFI_MODE_NULL.
+  // Remember successful session acquisition even after early radio release:
+  // the reader still needs the existing post-network reboot for heap recovery.
   bool wifiActivated = false;
+  bool radioOwned = false;
+  bool releaseRadio();
+  bool requireStation();
   bool lockInitialConfirmRelease = false;
 
   void onWifiSelectionComplete(bool success);

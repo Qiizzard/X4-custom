@@ -24,11 +24,11 @@ flow. Picker success leaves the connection for its parent; cancellation can
 stop the driver, followed by the parent's manager cleanup. Startup failures
 cannot trigger font-network retries without a hold. Simulator refuses radio.
 
-Status: sites 1–2 source integrated, **wip/unverified**; sites 3–8 remain pending.
+Status: sites 1–3 source integrated, **wip/unverified**; sites 4–8 remain pending.
 The shared WifiSelection child still uses direct SDK calls, so this is not a
 claim that every network operation is already behind the manager. Its later
 migration must preserve the parent hold through scanning/association and cancel
-cleanup. Next group starts with KOReaderSync, preserving its TLS/restart path.
+cleanup. Next group starts with CrossPointWebServer and the needed AP ownership mode.
 No OTA/recovery code or shipping partitions changed.
 
 V1/device checks: on X3/X4, Settings > System > Device > Clock sync, connect,
@@ -43,6 +43,40 @@ for radio ownership. No physical or runtime checks have been performed here.
 Compile evidence: C3 default PASS (145.447s), `/tmp/x4-p5a-build.log`,
 2026-09-14. Firmware 6,391,744 bytes, stock OTA free 161,856 bytes, reserve
 warning remains. No runtime/network/host/simulator/hardware tests performed.
+
+## KOReader sync checkpoint (2026-09-14)
+
+KOReaderSync now acquires `koreader_sync` after position/credential checks and
+before its existing WiFi picker. Picker allocation is fallible; busy foreign
+sessions fail without being borrowed or torn down. The picker still uses SDK
+calls inside the parent's hold until site 7 is migrated. Sync/upload entry
+checks ownership and a connected station with a nonzero IP; RadioManager also
+uses that readiness check for clock/font consumers (matching the prior KOReader
+WiFi helper's DHCP check). Simulator remains unavailable, not simulated success.
+
+Render-wait failures, completed upload (including HTTP failure), picker
+allocation failure and exit release only this owner's hold. The separate
+successful-session flag survives early release so the existing silent reader
+restart still happens on exit. Failed acquire does not trigger that restart.
+Release refusal logs and prevents exit-triggered reboot of another owner.
+The pre-network reader restart, EPUB release/reload timing, NTP fallback,
+TLS/credentials, document matching, progress mapping and upload payloads were
+not changed. One scalar ownership flag and a static owner label were added;
+no new buffers, per-loop allocations or unmeasured memory savings are claimed.
+
+V1/device: on X3/X4, open an EPUB and invoke KOReader sync, select WiFi, fetch
+progress and test Apply, Upload, already-synced and no-remote-progress branches.
+Confirm progress survives the return-to-reader restart, logs show one ownership
+release even after early upload teardown, and the next radio screen works.
+Cover picker cancel, missing credentials, OOM, DHCP/disconnect, HTTP/render-wait
+failure, global Home and foreign-owner denial. Check heap/largest block and
+stack high-water marks across repeated cycles. Cache reset is not required by
+this change; an existing missing position-map error still requires the normal
+EPUB optimization flow. These are pending checks, not passed results.
+
+KOReader compile evidence: C3 default PASS (31.696s), `/tmp/x4-p5b-build.log`,
+2026-09-14. Image 6,392,080 bytes, stock OTA free 161,520 bytes; reserve warning
+remains. No runtime/network/host/simulator/soak/hardware tests performed.
 
 ## Why it was not done in one pass
 
