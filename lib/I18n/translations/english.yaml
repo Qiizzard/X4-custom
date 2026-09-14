@@ -997,3 +997,5 @@ STR_STEGO_EMPTY: "No supported BMP files in this folder"
 STR_STEGO_VIEW_HINT: "Up/Down: page; closes after 10 seconds"
 STR_STEGO_SAVED: "Encrypted note saved in new BMP"
 STR_STEGO_ERROR: "Failed. Check key, BMP, SD and output space."
+
+STR_RADIO_BUSY_OR_UNAVAILABLE: "Radio busy or unavailable. Exit and retry later."

@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Clock sync and font downloads (2026-09-14) now reserve their radio session
+  and release through RadioManager. Busy foreign sessions stay intact. Device
+  and network lifecycle validation remains deferred.
+
 - The simulator smoke test now walks the app registry, entering and rendering
   every registered app on each run. Adding an app to the launcher adds it to the
   crash tripwire automatically — nothing to remember, and no harness to update.

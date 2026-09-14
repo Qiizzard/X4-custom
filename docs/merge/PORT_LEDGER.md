@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-13 UTC, P4 Stego Notes integration):
+Latest verified full working-snapshot image (2026-09-13 UTC, P5 clock/font radio integration):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,389,472 |
+| Firmware image (`firmware.bin`) | 6,391,744 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 164,128 |
+| Free space | 161,856 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 98,016 |
+| Shortfall against reserve | 100,288 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

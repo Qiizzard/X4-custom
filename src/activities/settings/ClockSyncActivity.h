@@ -18,11 +18,11 @@ class ClockSyncActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
-  enum State { SYNCING, SUCCESS, NO_WIFI, FAILED };
+  enum State { SYNCING, SUCCESS, NO_WIFI, FAILED, RADIO_UNAVAILABLE };
   State state = SYNCING;
   ScreenTransitionRefresh screenTransitionRefresh;
   char syncedTime[16] = {0};
-  bool shouldTearDownWifiOnExit = false;
+  bool radioOwned = false;
 
   void runSync();
   void launchWifiSelection();

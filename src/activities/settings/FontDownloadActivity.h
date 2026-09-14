@@ -99,6 +99,8 @@ class FontDownloadActivity : public Activity {
   bool manifestReloadNeeded_ = false;
   std::string activeDownloadFamilyName_;
   bool fontsChanged_ = false;
+  bool radioOwned_ = false;
+  bool radioStartupFailed_ = false;
 
   // Download progress
   size_t currentFileIndex_ = 0;

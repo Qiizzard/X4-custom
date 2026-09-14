@@ -51,6 +51,20 @@ void RadioManager::holdReport(char* buffer, const size_t bufferSize) const {
            static_cast<unsigned long>(heldForMs()));
 }
 
+bool RadioManager::shutdown(const char* owner) {
+  if (!owner) {
+    LOG_ERR(TAG, "Release refused: missing owner");
+    return false;
+  }
+  if (!isHeld()) return true;
+  if (owner_ != owner) {
+    LOG_ERR(TAG, "%s denied release: owned by %s", owner, this->owner());
+    return false;
+  }
+  shutdown();
+  return true;
+}
+
 #ifdef SIMULATOR
 
 // The simulator has no radio. Everything fails cleanly and says why, so a radio
@@ -59,6 +73,7 @@ void RadioManager::holdReport(char* buffer, const size_t bufferSize) const {
 // already use.
 
 bool RadioManager::foreignRadioActive() { return false; }
+bool RadioManager::stationConnected(const char*) const { return false; }
 
 bool RadioManager::acquire(const Mode mode, const char* owner) {
   LOG_INF(TAG, "simulator build: %s denied %s (no radio)", owner != nullptr ? owner : "?", modeName(mode));
@@ -109,6 +124,10 @@ void promiscuousTrampoline(void* buf, const wifi_promiscuous_pkt_type_t type) {
 bool RadioManager::foreignRadioActive() {
   // A legacy CrossInk screen brought WiFi up without going through here.
   return WiFi.getMode() != WIFI_MODE_NULL;
+}
+
+bool RadioManager::stationConnected(const char* owner) const {
+  return owner && owner_ == owner && mode_ == Mode::WifiStation && WiFi.status() == WL_CONNECTED;
 }
 
 bool RadioManager::acquire(const Mode mode, const char* owner) {

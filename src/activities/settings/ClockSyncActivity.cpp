@@ -4,7 +4,8 @@
 #include <HalClock.h>
 #include <I18n.h>
 #include <Logging.h>
-#include <WiFi.h>
+#include <Memory.h>
+#include <RadioManager.h>
 
 #include <cstdio>
 
@@ -16,34 +17,44 @@
 #include "components/UITheme.h"
 #include "fontIds.h"
 
+namespace {
+constexpr char kRadioOwner[] = "clock_sync";
+}
+
 void ClockSyncActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
   syncedTime[0] = '\0';
   state = SYNCING;
 
-  if (WiFi.status() == WL_CONNECTED) {
+  radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+  if (!radioOwned) {
+    state = RADIO_UNAVAILABLE;
     requestUpdate();
     return;
   }
-
-  shouldTearDownWifiOnExit = true;
+  // The legacy picker operates inside this parent's station hold. It keeps
+  // a successful connection up; this parent releases it on every exit.
   launchWifiSelection();
 }
 
 void ClockSyncActivity::onExit() {
   Activity::onExit();
 
-  if (shouldTearDownWifiOnExit && WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
-    WiFi.mode(WIFI_OFF);
-  }
+  if (radioOwned) RADIO.shutdown(kRadioOwner);
+  radioOwned = false;
 }
 
 void ClockSyncActivity::launchWifiSelection() {
   LOG_INF("CLK", "Manual sync requested without WiFi, launching WiFi selection");
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+  if (!picker) {
+    LOG_ERR("CLK", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
+    state = FAILED;
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
@@ -59,7 +70,7 @@ void ClockSyncActivity::onWifiSelectionComplete(const bool connected) {
 }
 
 void ClockSyncActivity::runSync() {
-  if (WiFi.status() != WL_CONNECTED) {
+  if (!RADIO.stationConnected(kRadioOwner)) {
     LOG_INF("CLK", "Manual sync requested but WiFi is not connected after selection");
     state = NO_WIFI;
     requestUpdate();
@@ -145,6 +156,9 @@ void ClockSyncActivity::render(RenderLock&&) {
     case NO_WIFI:
       renderer.drawCenteredText(UI_12_FONT_ID, midY - 20, tr(STR_CLOCK_SYNC_NO_WIFI), true, EpdFontFamily::BOLD);
       renderer.drawCenteredText(UI_10_FONT_ID, midY + 10, tr(STR_CLOCK_SYNC_NO_WIFI_HINT));
+      break;
+    case RADIO_UNAVAILABLE:
+      renderer.drawCenteredText(UI_12_FONT_ID, midY, tr(STR_RADIO_BUSY_OR_UNAVAILABLE));
       break;
     case FAILED:
       renderer.drawCenteredText(UI_12_FONT_ID, midY - 20, tr(STR_CLOCK_SYNC_FAIL), true, EpdFontFamily::BOLD);

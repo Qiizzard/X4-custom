@@ -77,6 +77,10 @@ class RadioManager {
   // way to end a hold -- there is no "release but leave it on" variant, because
   // that is the state leak this class exists to prevent.
   void shutdown();
+  // Activity-facing release: a failed acquire must never tear down another owner.
+  // Use the identical static owner pointer passed to acquire().
+  bool shutdown(const char* owner);
+  bool stationConnected(const char* owner) const;
 
   bool isHeld() const { return mode_ != Mode::Off; }
   Mode mode() const { return mode_; }

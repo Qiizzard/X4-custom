@@ -5,7 +5,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
-#include <WiFi.h>
+#include <RadioManager.h>
 #include <esp_rom_crc.h>
 
 #include <algorithm>
@@ -131,6 +131,10 @@ void FontDownloadActivity::onRowEvent(const fui::ActionEvent& event, void* user)
   self->activateSelected();  // ends with requestUpdateAndWait itself
 }
 
+namespace {
+constexpr char kFontRadioOwner[] = "font_download";
+}
+
 // --- Lifecycle ---
 
 void FontDownloadActivity::onEnter() {
@@ -147,22 +151,36 @@ void FontDownloadActivity::onEnter() {
   app_.setTheme(uiThemeTokens(uiTarget_));
   app_.on(ACTION_ROW, &FontDownloadActivity::onRowEvent, this);
   app_.setScreen(&FontDownloadActivity::listScreen, this);
-  WiFi.mode(WIFI_STA);
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
+  radioOwned_ = RADIO.acquire(RadioManager::Mode::WifiStation, kFontRadioOwner);
+  if (!radioOwned_) {
+    radioStartupFailed_ = true;
+    errorMessage_ = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    state_ = ERROR;
+    requestUpdate();
+    return;
+  }
+  // One fallible picker allocation; no new per-frame storage. Parent owns the
+  // station while this legacy child scans/connects, including cancel cleanup.
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+  if (!picker) {
+    LOG_ERR("Fonts", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
+    radioStartupFailed_ = true;
+    errorMessage_ = tr(STR_MEMORY_ERROR);
+    state_ = ERROR;
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
 void FontDownloadActivity::onExit() {
   Activity::onExit();
 
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
-    if (fontsChanged_) {
-      silentRestart();
-    } else {
-      WiFi.mode(WIFI_OFF);
-    }
+  if (radioOwned_) {
+    const bool released = RADIO.shutdown(kFontRadioOwner);
+    radioOwned_ = false;
+    if (released && fontsChanged_) silentRestart();
   }
 
   sdFontSystem.ensureLoaded(renderer);
@@ -207,6 +225,11 @@ void FontDownloadActivity::onWifiSelectionComplete(const bool success) {
 // --- Manifest fetching ---
 
 bool FontDownloadActivity::fetchAndParseManifest() {
+  if (!RADIO.stationConnected(kFontRadioOwner)) {
+    LOG_ERR("Fonts", "Manifest fetch requires owned station connection");
+    errorMessage_ = tr(STR_CONNECTION_FAILED);
+    return false;
+  }
   // Download manifest to a temp file on SD card to avoid holding both
   // TLS buffers and the full JSON string in RAM simultaneously.
   static constexpr const char* MANIFEST_TMP = "/fonts_manifest.tmp";
@@ -1008,6 +1031,13 @@ void FontDownloadActivity::buildListScreen(UiApp::ScreenType& screen) {
 // --- Input handling ---
 
 void FontDownloadActivity::loop() {
+  if (radioStartupFailed_) {
+    if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
+        mappedInput.wasPressed(MappedInputManager::Button::Back) ||
+        mappedInput.wasPressed(MappedInputManager::Button::Confirm))
+      finish();
+    return;
+  }
   if (state_ == FAMILY_LIST) {
     if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
         mappedInput.wasPressed(MappedInputManager::Button::Back)) {
@@ -1348,7 +1378,7 @@ void FontDownloadActivity::render(RenderLock&&) {
         messageY += smallLineHeight + 2;
       }
     }
-    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_RETRY), "", "");
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), radioStartupFailed_ ? "" : tr(STR_RETRY), "", "");
     GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   }
 

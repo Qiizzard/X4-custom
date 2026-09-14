@@ -5,6 +5,45 @@ foundations landing, **new merge apps do; CrossInk's own network screens do
 not.** This file is the standing record of that gap, so it stays a tracked
 debt instead of quietly becoming the norm.
 
+## Active P5 implementation (2026-09-14)
+
+The user-approved active queue supersedes the historical one-site/no-batching
+cadence below: related source migrations share one compile check, with runtime
+and hardware checks deferred to V1. ClockSync and FontDownload now acquire a
+named station hold before opening their existing WiFi picker, and release only
+their own hold at exit. RadioManager's owner-checked shutdown cannot release a
+different owner; station-status reads also require the matching owner. No new
+radio mode or dynamic RadioManager storage was added. Picker allocations now
+fail cleanly. Font-change restart happens after releasing the owned session.
+
+These two activities no longer directly start/stop/query Arduino WiFi. Busy
+managed or foreign legacy sessions are left intact and reported unavailable;
+ClockSync no longer silently borrows an already-connected foreign session.
+The normal radio-off → picker → operation → exit path remains the intended
+flow. Picker success leaves the connection for its parent; cancellation can
+stop the driver, followed by the parent's manager cleanup. Startup failures
+cannot trigger font-network retries without a hold. Simulator refuses radio.
+
+Status: sites 1–2 source integrated, **wip/unverified**; sites 3–8 remain pending.
+The shared WifiSelection child still uses direct SDK calls, so this is not a
+claim that every network operation is already behind the manager. Its later
+migration must preserve the parent hold through scanning/association and cancel
+cleanup. Next group starts with KOReaderSync, preserving its TLS/restart path.
+No OTA/recovery code or shipping partitions changed.
+
+V1/device checks: on X3/X4, Settings > System > Device > Clock sync, connect,
+sync, Back; then enter font downloads and cancel/complete a download, exit, and
+open another network screen. Expect clock_sync/font_download acquisition and
+release logs, no hold after exit, and normal font-change restart. Cover wrong
+credentials, dropped connection, picker cancel, allocation failure, global Home,
+foreign-radio denial and attempted release by a different owner. Check C3 free
+heap, largest block and task stack high-water marks. No cache reset is required
+for radio ownership. No physical or runtime checks have been performed here.
+
+Compile evidence: C3 default PASS (145.447s), `/tmp/x4-p5a-build.log`,
+2026-09-14. Firmware 6,391,744 bytes, stock OTA free 161,856 bytes, reserve
+warning remains. No runtime/network/host/simulator/hardware tests performed.
+
 ## Why it was not done in one pass
 
 CrossInk predates this arbiter. Eight activities drive Arduino WiFi and ESP-NOW

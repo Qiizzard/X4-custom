@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | pending | Adapt the eight legacy radio sites to RadioManager in coherent groups; keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync and FontDownload ownership source integrated (wip); next KOReaderSync, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -314,3 +314,13 @@ this schedule does not declare them completed or permanently blocked.
   simulator, soak or device tests run. Usage observed 2% → 19%, weekly
   48% → 51%, no reset. P4 actionable source ports complete; Medical Card
   access policy and hardware gates remain open. Next: P5 radio migration.
+
+- 2026-09-14 04:31 UTC wakeup, P5 checkpoint: ClockSync and FontDownload
+  acquire station ownership around their existing WiFi picker; checked owner
+  release/status, busy handling and fallible picker allocation added. Font-change
+  restart retained after owned teardown. Source integrated, runtime unverified.
+  One C3 compile sanity PASS (145.447s), `/tmp/x4-p5a-build.log`; image
+  6,391,744 bytes, stock OTA free 161,856 bytes (reserve warning). No host,
+  simulator, network, soak or hardware tests run. Usage observed 15% → 41%,
+  weekly 55% → 59%, no reset. Next: KOReaderSync; picker and remaining radio
+  migrations still pending. OTA/recovery and unrelated files unchanged.
