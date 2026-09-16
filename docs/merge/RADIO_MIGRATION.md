@@ -78,6 +78,36 @@ KOReader compile evidence: C3 default PASS (31.696s), `/tmp/x4-p5b-build.log`,
 2026-09-14. Image 6,392,080 bytes, stock OTA free 161,520 bytes; reserve warning
 remains. No runtime/network/host/simulator/soak/hardware tests performed.
 
+## AP manager checkpoint (2026-09-16, unverified)
+
+RadioManager now models WifiAccessPoint and exposes a dedicated configured
+acquisition API; generic acquire refuses AP so callers cannot start it without
+configuration. SSID is bounded to 32 bytes, password to 8–63 printable ASCII
+bytes (nullptr explicitly requests open), channel to 1–13 and clients to 1–4,
+matching the live Arduino WiFiAP API. Invalid non-null passwords are rejected,
+never downgraded to open. A managed/foreign radio prevents startup. Credentials
+are not retained or logged. Failure cleans up the attempted driver startup;
+owned shutdown now explicitly disconnects AP before turning WiFi off. Address
+lookup requires the same static owner pointer and zeros output on failure.
+Simulator startup fails without pretending that an AP exists. No new manager
+heap allocations or buffers were introduced; SDK allocations remain unmeasured.
+
+This is a source dependency checkpoint: CrossPointWebServer still uses its
+legacy WiFi calls. Next: wire AP/STA selection, address/status display, DNS/web
+service cleanup and the restart-before-socket-close path to owned sessions.
+Do not mark site 4 migrated or claim a working AP through RadioManager yet.
+V1/device checks must cover protected/open AP startup, invalid configuration,
+busy/foreign ownership, wrong-owner address/release, startup failure and teardown,
+phone connection/DHCP, web transfers, mode switching and the next radio activity.
+On X3/X4 use the file-transfer AP route after integration; verify existing SSID,
+password and client limit, then exit and open clock sync. No cache reset needed.
+No runtime/radio/host/simulator/hardware checks have been performed.
+
+AP checkpoint compile: C3 default PASS (220.334s), `/tmp/x4-p5c-build.log`,
+2026-09-16. Firmware 6,392,272 bytes; stock OTA free 161,328 bytes, reserve
+warning remains. Unused acquisition/address functions may be discarded until
+consumer integration; compilation is not runtime AP evidence.
+
 ## Why it was not done in one pass
 
 CrossInk predates this arbiter. Eight activities drive Arduino WiFi and ESP-NOW

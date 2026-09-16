@@ -38,6 +38,7 @@ class RadioManager {
     WifiScan,         // station mode, scanning only, never associated
     WifiPromiscuous,  // monitor mode: raw frames, listen only
     EspNow,           // device-to-device, no AP
+    WifiAccessPoint,  // configure through acquireAccessPoint(), not acquire()
   };
 
   // Raw-frame sink for promiscuous mode. A plain function pointer plus a
@@ -71,6 +72,14 @@ class RadioManager {
   // Re-acquiring the same mode from the same owner is a no-op success, so an
   // activity that re-enters does not have to track whether it already holds it.
   bool acquire(Mode mode, const char* owner);
+  // Dedicated AP startup validates configuration before touching the driver.
+  // nullptr password explicitly requests an open AP; non-null must be 8–63
+  // printable ASCII bytes. SSID 1–32 bytes, channel 1–13, clients 1–4.
+  // No credentials retained. Existing managed/foreign sessions are refused.
+  bool acquireAccessPoint(const char* owner, const char* ssid, const char* password, uint8_t channel,
+                          uint8_t maxClients);
+  // Write the active owned AP's address, or zero output on failure.
+  bool accessPointAddress(const char* owner, uint8_t (&address)[4]) const;
 
   // Release and take the radio all the way down. Safe to call when nothing is
   // held, so it can sit unconditionally in onExit(). This is the only correct

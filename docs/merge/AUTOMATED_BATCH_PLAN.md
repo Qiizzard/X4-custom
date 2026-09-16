@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload and KOReaderSync ownership source integrated (wip); next CrossPointWebServer/AP mode, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload and KOReaderSync ownership source integrated (wip); AP manager API checkpoint added; next CrossPointWebServer AP/STA wiring, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -333,3 +333,13 @@ this schedule does not declare them completed or permanently blocked.
   live sync/network, soak or hardware tests run. Usage observed 18% → 38%,
   weekly 63% → 66%, no reset. Next: CrossPointWebServer/AP ownership mode.
   Unrelated files, OTA/recovery code and shipping partitions preserved.
+
+- 2026-09-16 19:30 UTC wakeup, P5 checkpoint: bounded owner-checked AP
+  acquisition/address API and AP cleanup added to RadioManager. Web-server
+  consumer wiring remains next; no site-4 completion or runtime AP claim.
+  One C3 compile sanity PASS (220.334s), `/tmp/x4-p5c-build.log`; image
+  6,392,272 bytes, stock OTA free 161,328 bytes (reserve warning). No host,
+  simulator, radio, network, soak or hardware tests run. Usage observed
+  21% → 51%, weekly 71% → 75%, no reset. Next: CrossPointWebServer AP/STA
+  ownership and existing restart/service cleanup integration. Unrelated work,
+  OTA/recovery code and shipping partitions preserved.

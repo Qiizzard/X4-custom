@@ -32,6 +32,8 @@ const char* RadioManager::modeName(const Mode mode) {
       return "WifiPromiscuous";
     case Mode::EspNow:
       return "EspNow";
+    case Mode::WifiAccessPoint:
+      return "WifiAccessPoint";
   }
   return "?";
 }
@@ -72,6 +74,14 @@ bool RadioManager::shutdown(const char* owner) {
 // pretending to scan -- the same convention CrossInk's own nearby-sync screens
 // already use.
 
+bool RadioManager::acquireAccessPoint(const char* owner, const char*, const char*, uint8_t, uint8_t) {
+  LOG_INF(TAG, "simulator: %s denied AP (no radio)", owner ? owner : "?");
+  return false;
+}
+bool RadioManager::accessPointAddress(const char*, uint8_t (&address)[4]) const {
+  memset(address, 0, sizeof(address));
+  return false;
+}
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
 
@@ -131,9 +141,51 @@ bool RadioManager::stationConnected(const char* owner) const {
          WiFi.localIP() != IPAddress(0, 0, 0, 0);
 }
 
+bool RadioManager::acquireAccessPoint(const char* owner, const char* ssid, const char* password, uint8_t channel,
+                                      uint8_t maxClients) {
+  const size_t ssidLength = ssid ? strnlen(ssid, 33) : 0;
+  const size_t passwordLength = password ? strnlen(password, 64) : 0;
+  bool validPassword = !password || (passwordLength >= 8 && passwordLength <= 63);
+  if (password && validPassword) {
+    for (size_t i = 0; i < passwordLength; ++i) {
+      const unsigned char c = password[i];
+      if (c < 32 || c > 126) validPassword = false;
+    }
+  }
+  if (!owner || !owner[0] || !ssidLength || ssidLength > 32 || !validPassword || channel < kMinChannel ||
+      channel > kMaxChannel || !maxClients || maxClients > 4) {
+    LOG_ERR(TAG, "AP configuration rejected");
+    return false;
+  }
+  if (isHeld() || foreignRadioActive()) {
+    LOG_ERR(TAG, "%s denied AP: radio busy", owner);
+    return false;
+  }
+  // softAP enables AP mode itself. Never downgrade a rejected password to open.
+  if (!WiFi.softAP(ssid, password, channel, false, maxClients)) {
+    LOG_ERR(TAG, "%s could not start AP", owner);
+    stopWifi();
+    return false;
+  }
+  mode_ = Mode::WifiAccessPoint;
+  owner_ = owner;
+  acquiredAtMs_ = static_cast<uint32_t>(millis());
+  channel_ = channel;
+  LOG_INF(TAG, "%s acquired AP", owner);
+  return true;
+}
+bool RadioManager::accessPointAddress(const char* owner, uint8_t (&address)[4]) const {
+  memset(address, 0, sizeof(address));
+  if (!owner || owner_ != owner || mode_ != Mode::WifiAccessPoint) return false;
+  const IPAddress ip = WiFi.softAPIP();
+  if (ip == IPAddress(0, 0, 0, 0)) return false;
+  for (size_t i = 0; i < sizeof(address); ++i) address[i] = ip[i];
+  return true;
+}
+
 bool RadioManager::acquire(const Mode mode, const char* owner) {
-  if (mode == Mode::Off) {
-    LOG_ERR(TAG, "acquire(Off) is not a thing -- call shutdown()");
+  if (mode == Mode::Off || mode == Mode::WifiAccessPoint) {
+    LOG_ERR(TAG, "Use shutdown for Off or acquireAccessPoint for configured AP");
     return false;
   }
   if (owner == nullptr) {
@@ -204,6 +256,7 @@ bool RadioManager::startWifi(const Mode mode) {
       if (!WiFi.mode(WIFI_MODE_STA)) return false;
       WiFi.disconnect(false, false);
       return esp_wifi_set_promiscuous(false) == ESP_OK;
+    case Mode::WifiAccessPoint:  // only the configured acquisition path may start AP
     case Mode::Off:
       return false;
   }
@@ -214,6 +267,7 @@ void RadioManager::stopWifi() {
   // Take it all the way down. Leaving the driver in STA-idle is what makes the
   // *next* screen's radio behave unpredictably.
   esp_wifi_set_promiscuous(false);
+  if (WiFi.getMode() & WIFI_MODE_AP) WiFi.softAPdisconnect(true);
   WiFi.disconnect(true, false);
   WiFi.mode(WIFI_MODE_NULL);
 }
