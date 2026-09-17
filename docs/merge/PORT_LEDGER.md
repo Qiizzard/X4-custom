@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-16 UTC, P5 AP manager checkpoint):
+Latest verified full working-snapshot image (2026-09-17 UTC, P5 web-server AP/STA integration):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,392,272 |
+| Firmware image (`firmware.bin`) | 6,393,760 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 161,328 |
+| Free space | 159,840 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 100,816 |
+| Shortfall against reserve | 102,304 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

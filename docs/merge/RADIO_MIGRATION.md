@@ -24,11 +24,11 @@ flow. Picker success leaves the connection for its parent; cancellation can
 stop the driver, followed by the parent's manager cleanup. Startup failures
 cannot trigger font-network retries without a hold. Simulator refuses radio.
 
-Status: sites 1–3 source integrated, **wip/unverified**; sites 4–8 remain pending.
+Status: sites 1–4 AP/STA source integrated, **wip/unverified**; sites 5–8 remain pending.
 The shared WifiSelection child still uses direct SDK calls, so this is not a
 claim that every network operation is already behind the manager. Its later
 migration must preserve the parent hold through scanning/association and cancel
-cleanup. Next group starts with CrossPointWebServer and the needed AP ownership mode.
+cleanup. Next group starts with NearbyStatsSync and NearbyBookPositionSync (ESP-NOW).
 No OTA/recovery code or shipping partitions changed.
 
 V1/device checks: on X3/X4, Settings > System > Device > Clock sync, connect,
@@ -107,6 +107,39 @@ AP checkpoint compile: C3 default PASS (220.334s), `/tmp/x4-p5c-build.log`,
 2026-09-16. Firmware 6,392,272 bytes; stock OTA free 161,328 bytes, reserve
 warning remains. Unused acquisition/address functions may be discarded until
 consumer integration; compilation is not runtime AP evidence.
+
+## Web-server AP/STA integration (2026-09-17, wip)
+
+CrossPointWebServer now acquires `web_server` station ownership before its
+existing WiFi picker, or configured AP ownership before hotspot services.
+Picker cancellation releases the parent hold before returning to mode choice.
+AP address and station readiness/RSSI are read through RadioManager. Current
+open SSID/channel/four-client settings are unchanged; no password downgrade
+fallback remains. Picker, DNS and web-server allocations fail cleanly; DNS is
+owned by a unique_ptr and start failures are checked. These replace existing
+allocations, not additional frame/loop buffers. Peak RAM is not yet measured.
+
+Normal owned exits retain restart-before-socket-close to avoid the existing
+stalled-browser close problem. If restart returns on the deep-sleep path,
+services stop before the owned radio is released. Failed AP/STA acquire does
+not stop global mDNS/DNS or reboot another radio owner. Busy/startup error has
+a translated screen and Back exit. Calibre remains a separate legacy child;
+its existing parent fallback restart/disconnect branch is explicitly retained.
+Do not claim Calibre, the shared WiFi picker, or every radio path is migrated.
+Future picker ownership must support this parent hold rather than steal it.
+
+V1/device: X3/X4 file transfer > Create Hotspot, join from a phone/computer,
+check DHCP/captive DNS/address/SSID and upload/download, then exit with idle
+and stalled browser connections. Repeat Join Network, picker cancel then AP,
+WiFi loss/recovery, DNS/OOM failure, busy-owner denial and reader return path.
+Verify subsequent clock/nearby screens acquire normally; exercise deep-sleep
+cleanup and the unchanged Calibre branch. Check free heap/largest block and
+stack high-water marks. No cache reset is needed. No live network, simulator,
+host, soak or hardware validation has been run for this integration.
+
+Web-server integration compile: C3 default PASS (28.283s),
+`/tmp/x4-p5d-build.log`, 2026-09-17. Image 6,393,760 bytes; stock OTA free
+159,840 bytes, reserve warning remains. All runtime/device checks deferred.
 
 ## Why it was not done in one pass
 

@@ -84,6 +84,7 @@ bool RadioManager::accessPointAddress(const char*, uint8_t (&address)[4]) const 
 }
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
+int RadioManager::stationRssi(const char*) const { return -127; }
 
 bool RadioManager::acquire(const Mode mode, const char* owner) {
   LOG_INF(TAG, "simulator build: %s denied %s (no radio)", owner != nullptr ? owner : "?", modeName(mode));
@@ -140,6 +141,8 @@ bool RadioManager::stationConnected(const char* owner) const {
   return owner && owner_ == owner && mode_ == Mode::WifiStation && WiFi.status() == WL_CONNECTED &&
          WiFi.localIP() != IPAddress(0, 0, 0, 0);
 }
+
+int RadioManager::stationRssi(const char* owner) const { return stationConnected(owner) ? WiFi.RSSI() : -127; }
 
 bool RadioManager::acquireAccessPoint(const char* owner, const char* ssid, const char* password, uint8_t channel,
                                       uint8_t maxClients) {

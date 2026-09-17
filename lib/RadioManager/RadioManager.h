@@ -91,6 +91,7 @@ class RadioManager {
   bool shutdown(const char* owner);
   // Connected with a nonzero station IP; excludes association before DHCP.
   bool stationConnected(const char* owner) const;
+  int stationRssi(const char* owner) const;  // -127 when not owned/connected
 
   bool isHeld() const { return mode_ != Mode::Off; }
   Mode mode() const { return mode_; }

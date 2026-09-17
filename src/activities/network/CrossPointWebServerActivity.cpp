@@ -5,6 +5,7 @@
 #include <GfxRenderer.h>
 #include <I18n.h>
 #include <Memory.h>
+#include <RadioManager.h>
 #include <WiFi.h>
 
 #include <cstddef>
@@ -23,6 +24,7 @@
 #include "util/QrUtils.h"
 
 namespace {
+constexpr char kRadioOwner[] = "web_server";
 // AP Mode configuration
 constexpr const char* AP_SSID = "CrossPoint-Reader";
 constexpr const char* AP_PASSWORD = nullptr;  // Open network for ease of use
@@ -33,15 +35,14 @@ constexpr int QR_CODE_WIDTH = 198;
 constexpr int QR_CODE_HEIGHT = 198;
 
 // DNS server for captive portal (redirects all DNS queries to our IP)
-DNSServer* dnsServer = nullptr;
+std::unique_ptr<DNSServer> dnsServer;
 constexpr uint16_t DNS_PORT = 53;
 
 void stopDnsServer() {
   if (!dnsServer) return;
 
   dnsServer->stop();
-  delete dnsServer;
-  dnsServer = nullptr;
+  dnsServer.reset();
 }
 
 void restartMdns(const char* hostname, const char* tag) {
@@ -63,6 +64,12 @@ int barsForRssi(int rssi, int currentBars) {
   return bars;
 }
 }  // namespace
+
+void CrossPointWebServerActivity::radioFailed() {
+  LOG_ERR("WEBACT", "Radio/startup unavailable; owned resources retained for exit cleanup");
+  state = WebServerActivityState::RADIO_ERROR;
+  requestUpdate();
+}
 
 void CrossPointWebServerActivity::onEnter() {
   Activity::onEnter();
@@ -99,13 +106,21 @@ void CrossPointWebServerActivity::onExit() {
   Activity::onExit();
 
   state = WebServerActivityState::SHUTTING_DOWN;
+  // Calibre is a separate legacy child; preserve its existing fallback cleanup.
+  // A denied AP/STA acquire must not touch another session or its global mDNS.
+  const bool legacyCalibre = networkMode == NetworkMode::CONNECT_CALIBRE;
+  if (!radioOwned && !legacyCalibre) return;
+  if (radioOwned && RADIO.isHeld() && RADIO.owner() != kRadioOwner) {
+    LOG_ERR("WEBACT", "Lost radio ownership; refusing global service teardown/restart");
+    return;
+  }
 
   // Every active WiFi exit already reboots to clear network heap
   // fragmentation. Restart before graceful socket teardown: a stalled browser
   // can otherwise keep WebSocketsServer::close() retrying writes for seconds.
   // silentRestart() returns only when deep sleep is already in progress; that
   // path still needs the explicit cleanup below.
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
+  if ((radioOwned && RADIO.owner() == kRadioOwner) || (legacyCalibre && WiFi.getMode() != WIFI_MODE_NULL)) {
     if (returnBookPath.empty()) {
       silentRestart();
     } else {
@@ -119,21 +134,15 @@ void CrossPointWebServerActivity::onExit() {
   // Stop local services before disconnecting/restarting WiFi.
   stopWebServer();
   MDNS.end();
-  if (dnsServer) {
-    dnsServer->stop();
-    delete dnsServer;
-    dnsServer = nullptr;
-  }
   delay(50);
 
   // On the deep-sleep path silentRestart() returns without rebooting, so shut
   // WiFi down after local services have released their sockets.
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    if (isApMode) {
-      WiFi.softAPdisconnect(true);
-    } else {
-      WiFi.disconnect(false);
-    }
+  if (radioOwned) {
+    RADIO.shutdown(kRadioOwner);
+    radioOwned = false;
+  } else if (legacyCalibre && WiFi.getMode() != WIFI_MODE_NULL) {
+    WiFi.disconnect(false);
     delay(30);
   }
 
@@ -215,18 +224,26 @@ void CrossPointWebServerActivity::onNetworkModeSelected(const NetworkMode mode) 
 
   if (mode == NetworkMode::JOIN_NETWORK) {
     // STA mode - launch WiFi selection
-    WiFi.mode(WIFI_STA);
-
+    radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+    if (!radioOwned) {
+      radioFailed();
+      return;
+    }
+    auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+    if (!picker) {
+      LOG_ERR("WEBACT", "WiFi picker allocation failed");
+      radioFailed();
+      return;
+    }
     state = WebServerActivityState::WIFI_SELECTION;
-    startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
-                           [this](const ActivityResult& result) {
-                             if (!result.isCancelled) {
-                               const auto& wifi = std::get<WifiResult>(result.data);
-                               connectedIP = wifi.ip;
-                               connectedSSID = wifi.ssid;
-                             }
-                             onWifiSelectionComplete(!result.isCancelled);
-                           });
+    startActivityForResult(std::move(picker), [this](const ActivityResult& result) {
+      if (!result.isCancelled) {
+        const auto& wifi = std::get<WifiResult>(result.data);
+        connectedIP = wifi.ip;
+        connectedSSID = wifi.ssid;
+      }
+      onWifiSelectionComplete(!result.isCancelled);
+    });
   } else {
     // AP mode - start access point
     state = WebServerActivityState::AP_STARTING;
@@ -237,6 +254,10 @@ void CrossPointWebServerActivity::onNetworkModeSelected(const NetworkMode mode) 
 
 void CrossPointWebServerActivity::onWifiSelectionComplete(const bool connected) {
   if (connected) {
+    if (!RADIO.stationConnected(kRadioOwner)) {
+      radioFailed();
+      return;
+    }
     // Get connection info before exiting subactivity
     isApMode = false;
 
@@ -246,6 +267,14 @@ void CrossPointWebServerActivity::onWifiSelectionComplete(const bool connected) 
     // Start the web server
     startWebServer();
   } else {
+    // Release the parent's reservation before allowing another mode.
+    if (radioOwned) {
+      if (!RADIO.shutdown(kRadioOwner)) {
+        radioFailed();
+        return;
+      }
+      radioOwned = false;
+    }
     // User cancelled - go back to mode selection
     state = WebServerActivityState::MODE_SELECTION;
 
@@ -263,29 +292,18 @@ void CrossPointWebServerActivity::onWifiSelectionComplete(const bool connected) 
 void CrossPointWebServerActivity::startAccessPoint() {
   LOG_DBG("WEBACT", "Free heap before AP start: %d bytes", ESP.getFreeHeap());
 
-  // Configure and start the AP
-  WiFi.mode(WIFI_AP);
-  delay(100);
-
-  // Start soft AP
-  bool apStarted;
-  if (AP_PASSWORD && strlen(AP_PASSWORD) >= 8) {
-    apStarted = WiFi.softAP(AP_SSID, AP_PASSWORD, AP_CHANNEL, false, AP_MAX_CONNECTIONS);
-  } else {
-    // Open network (no password)
-    apStarted = WiFi.softAP(AP_SSID, nullptr, AP_CHANNEL, false, AP_MAX_CONNECTIONS);
-  }
-
-  if (!apStarted) {
-    LOG_ERR("WEBACT", "ERROR: Failed to start Access Point!");
-    exitToOrigin();
+  radioOwned = RADIO.acquireAccessPoint(kRadioOwner, AP_SSID, AP_PASSWORD, AP_CHANNEL, AP_MAX_CONNECTIONS);
+  if (!radioOwned) {
+    radioFailed();
     return;
   }
-
-  delay(100);  // Wait for AP to fully initialize
-
-  // Get AP IP address
-  const IPAddress apIP = WiFi.softAPIP();
+  delay(100);  // Existing AP readiness allowance, subject to device validation.
+  uint8_t address[4];
+  if (!RADIO.accessPointAddress(kRadioOwner, address)) {
+    radioFailed();
+    return;
+  }
+  const IPAddress apIP(address[0], address[1], address[2], address[3]);
   char ipStr[16];
   snprintf(ipStr, sizeof(ipStr), "%d.%d.%d.%d", apIP[0], apIP[1], apIP[2], apIP[3]);
   connectedIP = ipStr;
@@ -297,9 +315,19 @@ void CrossPointWebServerActivity::startAccessPoint() {
   // Start DNS server for captive portal behavior
   // This redirects all DNS queries to our IP, making any domain typed resolve to us
   stopDnsServer();
-  dnsServer = new DNSServer();
+  // Same single DNS service allocation, now fallible and owned by the helper.
+  dnsServer = makeUniqueNoThrow<DNSServer>();
+  if (!dnsServer) {
+    LOG_ERR("WEBACT", "DNS allocation failed");
+    radioFailed();
+    return;
+  }
   dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
-  dnsServer->start(DNS_PORT, "*", apIP);
+  if (!dnsServer->start(DNS_PORT, "*", apIP)) {
+    LOG_ERR("WEBACT", "DNS startup failed");
+    radioFailed();
+    return;
+  }
 
   LOG_DBG("WEBACT", "Free heap after AP start: %d bytes", ESP.getFreeHeap());
 
@@ -309,12 +337,17 @@ void CrossPointWebServerActivity::startAccessPoint() {
 
 void CrossPointWebServerActivity::startWebServer() {
   // Create the web server instance
-  webServer.reset(new CrossPointWebServer());
+  webServer = makeUniqueNoThrow<CrossPointWebServer>();
+  if (!webServer) {
+    LOG_ERR("WEBACT", "Web server allocation failed");
+    radioFailed();
+    return;
+  }
   webServer->begin();
 
   if (webServer->isRunning()) {
     state = WebServerActivityState::SERVER_RUNNING;
-    lastWifiBars = isApMode ? 0 : barsForRssi(WiFi.RSSI(), 0);
+    lastWifiBars = isApMode ? 0 : barsForRssi(RADIO.stationRssi(kRadioOwner), 0);
 
     // Force an immediate render since we're transitioning from a subactivity
     // that had its own rendering task. We need to make sure our display is shown.
@@ -353,7 +386,8 @@ void CrossPointWebServerActivity::stopWebServer() {
 }
 
 void CrossPointWebServerActivity::loop() {
-  if ((state == WebServerActivityState::SERVER_RUNNING || state == WebServerActivityState::AP_STARTING) &&
+  if ((state == WebServerActivityState::SERVER_RUNNING || state == WebServerActivityState::AP_STARTING ||
+       state == WebServerActivityState::RADIO_ERROR) &&
       exitRequested()) {
     exitToOrigin();
     return;
@@ -371,17 +405,17 @@ void CrossPointWebServerActivity::loop() {
       static unsigned long lastWifiCheck = 0;
       if (millis() - lastWifiCheck > 2000) {  // Check every 2 seconds
         lastWifiCheck = millis();
-        const wl_status_t wifiStatus = WiFi.status();
+        const bool wifiConnected = RADIO.stationConnected(kRadioOwner);
         // Driver auto-reconnect handles retries; abandon (via onGoHome) only
         // after WIFI_ABANDON_MS, otherwise the activity freezes on a blip.
         bool repaint = false;
-        if (wifiStatus != WL_CONNECTED) {
+        if (!wifiConnected) {
           if (consecutiveDisconnects == 0) {
             firstDisconnectAt = millis();
             repaint = true;
           }
           consecutiveDisconnects++;
-          LOG_DBG("WEBACT", "WiFi not connected (status=%d, consecutive=%d, total=%lu ms)", wifiStatus,
+          LOG_DBG("WEBACT", "WiFi not connected (ready=%d, consecutive=%d, total=%lu ms)", wifiConnected,
                   consecutiveDisconnects, millis() - firstDisconnectAt);
           if (millis() - firstDisconnectAt > WIFI_ABANDON_MS) {
             LOG_DBG("WEBACT", "WiFi unavailable for >%lu s; returning to network selection", WIFI_ABANDON_MS / 1000UL);
@@ -397,7 +431,7 @@ void CrossPointWebServerActivity::loop() {
           }
           consecutiveDisconnects = 0;
           firstDisconnectAt = 0;
-          const int rssi = WiFi.RSSI();
+          const int rssi = RADIO.stationRssi(kRadioOwner);
           if (rssi < -75) {
             LOG_DBG("WEBACT", "Warning: Weak WiFi signal: %d dBm", rssi);
           }
@@ -447,7 +481,8 @@ void CrossPointWebServerActivity::loop() {
 void CrossPointWebServerActivity::render(RenderLock&&) {
   // Only render our own UI when server is running
   // Subactivities handle their own rendering
-  if (state == WebServerActivityState::SERVER_RUNNING || state == WebServerActivityState::AP_STARTING) {
+  if (state == WebServerActivityState::SERVER_RUNNING || state == WebServerActivityState::AP_STARTING ||
+      state == WebServerActivityState::RADIO_ERROR) {
     renderer.clearScreen();
     const auto pageHeight = renderer.getScreenHeight();
 
@@ -457,7 +492,9 @@ void CrossPointWebServerActivity::render(RenderLock&&) {
       renderHeader();
       const auto height = renderer.getLineHeight(UI_10_FONT_ID);
       const auto top = (pageHeight - height) / 2;
-      renderer.drawCenteredText(UI_10_FONT_ID, top, tr(STR_STARTING_HOTSPOT));
+      renderer.drawCenteredText(
+          UI_10_FONT_ID, top,
+          state == WebServerActivityState::RADIO_ERROR ? tr(STR_RADIO_BUSY_OR_UNAVAILABLE) : tr(STR_STARTING_HOTSPOT));
     }
     renderer.displayBuffer(screenTransitionRefresh.modeFor(static_cast<uint8_t>(state)));
   }
@@ -566,7 +603,7 @@ void CrossPointWebServerActivity::renderWifiIndicator(int subHeaderTop) const {
   const int iconLeft = iconRight - iconWidth;
   const int iconBottom = subHeaderTop + metrics.tabBarHeight - metrics.verticalSpacing;
 
-  const bool wifiUp = (WiFi.status() == WL_CONNECTED) && (consecutiveDisconnects == 0);
+  const bool wifiUp = RADIO.stationConnected(kRadioOwner) && (consecutiveDisconnects == 0);
   if (wifiUp) {
     for (int i = 0; i < BAR_COUNT; i++) {
       const int barHeight = (i + 1) * ICON_HEIGHT / BAR_COUNT;

@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Web file transfer (2026-09-17) now owns its AP/station radio sessions and
+  reports startup failures. Existing hotspot settings and fast-exit restart
+  remain; device/network validation is deferred.
+
 - KOReader sync (2026-09-14) now reserves its radio session, releases it on
   upload/error/exit paths and retains the reader restart flow. Network and
   device validation remains deferred.
