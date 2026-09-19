@@ -600,7 +600,7 @@ void KOReaderSyncActivity::onEnter() {
 
   // The legacy picker operates within this parent's station hold. A successful
   // connection stays up for TLS; cancellation and parent exit both clean up.
-  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, true);
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, true, kRadioOwner);
   if (!picker) {
     LOG_ERR("KOSync", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
     releaseRadio();

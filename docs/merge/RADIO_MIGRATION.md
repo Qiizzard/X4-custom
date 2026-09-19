@@ -211,3 +211,30 @@ Expect nearby_stats/nearby_position acquisition/release logs and book-reader
 restart after an acquired session. Open clock sync afterward to check reuse.
 Check callback teardown, heap and stack watermarks; no cache reset required.
 No two-device, simulator, host, soak or hardware verification run in this batch.
+
+## P5 shared picker authorization checkpoint (2026-09-19)
+
+ClockSync, FontDownload, KOReaderSync and web-server STA now pass their static
+owner token explicitly to WifiSelection. The picker checks matching station
+ownership before entry, scanning, connecting and each loop. Legacy callers may
+use the existing path only when no manager hold exists. Denied/lost ownership
+shows the translated unavailable error; Back/Done exits without radio cleanup.
+Successful completion keeps the parent's connection and hold; cancellation
+stops the connection but leaves the manager reservation for parent cleanup.
+Unfinished exits default to cancellation cleanup, including global Home.
+No new heap allocation or changes to credential persistence/association policy.
+
+This is a **wip/unverified checkpoint**, not completion of site 7. SDK scanning,
+association and event logging still reside in the picker. Next: migrate these
+operations behind manager APIs and define handoff for remaining legacy parents
+(Settings, OPDS, Calibre, KOReader auth and OTA) without orphaned holds. OTA
+release/recovery gates remain open. No hardware or deferred V1 tests performed.
+Device checks: connect/cancel through each of the four managed parents, cancel
+from password entry or global Home, and verify the next radio screen works.
+With a different owner held, picker entry must fail without stopping that hold.
+Check auto-connect, hidden SSIDs, save/forget and wrong passwords on X3/X4.
+
+Compile evidence: final C3 default PASS (25.824s),
+`/tmp/x4-p5f-final-build.log`; 6,394,976-byte image, stock OTA free 158,624
+bytes, reserve warning remains. Initial compile passed before the Done-button
+correction; final incremental compile checked the corrected source.

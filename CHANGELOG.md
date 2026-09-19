@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Wi-Fi selection (2026-09-19) now checks authorization from migrated parent
+  screens, preserves their radio hold on return, and cleans up unfinished
+  exits. Source integration remains experimental pending device validation.
+
 - Nearby stats and book-position sync (2026-09-19) now reserve their radio
   sessions and clean up failed startup before exit. Device sync and lifecycle
   validation remain deferred.

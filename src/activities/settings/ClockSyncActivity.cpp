@@ -47,7 +47,7 @@ void ClockSyncActivity::onExit() {
 
 void ClockSyncActivity::launchWifiSelection() {
   LOG_INF("CLK", "Manual sync requested without WiFi, launching WiFi selection");
-  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
   if (!picker) {
     LOG_ERR("CLK", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
     state = FAILED;

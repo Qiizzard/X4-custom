@@ -229,7 +229,7 @@ void CrossPointWebServerActivity::onNetworkModeSelected(const NetworkMode mode) 
       radioFailed();
       return;
     }
-    auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+    auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
     if (!picker) {
       LOG_ERR("WEBACT", "WiFi picker allocation failed");
       radioFailed();

@@ -87,7 +87,12 @@ class WifiSelectionActivity final : public Activity {
 
   // Whether we are attempting to auto-connect or auto-scan saved networks.
   bool autoConnecting = false;
-  bool tearDownWifiOnExit = false;
+  bool tearDownWifiOnExit = true;
+  // Optional static parent token. The parent owns the hold through child lifetime.
+  const char* const parentRadioOwner;
+  bool radioAccessDenied = false;
+  bool hasRadioAccess() const;
+  bool requireRadioAccess();
 
   // True when the user stopped auto-connect and asked to see the scan result.
   bool manualNetworkListRequested = false;
@@ -150,7 +155,7 @@ class WifiSelectionActivity final : public Activity {
 
  public:
   explicit WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, bool autoConnect = true,
-                                 bool useReaderButtonHints = false);
+                                 bool useReaderButtonHints = false, const char* parentRadioOwner = nullptr);
   void onEnter() override;
   void onExit() override;
   void loop() override;

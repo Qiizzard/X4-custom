@@ -4,6 +4,7 @@
 #include <HalClock.h>
 #include <I18n.h>
 #include <Logging.h>
+#include <RadioManager.h>
 #include <WiFi.h>
 #ifndef SIMULATOR
 #include <esp_mac.h>
@@ -175,10 +176,12 @@ const char* wifiAuthName(const int authMode) {
 }  // namespace
 
 WifiSelectionActivity::WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                             const bool autoConnect, const bool useReaderButtonHints)
+                                             const bool autoConnect, const bool useReaderButtonHints,
+                                             const char* parentRadioOwner)
     : Activity("WifiSelection", renderer, mappedInput),
       allowAutoConnect(autoConnect),
       useReaderButtonHints(useReaderButtonHints),
+      parentRadioOwner(parentRadioOwner),
       uiTarget(makeUiTarget(renderer)),
       app(uiTarget, uiTarget.deviceContext()) {}
 
@@ -204,9 +207,30 @@ void WifiSelectionActivity::onRowEvent(const fui::ActionEvent& event, void* user
   self->selectNetwork(static_cast<int>(self->selectedNetworkIndex));
 }
 
+bool WifiSelectionActivity::hasRadioAccess() const {
+  if (parentRadioOwner) {
+    return RADIO.mode() == RadioManager::Mode::WifiStation && RADIO.owner() == parentRadioOwner;
+  }
+  // Unmigrated callers retain their legacy flow only while no manager owner exists.
+  return !RADIO.isHeld();
+}
+
+bool WifiSelectionActivity::requireRadioAccess() {
+  if (!radioAccessDenied && hasRadioAccess()) return true;
+  if (!radioAccessDenied) {
+    LOG_ERR("WIFI", "Picker radio authorization unavailable");
+    radioAccessDenied = true;
+    state = WifiSelectionState::CONNECTION_FAILED;
+    connectionError = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    requestUpdate();
+  }
+  return false;
+}
+
 void WifiSelectionActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
+  if (!requireRadioAccess()) return;
   ensureWifiEventLoggingRegistered();
 
   // Reset state
@@ -219,7 +243,7 @@ void WifiSelectionActivity::onEnter() {
   connectionError.clear();
   enteredPassword.clear();
   usedSavedPassword = false;
-  tearDownWifiOnExit = false;
+  tearDownWifiOnExit = true;
   savePromptSelection = 0;
   forgetPromptSelection = 0;
   autoConnecting = false;
@@ -265,6 +289,7 @@ void WifiSelectionActivity::onEnter() {
 
 void WifiSelectionActivity::onExit() {
   Activity::onExit();
+  if (radioAccessDenied || !hasRadioAccess()) return;
 
   // Stop any ongoing WiFi scan
   WiFi.scanDelete();
@@ -277,13 +302,15 @@ void WifiSelectionActivity::onExit() {
 #endif
     WiFi.disconnect(false);
     delay(30);
-    WiFi.mode(WIFI_OFF);
+    // A managed parent releases its own reservation after receiving cancellation.
+    if (!parentRadioOwner) WiFi.mode(WIFI_OFF);
   }
 
   LOG_DBG("WIFI", "Free heap at onExit end: %d bytes", ESP.getFreeHeap());
 }
 
 void WifiSelectionActivity::startWifiScan(const bool autoScan) {
+  if (!requireRadioAccess()) return;
   autoConnecting = autoScan;
   manualNetworkListRequested = false;
   topIndex = 0;
@@ -554,6 +581,7 @@ void WifiSelectionActivity::showNetworkListFromAutoConnect() {
 }
 
 void WifiSelectionActivity::attemptConnection() {
+  if (!requireRadioAccess()) return;
   state = autoConnecting ? WifiSelectionState::AUTO_CONNECTING : WifiSelectionState::CONNECTING;
   connectionStartTime = millis();
   connectedIP.clear();
@@ -728,6 +756,14 @@ void WifiSelectionActivity::checkConnectionStatus() {
 }
 
 void WifiSelectionActivity::loop() {
+  if (!requireRadioAccess()) {
+    if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
+        mappedInput.wasPressed(MappedInputManager::Button::Back) ||
+        mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+      onComplete(false);
+    }
+    return;
+  }
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer)) {
     switch (state) {
       case WifiSelectionState::SCANNING:
@@ -1378,7 +1414,8 @@ void WifiSelectionActivity::renderForgetPrompt(const Rect* screen, const ThemeMe
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4, useReaderButtonHints);
 }
 
-void WifiSelectionActivity::onComplete(const bool connected) {
+void WifiSelectionActivity::onComplete(const bool requestedConnected) {
+  const bool connected = requestedConnected && requireRadioAccess();
   tearDownWifiOnExit = !connected;
   ActivityResult result;
   result.isCancelled = !connected;

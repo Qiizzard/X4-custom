@@ -161,7 +161,7 @@ void FontDownloadActivity::onEnter() {
   }
   // One fallible picker allocation; no new per-frame storage. Parent owns the
   // station while this legacy child scans/connects, including cancel cleanup.
-  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput);
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kFontRadioOwner);
   if (!picker) {
     LOG_ERR("Fonts", "WiFi picker allocation failed (%u bytes)", unsigned(sizeof(WifiSelectionActivity)));
     radioStartupFailed_ = true;

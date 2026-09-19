@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); next shared WiFi picker, then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker parent authorization integrated (wip), with SDK scan/association migration and legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -364,3 +364,14 @@ this schedule does not declare them completed or permanently blocked.
   24% → 41%, weekly 4% → 6%, no reset through compile/checkpoint boundary.
   Next: shared WiFi picker; OTA/recovery release gates remain open.
   Unrelated work and shipping partitions preserved.
+
+- 2026-09-19 20:14 UTC wakeup, P5 picker checkpoint: explicit parent tokens
+  wired through four managed callers; denied/lost ownership prevents picker
+  operations and teardown, cancellation preserves the parent's reservation,
+  unfinished exits clean up. Wip; SDK migration/legacy handoff remains next.
+  C3 compile PASS, final 25.824s (`/tmp/x4-p5f-final-build.log`), after
+  initial 29.649s compile and a Done-button correction. Image 6,394,976 bytes,
+  OTA free 158,624 bytes; reserve warning remains, partitions unchanged.
+  No host/simulator/soak/device tests. Usage 6% → 17%, weekly 8% → 10%;
+  no window rollover (reset timestamp varied by one second). Unrelated work
+  preserved. Resume site 7 before OTA; five-hour cadence remains unchanged.
