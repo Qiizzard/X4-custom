@@ -82,6 +82,7 @@ bool RadioManager::accessPointAddress(const char*, uint8_t (&address)[4]) const 
   memset(address, 0, sizeof(address));
   return false;
 }
+bool RadioManager::configureEspNow(const char*, uint8_t) { return false; }
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
 int RadioManager::stationRssi(const char*) const { return -127; }
@@ -264,6 +265,20 @@ bool RadioManager::startWifi(const Mode mode) {
       return false;
   }
   return false;
+}
+
+bool RadioManager::configureEspNow(const char* owner, const uint8_t channel) {
+  if (!owner || owner_ != owner || mode_ != Mode::EspNow || channel < kMinChannel || channel > kMaxChannel) {
+    LOG_ERR(TAG, "ESP-NOW configuration requires its owner and a valid channel");
+    return false;
+  }
+  if (!WiFi.setSleep(false) || esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE) != ESP_OK ||
+      esp_wifi_set_ps(WIFI_PS_NONE) != ESP_OK) {
+    LOG_ERR(TAG, "Could not configure ESP-NOW radio");
+    return false;
+  }
+  channel_ = channel;
+  return true;
 }
 
 void RadioManager::stopWifi() {

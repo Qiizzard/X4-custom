@@ -48,6 +48,7 @@ class NearbyStatsSyncActivity final : public Activity {
   uint8_t eventHead_ = 0;
   uint8_t eventCount_ = 0;
   bool eventOverflow_ = false;
+  bool radioOwned_ = false;
   bool espNowStarted_ = false;
   bool localStatsReady_ = false;
   bool peerSeen_ = false;

@@ -24,11 +24,11 @@ flow. Picker success leaves the connection for its parent; cancellation can
 stop the driver, followed by the parent's manager cleanup. Startup failures
 cannot trigger font-network retries without a hold. Simulator refuses radio.
 
-Status: sites 1–4 AP/STA source integrated, **wip/unverified**; sites 5–8 remain pending.
+Status: sites 1–6 source integrated, **wip/unverified**; sites 7–8 remain pending.
 The shared WifiSelection child still uses direct SDK calls, so this is not a
 claim that every network operation is already behind the manager. Its later
 migration must preserve the parent hold through scanning/association and cancel
-cleanup. Next group starts with NearbyStatsSync and NearbyBookPositionSync (ESP-NOW).
+cleanup. Next group is the shared WiFi picker; OTA stays last.
 No OTA/recovery code or shipping partitions changed.
 
 V1/device checks: on X3/X4, Settings > System > Device > Clock sync, connect,
@@ -191,3 +191,23 @@ a batch.
 
 When all eight rows are migrated, `foreignRadioActive()` should never return
 true. At that point make it an assertion in debug builds and delete this file.
+
+## P5 nearby ESP-NOW ownership (2026-09-19)
+
+Both nearby-sync activities now reserve a named EspNow hold. RadioManager
+configures their existing channel and disabled power saving with checked SDK
+results; activities retain ESP-NOW protocol, peer and callback management.
+Partial startup failure clears callbacks/deinitializes a started ESP-NOW stack
+before releasing the hold. Denied acquisition does not switch off another
+session. Sync retries after startup failure report unavailable instead of
+sending. Book-position sync retains restart-to-reader after radio activation;
+denied acquisition does not mark the radio activated. No new heap allocations.
+
+C3 default compile PASS (28.639s), `/tmp/x4-p5e-build.log`; 6,394,528-byte
+image, 159,072 bytes free in unchanged stock slots. Source **wip/unverified**.
+V1/device: on two X3/X4 readers, exchange nearby reading stats, then share and
+apply a book position; test cancel, global Home, startup failure and busy radio.
+Expect nearby_stats/nearby_position acquisition/release logs and book-reader
+restart after an acquired session. Open clock sync afterward to check reuse.
+Check callback teardown, heap and stack watermarks; no cache reset required.
+No two-device, simulator, host, soak or hardware verification run in this batch.

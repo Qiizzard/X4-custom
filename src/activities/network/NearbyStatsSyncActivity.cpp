@@ -65,10 +65,9 @@ void NearbyStatsSyncActivity::setState(const State state) {
 #include <GfxRenderer.h>
 #include <I18n.h>
 #include <Logging.h>
-#include <WiFi.h>
+#include <RadioManager.h>
 #include <esp_mac.h>
 #include <esp_now.h>
-#include <esp_wifi.h>
 
 #include <algorithm>
 #include <array>
@@ -87,6 +86,7 @@ void NearbyStatsSyncActivity::setState(const State state) {
 namespace {
 
 constexpr const char* LOG_TAG = "NSYNC";
+constexpr char RADIO_OWNER[] = "nearby_stats";
 constexpr const char* CROSSPOINT_ROOT = "/.crosspoint";
 constexpr const char* GLOBAL_STATS_PATH = "/.crosspoint/global_stats.bin";
 constexpr const char* SYNCED_STATS_DIR = "/.crosspoint/synced_stats";
@@ -248,17 +248,20 @@ void NearbyStatsSyncActivity::loop() {
 }
 
 bool NearbyStatsSyncActivity::beginEspNow() {
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect(false);
-  WiFi.setSleep(false);
-  if (esp_wifi_set_channel(ESPNOW_CHANNEL, WIFI_SECOND_CHAN_NONE) != ESP_OK) return false;
-  esp_wifi_set_ps(WIFI_PS_NONE);
-
-  if (esp_now_init() != ESP_OK) return false;
+  if (!RADIO.acquire(RadioManager::Mode::EspNow, RADIO_OWNER)) return false;
+  radioOwned_ = true;
+  if (!RADIO.configureEspNow(RADIO_OWNER, ESPNOW_CHANNEL) || esp_now_init() != ESP_OK) {
+    LOG_ERR(LOG_TAG, "Could not initialize ESP-NOW");
+    endEspNow();
+    return false;
+  }
   espNowStarted_ = true;
 
-  if (esp_now_register_recv_cb(onEspNowReceive) != ESP_OK) return false;
-  if (!addPeer(BROADCAST_MAC)) return false;
+  if (esp_now_register_recv_cb(onEspNowReceive) != ESP_OK || !addPeer(BROADCAST_MAC)) {
+    LOG_ERR(LOG_TAG, "Could not register ESP-NOW receiver or broadcast peer");
+    endEspNow();
+    return false;
+  }
   activeActivity = this;
   return true;
 }
@@ -270,8 +273,7 @@ void NearbyStatsSyncActivity::endEspNow() {
     esp_now_deinit();
     espNowStarted_ = false;
   }
-  WiFi.disconnect(false);
-  WiFi.mode(WIFI_OFF);
+  if (radioOwned_ && RADIO.shutdown(RADIO_OWNER)) radioOwned_ = false;
 }
 
 bool NearbyStatsSyncActivity::prepareLocalStats() {
@@ -294,6 +296,10 @@ bool NearbyStatsSyncActivity::prepareLocalStats() {
 }
 
 void NearbyStatsSyncActivity::startSync() {
+  if (!radioOwned_ || !espNowStarted_ || activeActivity != this) {
+    setError(tr(STR_RADIO_BUSY_OR_UNAVAILABLE));
+    return;
+  }
   errorMessage_.clear();
   peerSeen_ = false;
   peerStatsSaved_ = false;

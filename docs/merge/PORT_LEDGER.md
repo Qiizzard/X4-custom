@@ -28,7 +28,7 @@ coherent, working subset.
 | `lib/RingBuffer` | `done` | Rule 10 primitive. Header-only SPSC framed ring, in-object storage, drops-and-counts on overflow. 11 host tests inc. a concurrent producer/consumer. |
 | `lib/SecureStore` | `done` | Rule 22 crypto: AES-256-GCM + PBKDF2-HMAC-SHA256, per-blob random salt/IV, header authenticated as AAD. 19 host tests inc. single-bit tamper sweep + duress-vault separation. |
 | `lib/RadioManager` | `done` | Rules 7-9 arbitration: one owner, symmetric acquire/shutdown, capped scan, listen-only promiscuous. Simulator builds a no-radio stub. **Not yet exercised on hardware.** |
-| Legacy radio migration | `todo` | Eight CrossInk network call sites still drive Arduino WiFi directly. `acquire()` detects and refuses rather than stomping. See `RADIO_MIGRATION.md`. |
+| Legacy radio migration | `wip` | Sites 1–6 source integrated; shared WiFi picker and OTA remain. Runtime/device validation deferred to V1. `acquire()` refuses foreign sessions. See `RADIO_MIGRATION.md`. |
 | App registry + Tools launcher | `done` | `src/activities/apps/AppRegistry.{h,cpp}` (constexpr table in flash, function-pointer factories) + `AppLauncherActivity` (two-level list on the shared FreeInkUI components). Reached from Home → Tools. |
 
 ## Reader / EPUB engine
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-17 UTC, P5 web-server AP/STA integration):
+Latest verified full working-snapshot image (2026-09-19 UTC, P5 nearby ESP-NOW integration):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,393,760 |
+| Firmware image (`firmware.bin`) | 6,394,528 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 159,840 |
+| Free space | 159,072 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 102,304 |
+| Shortfall against reserve | 103,072 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

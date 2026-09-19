@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA ownership source integrated (wip); next the two ESP-NOW sync sites, then remaining sites in RADIO_MIGRATION. Shared WiFi picker migration remains pending. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); next shared WiFi picker, then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -352,3 +352,15 @@ this schedule does not declare them completed or permanently blocked.
   transfer/radio, host, simulator, soak or hardware tests run. Usage observed
   22% → 46%, weekly 81% → 84%, no reset. Next: the two ESP-NOW sync sites;
   shared picker/OTA migrations remain pending. Unrelated work preserved.
+
+- 2026-09-19 15:13 UTC wakeup, P5 checkpoint: NearbyStatsSync and
+  NearbyBookPositionSync acquire named ESP-NOW holds; manager configures channel
+  and power save. Partial startup failures clean up, failed startup cannot send,
+  and callbacks/ESP-NOW stop before owner-checked radio shutdown. Reader restart
+  semantics and packet/security formats retained. Source wip/unverified.
+  One C3 compile sanity PASS (28.639s), `/tmp/x4-p5e-build.log`; image
+  6,394,528 bytes, stock OTA free 159,072 bytes (reserve warning). No host,
+  simulator, two-device sync, soak or hardware tests run. Usage observed
+  24% → 41%, weekly 4% → 6%, no reset through compile/checkpoint boundary.
+  Next: shared WiFi picker; OTA/recovery release gates remain open.
+  Unrelated work and shipping partitions preserved.

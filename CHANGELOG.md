@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Nearby stats and book-position sync (2026-09-19) now reserve their radio
+  sessions and clean up failed startup before exit. Device sync and lifecycle
+  validation remain deferred.
+
 - Web file transfer (2026-09-17) now owns its AP/station radio sessions and
   reports startup failures. Existing hotspot settings and fast-exit restart
   remain; device/network validation is deferred.
