@@ -28,6 +28,7 @@ class CalibreConnectActivity final : public Activity {
   std::string lastCompleteName;
   unsigned long lastCompleteAt = 0;
   unsigned long lastProcessedCompleteAt = 0;  // Track which server value we've already processed
+  bool radioOwned = false;
   bool exitRequested = false;
   bool returnToReader = false;
 

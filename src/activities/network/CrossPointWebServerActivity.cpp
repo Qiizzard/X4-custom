@@ -6,7 +6,6 @@
 #include <I18n.h>
 #include <Memory.h>
 #include <RadioManager.h>
-#include <WiFi.h>
 
 #include <cstddef>
 
@@ -108,8 +107,8 @@ void CrossPointWebServerActivity::onExit() {
   state = WebServerActivityState::SHUTTING_DOWN;
   // Calibre is a separate legacy child; preserve its existing fallback cleanup.
   // A denied AP/STA acquire must not touch another session or its global mDNS.
-  const bool legacyCalibre = networkMode == NetworkMode::CONNECT_CALIBRE;
-  if (!radioOwned && !legacyCalibre) return;
+  // Calibre owns its child session and cleans it up itself.
+  if (!radioOwned) return;
   if (radioOwned && RADIO.isHeld() && RADIO.owner() != kRadioOwner) {
     LOG_ERR("WEBACT", "Lost radio ownership; refusing global service teardown/restart");
     return;
@@ -120,7 +119,7 @@ void CrossPointWebServerActivity::onExit() {
   // can otherwise keep WebSocketsServer::close() retrying writes for seconds.
   // silentRestart() returns only when deep sleep is already in progress; that
   // path still needs the explicit cleanup below.
-  if ((radioOwned && RADIO.owner() == kRadioOwner) || (legacyCalibre && WiFi.getMode() != WIFI_MODE_NULL)) {
+  if (RADIO.owner() == kRadioOwner) {
     if (returnBookPath.empty()) {
       silentRestart();
     } else {
@@ -141,9 +140,6 @@ void CrossPointWebServerActivity::onExit() {
   if (radioOwned) {
     RADIO.shutdown(kRadioOwner);
     radioOwned = false;
-  } else if (legacyCalibre && WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
   }
 
   LOG_DBG("WEBACT", "Free heap at onExit end: %d bytes", ESP.getFreeHeap());

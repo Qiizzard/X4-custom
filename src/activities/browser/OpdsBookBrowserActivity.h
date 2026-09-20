@@ -30,6 +30,8 @@ class OpdsBookBrowserActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+  bool radioOwned = false;
+  bool restartOnExit = false;
   // FreeInkUI app runtime for the browsing screen: owns the interaction table,
   // routes touch snapshots, and dispatches row/search actions to the static
   // handlers below. 24 interaction slots cover the densest page (Small scale,

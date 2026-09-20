@@ -326,3 +326,26 @@ no cache reset. Host/simulator/soak/device tests remain deferred.
 
 Compile evidence: C3 default PASS (37.353s), `/tmp/x4-p5j-build.log`;
 image 6,397,296 bytes, stock OTA free 156,304 bytes; reserve warning remains.
+
+## P5 OPDS/Calibre parent batch (2026-09-20)
+
+OPDS and Calibre acquire named station holds and pass them to fallible picker
+allocations. OPDS retries reuse its hold; real feed/download operations require
+its connected station, while existing simulator fixtures remain unchanged.
+OPDS releases before its minimal-boot restart and refuses foreign-session
+borrowing/restart. Calibre checks the station before server startup, uses a
+fallible server allocation and preserves fast restart before socket teardown;
+if restart returns during deep sleep, sockets stop before owner-checked release.
+Denied acquisition cannot trigger its global mDNS/restart path. Web transfer's
+parent no longer performs the old fallback Calibre radio teardown.
+
+Source **wip/unverified**. OTA is the remaining legacy picker caller; migrate it
+then remove the null-owner compatibility path. V1/device: browse/search/download
+OPDS, cancel/retry/drop Wi-Fi; connect Calibre and send a test book, cancel/global
+Home, return to reader and enter another network screen. Expect named holds,
+normal restart and no disruption when acquisition is denied. Check mDNS/socket
+cleanup and C3 heap. No cache reset unless separately testing EPUB cache changes.
+Host/simulator/soak/device verification remains deferred.
+
+Compile evidence: C3 default PASS (23.453s), `/tmp/x4-p5k-build.log`;
+6,397,440-byte image, stock OTA free 156,160 bytes; reserve warning remains.

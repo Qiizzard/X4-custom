@@ -3,7 +3,8 @@
 #include <ESPmDNS.h>
 #include <GfxRenderer.h>
 #include <I18n.h>
-#include <WiFi.h>
+#include <Memory.h>
+#include <RadioManager.h>
 #include <esp_task_wdt.h>
 
 #include "MappedInputManager.h"
@@ -15,6 +16,7 @@
 #include "fontIds.h"
 
 namespace {
+constexpr char kRadioOwner[] = "calibre_connect";
 constexpr const char* HOSTNAME = "crosspoint";
 }  // namespace
 
@@ -35,37 +37,45 @@ void CalibreConnectActivity::onEnter() {
   lastProcessedCompleteAt = 0;
   exitRequested = false;
 
-  if (WiFi.status() != WL_CONNECTED) {
-    startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
-                           [this](const ActivityResult& result) {
-                             if (!result.isCancelled) {
-                               const auto& wifi = std::get<WifiResult>(result.data);
-                               connectedIP = wifi.ip;
-                               connectedSSID = wifi.ssid;
-                             }
-                             onWifiSelectionComplete(!result.isCancelled);
-                           });
-  } else {
-    connectedIP = WiFi.localIP().toString().c_str();
-    connectedSSID = WiFi.SSID().c_str();
-    startWebServer();
+  radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+  if (!radioOwned) {
+    state = CalibreConnectState::ERROR;
+    requestUpdate();
+    return;
   }
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
+  if (!picker) {
+    LOG_ERR("CAL", "WiFi picker allocation failed");
+    state = CalibreConnectState::ERROR;
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(picker), [this](const ActivityResult& result) {
+    if (!result.isCancelled) {
+      const auto& wifi = std::get<WifiResult>(result.data);
+      connectedIP = wifi.ip;
+      connectedSSID = wifi.ssid;
+    }
+    onWifiSelectionComplete(!result.isCancelled);
+  });
 }
 
 void CalibreConnectActivity::onExit() {
   Activity::onExit();
 
-  MDNS.end();
-
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
-    if (returnToReader) {
-      silentRestartToReader();
-    } else {
-      silentRestart();
-    }
+  if (!radioOwned) return;
+  if (RADIO.isHeld() && RADIO.owner() != kRadioOwner) {
+    LOG_ERR("CAL", "Lost radio ownership; refusing service teardown/restart");
+    return;
   }
+  MDNS.end();
+  // Keep fast restart before socket teardown. Deep-sleep cleanup may return.
+  if (returnToReader)
+    silentRestartToReader();
+  else
+    silentRestart();
+  stopWebServer();
+  if (RADIO.shutdown(kRadioOwner)) radioOwned = false;
 }
 
 void CalibreConnectActivity::onWifiSelectionComplete(const bool connected) {
@@ -78,6 +88,11 @@ void CalibreConnectActivity::onWifiSelectionComplete(const bool connected) {
 }
 
 void CalibreConnectActivity::startWebServer() {
+  if (!RADIO.stationConnected(kRadioOwner)) {
+    state = CalibreConnectState::ERROR;
+    requestUpdate();
+    return;
+  }
   state = CalibreConnectState::SERVER_STARTING;
   requestUpdate();
 
@@ -87,7 +102,13 @@ void CalibreConnectActivity::startWebServer() {
     LOG_DBG("CAL", "mDNS started: http://%s.local/", HOSTNAME);
   }
 
-  webServer.reset(new CrossPointWebServer());
+  webServer = makeUniqueNoThrow<CrossPointWebServer>();
+  if (!webServer) {
+    LOG_ERR("CAL", "Web server allocation failed");
+    state = CalibreConnectState::ERROR;
+    requestUpdate();
+    return;
+  }
   webServer->begin();
 
   if (webServer->isRunning()) {

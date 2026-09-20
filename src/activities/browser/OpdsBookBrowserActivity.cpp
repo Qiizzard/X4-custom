@@ -8,7 +8,7 @@
 #include <Logging.h>
 #include <Memory.h>
 #include <OpdsStream.h>
-#include <WiFi.h>
+#include <RadioManager.h>
 
 #include <utility>
 
@@ -32,6 +32,7 @@
 namespace fui = freeink::ui;
 
 namespace {
+constexpr char kRadioOwner[] = "opds_browser";
 constexpr size_t OPDS_BROWSER_ENTRY_CAPACITY = MAX_OPDS_FEED_ENTRIES + 2;
 constexpr size_t OPDS_DOWNLOAD_BUFFER_SIZE = 2048;
 constexpr fui::ActionId ACTION_ROW = 1;
@@ -61,6 +62,9 @@ void OpdsBookBrowserActivity::onEnter() {
   Activity::onEnter();
 
   sdFontSystem.releaseLoadedFont(renderer);
+#ifndef SIMULATOR
+  restartOnExit = !RADIO.isHeld() && !RADIO.foreignRadioActive();
+#endif
 
   state = BrowserState::CHECK_WIFI;
   entryCount = 0;
@@ -104,13 +108,11 @@ void OpdsBookBrowserActivity::onExit() {
   navigationHistory.clear();
 
 #ifndef SIMULATOR
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
+  if (radioOwned) {
+    if (!RADIO.shutdown(kRadioOwner)) return;
+    radioOwned = false;
   }
-  // OPDS launches from minimal network boot, so restore the full app state
-  // even if setup failed before WiFi was started.
-  silentRestart();
+  if (restartOnExit && !RADIO.isHeld() && !RADIO.foreignRadioActive()) silentRestart();
 #endif
 }
 
@@ -163,7 +165,7 @@ void OpdsBookBrowserActivity::loop() {
     int tx = 0;
     int ty = 0;
     if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) || mappedInput.wasScreenTapped(tx, ty)) {
-      if (WiFi.status() == WL_CONNECTED && WiFi.localIP() != IPAddress(0, 0, 0, 0)) {
+      if (RADIO.stationConnected(kRadioOwner)) {
         showLoadingBeforeFetch();
         fetchFeed(currentPath);
       } else {
@@ -470,6 +472,12 @@ void OpdsBookBrowserActivity::fetchFeed(const std::string& path) {
   requestUpdate();
   return;
 #endif
+  if (!RADIO.stationConnected(kRadioOwner)) {
+    state = BrowserState::ERROR;
+    errorMessage = tr(STR_WIFI_CONN_FAILED);
+    requestUpdate();
+    return;
+  }
 
   if (server.url.empty()) {
     state = BrowserState::ERROR;
@@ -592,6 +600,12 @@ void OpdsBookBrowserActivity::downloadBook(const OpdsEntry& book) {
   requestUpdate(true);
   return;
 #endif
+  if (!RADIO.stationConnected(kRadioOwner)) {
+    state = BrowserState::ERROR;
+    errorMessage = tr(STR_WIFI_CONN_FAILED);
+    requestUpdate();
+    return;
+  }
 
   // Build full download URL relative to the current feed, not the root server URL
   const std::string feedUrl = UrlUtils::buildUrl(server.url, currentPath);
@@ -740,7 +754,7 @@ void OpdsBookBrowserActivity::performSearch(const std::string& query) {
 }
 
 void OpdsBookBrowserActivity::checkAndConnectWifi() {
-  if (WiFi.status() == WL_CONNECTED && WiFi.localIP() != IPAddress(0, 0, 0, 0)) {
+  if (RADIO.stationConnected(kRadioOwner)) {
     showLoadingBeforeFetch();
     fetchFeed(currentPath);
     return;
@@ -749,19 +763,37 @@ void OpdsBookBrowserActivity::checkAndConnectWifi() {
 }
 
 void OpdsBookBrowserActivity::launchWifiSelection() {
+  if (!radioOwned) {
+    radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+    if (!radioOwned) {
+      state = BrowserState::ERROR;
+      errorMessage = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+      requestUpdate();
+      return;
+    }
+    restartOnExit = true;
+  }
   state = BrowserState::WIFI_SELECTION;
   requestUpdate();
 
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
+  if (!picker) {
+    LOG_ERR("OPDS", "WiFi picker allocation failed");
+    state = BrowserState::ERROR;
+    errorMessage = tr(STR_MEMORY_ERROR);
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
 void OpdsBookBrowserActivity::onWifiSelectionComplete(const bool connected) {
-  if (connected) {
+  if (connected && RADIO.stationConnected(kRadioOwner)) {
     showLoadingBeforeFetch();
     fetchFeed(currentPath);
   } else {
-    // Leave WiFi up; onExit's silent reboot handles teardown without fragmenting.
+    // Keep the owned hold for retry; onExit releases it before restart.
     state = BrowserState::ERROR;
     errorMessage = tr(STR_WIFI_CONN_FAILED);
     requestUpdate();

@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- OPDS and Calibre (2026-09-20) now own their Wi-Fi sessions and check the
+  connection before network work. Calibre's parent no longer tears down its
+  radio. Runtime and device validation remain deferred.
+
 - Settings Wi-Fi and KOReader account authentication (2026-09-20) now own
   their radio sessions. Settings disconnects when its picker returns; account
   authentication leaves another owner's session untouched. Device checks pending.
