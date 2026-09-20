@@ -282,3 +282,25 @@ open/protected/hidden and multi-AP networks; test wrong password, timeout,
 auto-connect fallback, cancel/global Home and the next radio screen. Verify
 router hostname and saved credentials survive; check wrong-owner refusal.
 No host/simulator suites, soak or device tests run; no cache reset needed.
+
+## P5 picker status/events checkpoint (2026-09-20)
+
+The picker no longer calls Arduino WiFi or ESP SDK APIs directly. Manager
+status snapshots expose connection/failure flags, IP, RSSI, BSSID and channel;
+MAC reads also live there. Existing association-complete semantics, retry,
+credential save and RTC behavior remain. Simulator returns unavailable, not a
+fabricated connection. Legacy parent handoff remains: null-owner compatibility
+still only works when no manager hold exists. Site 7 remains **wip/unverified**.
+
+Event logging uses one process-lifetime SDK registration in place of four,
+with no activity pointer captured. The SDK owns that existing type of callback
+allocation; no per-attempt registration or new result heap buffer. Active/reason
+fields shared with the event task are atomic; shutdown disables logging.
+Snapshots use small stack storage. No runtime memory/performance claim.
+V1/device: connect/cancel/retry via Settings and managed clock sync, check IP,
+MAC, signal and disconnect logs, then use another radio screen. Cover dropped
+AP, wrong credentials, denied ownership and repeated entry/exit. No cache reset
+needed; all host/simulator/soak/device tests remain deferred.
+
+Compile evidence: C3 default PASS (27.492s), `/tmp/x4-p5i-build.log`;
+6,396,768-byte image, stock OTA free 156,832 bytes, reserve warning remains.

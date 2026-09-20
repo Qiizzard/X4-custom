@@ -3,11 +3,13 @@
 #include <Arduino.h>
 #include <Logging.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstring>
 
 #ifndef SIMULATOR
 #include <WiFi.h>
+#include <esp_mac.h>
 #include <esp_wifi.h>
 #endif
 
@@ -115,6 +117,16 @@ void RadioManager::clearPickerScan(const char*) {}
 bool RadioManager::preparePickerConnection(const char*) { return false; }
 int RadioManager::beginPickerConnection(const char*, const char*, const char*) { return -1; }
 void RadioManager::disconnectPicker(const char*, bool) {}
+bool RadioManager::pickerStatus(const char*, PickerStatus& out) const {
+  out = {};
+  return false;
+}
+bool RadioManager::stationMac(uint8_t (&mac)[6]) {
+  memset(mac, 0, sizeof(mac));
+  return false;
+}
+void RadioManager::setPickerEventLogging(const char*, bool, bool) {}
+void RadioManager::logPickerDisconnectReason(const char*) const {}
 
 bool RadioManager::startPromiscuous(FrameSink, void*, uint8_t) { return false; }
 bool RadioManager::setChannel(uint8_t) { return false; }
@@ -125,6 +137,66 @@ void RadioManager::stopWifi() {}
 #else
 
 namespace {
+std::atomic<uint8_t> sPickerDisconnectReason{0};
+std::atomic<bool> sPickerLoggingActive{false};
+bool sPickerEventsRegistered = false;
+
+void logWifiStationEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+  if (!sPickerLoggingActive) {
+    return;
+  }
+
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      LOG_INF("WIFI", "STA event: connected to AP");
+      break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
+      const uint8_t* ip = reinterpret_cast<const uint8_t*>(&info.got_ip.ip_info.ip.addr);
+      LOG_INF("WIFI", "STA event: got IP %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+      break;
+    }
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: {
+      uint8_t reason = info.wifi_sta_disconnected.reason;
+      if (reason == 0) {
+        reason = WIFI_REASON_UNSPECIFIED;
+      }
+      sPickerDisconnectReason = reason;
+      LOG_INF("WIFI", "STA event: disconnected reason=%u(%s)", reason,
+              WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(reason)));
+      break;
+    }
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+      LOG_INF("WIFI", "STA event: lost IP");
+      break;
+    default:
+      break;
+  }
+}
+
+const char* wifiStatusName(const wl_status_t status) {
+  switch (status) {
+    case WL_IDLE_STATUS:
+      return "IDLE";
+    case WL_NO_SSID_AVAIL:
+      return "NO_SSID_AVAIL";
+    case WL_CONNECTED:
+      return "CONNECTED";
+    case WL_CONNECT_FAILED:
+      return "CONNECT_FAILED";
+    case WL_CONNECTION_LOST:
+      return "CONNECTION_LOST";
+    case WL_DISCONNECTED:
+      return "DISCONNECTED";
+    case WL_NO_SHIELD:
+      return "NO_SHIELD";
+    case WL_STOPPED:
+      return "STOPPED";
+    case WL_SCAN_COMPLETED:
+      return "SCAN_COMPLETED";
+    default:
+      return "UNKNOWN";
+  }
+}
 
 // Promiscuous frames arrive on a WiFi-task callback, not the activity task, so
 // the sink and its context have to be reachable from there. File-scope pointers
@@ -299,6 +371,7 @@ bool RadioManager::configureEspNow(const char* owner, const uint8_t channel) {
 }
 
 void RadioManager::stopWifi() {
+  sPickerLoggingActive = false;
   // Take it all the way down. Leaving the driver in STA-idle is what makes the
   // *next* screen's radio behave unpredictably.
   esp_wifi_set_promiscuous(false);
@@ -307,8 +380,53 @@ void RadioManager::stopWifi() {
   WiFi.mode(WIFI_MODE_NULL);
 }
 
+bool RadioManager::stationMac(uint8_t (&mac)[6]) {
+  memset(mac, 0, sizeof(mac));
+  if (esp_read_mac(mac, ESP_MAC_WIFI_STA) == ESP_OK) return true;
+  LOG_ERR(TAG, "Failed to read station MAC");
+  return false;
+}
+
+bool RadioManager::pickerStatus(const char* owner, PickerStatus& out) const {
+  out = {};
+  if (!pickerAccessAllowed(owner)) return false;
+  const auto status = WiFi.status();
+  out.code = static_cast<int>(status);
+  out.name = wifiStatusName(status);
+  out.connected = status == WL_CONNECTED;
+  out.failed = status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL || status == WL_CONNECTION_LOST;
+  out.networkNotFound = status == WL_NO_SSID_AVAIL;
+  if (out.connected) {
+    out.rssi = WiFi.RSSI();
+    const IPAddress ip = WiFi.localIP();
+    for (size_t i = 0; i < sizeof(out.ip); ++i) out.ip[i] = ip[i];
+    WiFi.BSSID(out.bssid);
+    out.channel = WiFi.channel();
+  }
+  return true;
+}
+
+void RadioManager::setPickerEventLogging(const char* owner, const bool active, const bool resetReason) {
+  if (!pickerAccessAllowed(owner)) return;
+  if (resetReason) sPickerDisconnectReason = 0;
+  if (active && !sPickerEventsRegistered) {
+    sPickerEventsRegistered = WiFi.onEvent(logWifiStationEvent) != 0;
+    if (!sPickerEventsRegistered) LOG_ERR(TAG, "Could not register picker event logging");
+  }
+  sPickerLoggingActive = active && sPickerEventsRegistered;
+}
+
+void RadioManager::logPickerDisconnectReason(const char* owner) const {
+  if (!pickerAccessAllowed(owner)) return;
+  const uint8_t reason = sPickerDisconnectReason.load();
+  if (reason)
+    LOG_INF(TAG, "Last disconnect reason: %u(%s)", reason,
+            WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(reason)));
+}
+
 bool RadioManager::preparePickerConnection(const char* owner) {
   if (!pickerAccessAllowed(owner)) return false;
+  setPickerEventLogging(owner, false, true);
   // Credentials belong to WifiCredentialStore, never the SDK's persistent store.
   WiFi.persistent(false);
   if (!WiFi.mode(WIFI_STA)) {
@@ -340,6 +458,7 @@ int RadioManager::beginPickerConnection(const char* owner, const char* ssid, con
     LOG_ERR(TAG, "Invalid picker credential length");
     return WL_CONNECT_FAILED;
   }
+  setPickerEventLogging(owner, true, true);
   return password ? WiFi.begin(ssid, password) : WiFi.begin(ssid);
 }
 

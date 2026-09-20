@@ -5,10 +5,6 @@
 #include <I18n.h>
 #include <Logging.h>
 #include <RadioManager.h>
-#include <WiFi.h>
-#ifndef SIMULATOR
-#include <esp_mac.h>
-#endif
 
 #include <algorithm>
 #include <cstring>
@@ -30,147 +26,15 @@ namespace {
 
 constexpr fui::ActionId ACTION_ROW = 1;
 
-#ifndef SIMULATOR
-uint8_t sLastStaDisconnectReason = 0;
-bool sConnectionAttemptLoggingActive = false;
-bool sWifiEventLoggingRegistered = false;
-#endif
-
 std::string getDisplayMacAddress() {
   uint8_t mac[6] = {};
 
-#ifndef SIMULATOR
-  if (esp_read_mac(mac, ESP_MAC_WIFI_STA) != ESP_OK) {
-    LOG_ERR("WIFI", "Failed to read station MAC address");
-  }
-#else
-  WiFi.macAddress(mac);
-#endif
+  RADIO.stationMac(mac);
 
   char macStr[64];
   snprintf(macStr, sizeof(macStr), "%s %02x-%02x-%02x-%02x-%02x-%02x", tr(STR_MAC_ADDRESS), mac[0], mac[1], mac[2],
            mac[3], mac[4], mac[5]);
   return std::string(macStr);
-}
-
-#ifndef SIMULATOR
-void logWifiStationEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
-  if (!sConnectionAttemptLoggingActive) {
-    return;
-  }
-
-  switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-      LOG_INF("WIFI", "STA event: connected to AP");
-      break;
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
-      const uint8_t* ip = reinterpret_cast<const uint8_t*>(&info.got_ip.ip_info.ip.addr);
-      LOG_INF("WIFI", "STA event: got IP %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-      break;
-    }
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: {
-      uint8_t reason = info.wifi_sta_disconnected.reason;
-      if (reason == 0) {
-        reason = WIFI_REASON_UNSPECIFIED;
-      }
-      sLastStaDisconnectReason = reason;
-      LOG_INF("WIFI", "STA event: disconnected reason=%u(%s)", reason,
-              WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(reason)));
-      break;
-    }
-    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-      LOG_INF("WIFI", "STA event: lost IP");
-      break;
-    default:
-      break;
-  }
-}
-
-void ensureWifiEventLoggingRegistered() {
-  if (sWifiEventLoggingRegistered) {
-    return;
-  }
-  WiFi.onEvent(logWifiStationEvent, ARDUINO_EVENT_WIFI_STA_CONNECTED);
-  WiFi.onEvent(logWifiStationEvent, ARDUINO_EVENT_WIFI_STA_GOT_IP);
-  WiFi.onEvent(logWifiStationEvent, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  WiFi.onEvent(logWifiStationEvent, ARDUINO_EVENT_WIFI_STA_LOST_IP);
-  sWifiEventLoggingRegistered = true;
-}
-#else
-void ensureWifiEventLoggingRegistered() {}
-#endif
-
-const char* wifiStatusName(const wl_status_t status) {
-  switch (status) {
-    case WL_IDLE_STATUS:
-      return "IDLE";
-    case WL_NO_SSID_AVAIL:
-      return "NO_SSID_AVAIL";
-    case WL_CONNECTED:
-      return "CONNECTED";
-    case WL_CONNECT_FAILED:
-      return "CONNECT_FAILED";
-#ifndef SIMULATOR
-    case WL_CONNECTION_LOST:
-      return "CONNECTION_LOST";
-#endif
-    case WL_DISCONNECTED:
-      return "DISCONNECTED";
-#ifndef SIMULATOR
-    case WL_NO_SHIELD:
-      return "NO_SHIELD";
-    case WL_STOPPED:
-      return "STOPPED";
-    case WL_SCAN_COMPLETED:
-      return "SCAN_COMPLETED";
-#endif
-    default:
-      return "UNKNOWN";
-  }
-}
-
-bool wifiStatusIsConnectionFailure(const wl_status_t status) {
-  if (status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL) {
-    return true;
-  }
-#ifndef SIMULATOR
-  return status == WL_CONNECTION_LOST;
-#else
-  return false;
-#endif
-}
-
-const char* wifiAuthName(const int authMode) {
-  switch (authMode) {
-    case WIFI_AUTH_OPEN:
-      return "OPEN";
-#ifndef SIMULATOR
-    case WIFI_AUTH_WEP:
-      return "WEP";
-    case WIFI_AUTH_WPA_PSK:
-      return "WPA_PSK";
-#endif
-    case WIFI_AUTH_WPA2_PSK:
-      return "WPA2_PSK";
-#ifndef SIMULATOR
-    case WIFI_AUTH_WPA_WPA2_PSK:
-      return "WPA_WPA2_PSK";
-    case WIFI_AUTH_WPA2_ENTERPRISE:
-      return "WPA2_ENTERPRISE";
-    case WIFI_AUTH_WPA3_PSK:
-      return "WPA3_PSK";
-    case WIFI_AUTH_WPA2_WPA3_PSK:
-      return "WPA2_WPA3_PSK";
-    case WIFI_AUTH_WAPI_PSK:
-      return "WAPI_PSK";
-    case WIFI_AUTH_OWE:
-      return "OWE";
-    case WIFI_AUTH_WPA3_ENT_192:
-      return "WPA3_ENT_192";
-#endif
-    default:
-      return "UNKNOWN";
-  }
 }
 
 }  // namespace
@@ -231,7 +95,6 @@ void WifiSelectionActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
   if (!requireRadioAccess()) return;
-  ensureWifiEventLoggingRegistered();
 
   // Reset state
   selectedNetworkIndex = 0;
@@ -297,9 +160,7 @@ void WifiSelectionActivity::onExit() {
   // Successful connections leave WiFi up for the parent activity. Canceled
   // flows own their cleanup because no parent may be present to tear WiFi down.
   if (tearDownWifiOnExit) {
-#ifndef SIMULATOR
-    sConnectionAttemptLoggingActive = false;
-#endif
+    RADIO.setPickerEventLogging(parentRadioOwner, false);
     RADIO.disconnectPicker(parentRadioOwner, true);
   }
 
@@ -576,10 +437,6 @@ void WifiSelectionActivity::attemptConnection() {
   connectionError.clear();
   lastConnectionStatusLogTime = 0;
   lastLoggedWifiStatus = -1;
-#ifndef SIMULATOR
-  sLastStaDisconnectReason = 0;
-  sConnectionAttemptLoggingActive = false;
-#endif
   requestUpdate();
 
   LOG_INF("WIFI", "Connecting to ssid=%s auto=%d saved=%d encrypted=%d passProvided=%d heap=%u maxAlloc=%u",
@@ -592,15 +449,10 @@ void WifiSelectionActivity::attemptConnection() {
     requestUpdate();
     return;
   }
-#ifndef SIMULATOR
-  sLastStaDisconnectReason = 0;
-  sConnectionAttemptLoggingActive = true;
-#endif
 
   const char* password = selectedRequiresPassword && !enteredPassword.empty() ? enteredPassword.c_str() : nullptr;
-  const auto beginStatus =
-      static_cast<wl_status_t>(RADIO.beginPickerConnection(parentRadioOwner, selectedSSID.c_str(), password));
-  LOG_INF("WIFI", "WiFi.begin returned status=%d/%s", static_cast<int>(beginStatus), wifiStatusName(beginStatus));
+  const int beginStatus = RADIO.beginPickerConnection(parentRadioOwner, selectedSSID.c_str(), password);
+  LOG_INF("WIFI", "Connection begin returned status=%d", beginStatus);
 }
 
 void WifiSelectionActivity::checkConnectionStatus() {
@@ -608,37 +460,41 @@ void WifiSelectionActivity::checkConnectionStatus() {
     return;
   }
 
-  const wl_status_t status = WiFi.status();
+  RadioManager::PickerStatus snapshot;
+  if (!RADIO.pickerStatus(parentRadioOwner, snapshot)) {
+    connectionError = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    state = WifiSelectionState::CONNECTION_FAILED;
+    requestUpdate();
+    return;
+  }
+  const int status = snapshot.code;
   const unsigned long now = millis();
 
   if (lastLoggedWifiStatus != static_cast<int>(status) ||
       now - lastConnectionStatusLogTime >= CONNECTION_STATUS_LOG_INTERVAL_MS) {
     LOG_INF("WIFI", "Connection poll: elapsed=%lums status=%d/%s rssi=%d", now - connectionStartTime,
-            static_cast<int>(status), wifiStatusName(status), status == WL_CONNECTED ? WiFi.RSSI() : 0);
+            static_cast<int>(status), snapshot.name, snapshot.rssi);
     lastLoggedWifiStatus = static_cast<int>(status);
     lastConnectionStatusLogTime = now;
   }
 
-  if (status == WL_CONNECTED) {
+  if (snapshot.connected) {
     // Successfully connected
-    IPAddress ip = WiFi.localIP();
+    const auto& ip = snapshot.ip;
     char ipStr[16];
     snprintf(ipStr, sizeof(ipStr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
     connectedIP = ipStr;
     autoConnecting = false;
-#ifndef SIMULATOR
-    sConnectionAttemptLoggingActive = false;
-#endif
-    LOG_INF("WIFI", "Connected to ssid=%s ip=%s rssi=%d", selectedSSID.c_str(), connectedIP.c_str(), WiFi.RSSI());
+    RADIO.setPickerEventLogging(parentRadioOwner, false);
+    LOG_INF("WIFI", "Connected to ssid=%s ip=%s rssi=%d", selectedSSID.c_str(), connectedIP.c_str(), snapshot.rssi);
 
 #if defined(ENABLE_SERIAL_LOG) && LOG_LEVEL >= 2
-    uint8_t connectedBssid[6] = {};
-    WiFi.BSSID(connectedBssid);
+    const auto& connectedBssid = snapshot.bssid;
     LOG_DBG("WIFI", "Connected BSSID: %02x:%02x:%02x:%02x:%02x:%02x, channel: %d, RSSI: %d dBm",
             static_cast<unsigned>(connectedBssid[0]), static_cast<unsigned>(connectedBssid[1]),
             static_cast<unsigned>(connectedBssid[2]), static_cast<unsigned>(connectedBssid[3]),
-            static_cast<unsigned>(connectedBssid[4]), static_cast<unsigned>(connectedBssid[5]), WiFi.channel(),
-            WiFi.RSSI());
+            static_cast<unsigned>(connectedBssid[4]), static_cast<unsigned>(connectedBssid[5]), snapshot.channel,
+            snapshot.rssi);
 #endif
 
     // Sync RTC from NTP on the first successful WiFi connection only. Users can force a re-sync from
@@ -679,20 +535,15 @@ void WifiSelectionActivity::checkConnectionStatus() {
     return;
   }
 
-  if (wifiStatusIsConnectionFailure(status)) {
+  if (snapshot.failed) {
     connectionError = tr(STR_ERROR_GENERAL_FAILURE);
-    if (status == WL_NO_SSID_AVAIL) {
+    if (snapshot.networkNotFound) {
       connectionError = tr(STR_ERROR_NETWORK_NOT_FOUND);
     }
     LOG_INF("WIFI", "Connection failed: ssid=%s status=%d/%s elapsed=%lums", selectedSSID.c_str(),
-            static_cast<int>(status), wifiStatusName(status), now - connectionStartTime);
-#ifndef SIMULATOR
-    if (sLastStaDisconnectReason != 0) {
-      LOG_INF("WIFI", "Last disconnect reason: %u(%s)", sLastStaDisconnectReason,
-              WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(sLastStaDisconnectReason)));
-    }
-    sConnectionAttemptLoggingActive = false;
-#endif
+            static_cast<int>(status), snapshot.name, now - connectionStartTime);
+    RADIO.logPickerDisconnectReason(parentRadioOwner);
+    RADIO.setPickerEventLogging(parentRadioOwner, false);
     if (autoConnecting) {
       handleAutoConnectFailure();
       return;
@@ -708,14 +559,9 @@ void WifiSelectionActivity::checkConnectionStatus() {
     RADIO.disconnectPicker(parentRadioOwner);
     connectionError = tr(STR_ERROR_CONNECTION_TIMEOUT);
     LOG_INF("WIFI", "Connection timed out: ssid=%s elapsed=%lums lastStatus=%d/%s", selectedSSID.c_str(),
-            millis() - connectionStartTime, static_cast<int>(status), wifiStatusName(status));
-#ifndef SIMULATOR
-    if (sLastStaDisconnectReason != 0) {
-      LOG_INF("WIFI", "Last disconnect reason before timeout: %u(%s)", sLastStaDisconnectReason,
-              WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(sLastStaDisconnectReason)));
-    }
-    sConnectionAttemptLoggingActive = false;
-#endif
+            millis() - connectionStartTime, static_cast<int>(status), snapshot.name);
+    RADIO.logPickerDisconnectReason(parentRadioOwner);
+    RADIO.setPickerEventLogging(parentRadioOwner, false);
     if (autoConnecting) {
       handleAutoConnectFailure();
       return;
@@ -738,17 +584,13 @@ void WifiSelectionActivity::loop() {
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer)) {
     switch (state) {
       case WifiSelectionState::SCANNING:
-#ifndef SIMULATOR
-        sConnectionAttemptLoggingActive = false;
-#endif
+        RADIO.setPickerEventLogging(parentRadioOwner, false);
         RADIO.clearPickerScan(parentRadioOwner);
         onComplete(false);
         return;
       case WifiSelectionState::CONNECTING:
       case WifiSelectionState::AUTO_CONNECTING:
-#ifndef SIMULATOR
-        sConnectionAttemptLoggingActive = false;
-#endif
+        RADIO.setPickerEventLogging(parentRadioOwner, false);
         RADIO.disconnectPicker(parentRadioOwner);
         onComplete(false);
         return;
@@ -780,9 +622,7 @@ void WifiSelectionActivity::loop() {
   if ((state == WifiSelectionState::SCANNING || state == WifiSelectionState::CONNECTING ||
        state == WifiSelectionState::AUTO_CONNECTING) &&
       mappedInput.wasPressed(MappedInputManager::Button::Back)) {
-#ifndef SIMULATOR
-    sConnectionAttemptLoggingActive = false;
-#endif
+    RADIO.setPickerEventLogging(parentRadioOwner, false);
     if (state == WifiSelectionState::SCANNING) {
       RADIO.clearPickerScan(parentRadioOwner);
     } else {

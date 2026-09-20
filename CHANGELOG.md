@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Wi-Fi selection status and event reporting (2026-09-20) now use the radio
+  manager, completing removal of direct Wi-Fi SDK calls from the picker.
+  Legacy ownership handoff and device validation remain pending.
+
 - Wi-Fi selection connection setup and disconnect (2026-09-20) now check
   radio ownership through the manager. Saved-network policy is preserved;
   device validation remains deferred.

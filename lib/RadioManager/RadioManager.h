@@ -123,6 +123,21 @@ class RadioManager {
   int beginPickerConnection(const char* owner, const char* ssid, const char* password);
   // finish=true also powers off legacy sessions; managed parents retain their hold.
   void disconnectPicker(const char* owner, bool finish = false);
+  struct PickerStatus {
+    int code = -1;
+    const char* name = "UNAVAILABLE";
+    bool connected = false;
+    bool failed = true;
+    bool networkNotFound = false;
+    int rssi = 0;
+    uint8_t ip[4] = {};
+    uint8_t bssid[6] = {};
+    uint8_t channel = 0;
+  };
+  bool pickerStatus(const char* owner, PickerStatus& out) const;
+  static bool stationMac(uint8_t (&mac)[6]);
+  void setPickerEventLogging(const char* owner, bool active, bool resetReason = false);
+  void logPickerDisconnectReason(const char* owner) const;
 
   // Enter monitor mode and route frames to `sink`. Requires a WifiPromiscuous
   // hold. LISTEN ONLY -- nothing in this firmware transmits a crafted frame.

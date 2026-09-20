@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), connection setup/disconnect integrated; status/events and legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), connection setup/disconnect integrated; status/events integrated; legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -395,3 +395,12 @@ this schedule does not declare them completed or permanently blocked.
   or device tests. Usage 10% → 15%, weekly 15% → 16% at compile boundary,
   no reset. Next: status/events and legacy handoff, then OTA. Unrelated work,
   shipping partitions and five-hour cadence preserved.
+
+- 2026-09-20 13:14 UTC wakeup, P5 status/events checkpoint: picker uses
+  manager status snapshots/MAC reads and centralized event logging; no direct
+  WiFi/ESP SDK calls remain in that activity. Atomic callback-shared flags;
+  legacy handoff remains next, source wip/unverified. C3 compile PASS
+  (27.492s), `/tmp/x4-p5i-build.log`; image 6,396,768 bytes, stock OTA free
+  156,832 bytes, reserve warning remains. No deferred suites/device tests.
+  Usage 21% → 34%, weekly 17% → 19% through compile/checkpoint, no reset.
+  Unrelated work, partitions and five-hour cadence preserved.
