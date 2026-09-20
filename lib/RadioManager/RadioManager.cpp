@@ -67,6 +67,12 @@ bool RadioManager::shutdown(const char* owner) {
   return true;
 }
 
+bool RadioManager::pickerScanAllowed(const char* owner) const {
+  const bool allowed = owner ? (owner_ == owner && mode_ == Mode::WifiStation) : !isHeld();
+  if (!allowed) LOG_ERR(TAG, "Picker scan denied: owner mismatch");
+  return allowed;
+}
+
 #ifdef SIMULATOR
 
 // The simulator has no radio. Everything fails cleanly and says why, so a radio
@@ -99,6 +105,14 @@ void RadioManager::shutdown() {
 }
 
 int RadioManager::scanNetworks(ScanResult*, size_t) { return -1; }
+int RadioManager::startPickerScan(const char*) { return kScanFailed; }
+int RadioManager::pickerScanCount(const char*) { return kScanFailed; }
+bool RadioManager::pickerScanResult(const char*, size_t, ScanResult& out) {
+  out = {};
+  return false;
+}
+void RadioManager::clearPickerScan(const char*) {}
+
 bool RadioManager::startPromiscuous(FrameSink, void*, uint8_t) { return false; }
 bool RadioManager::setChannel(uint8_t) { return false; }
 void RadioManager::stopPromiscuous() {}
@@ -288,6 +302,50 @@ void RadioManager::stopWifi() {
   if (WiFi.getMode() & WIFI_MODE_AP) WiFi.softAPdisconnect(true);
   WiFi.disconnect(true, false);
   WiFi.mode(WIFI_MODE_NULL);
+}
+
+int RadioManager::startPickerScan(const char* owner) {
+  static_assert(WIFI_SCAN_RUNNING == kScanRunning && WIFI_SCAN_FAILED == kScanFailed);
+  if (!pickerScanAllowed(owner)) return kScanFailed;
+  // Managed parents already started STA; legacy parents still need startup here.
+  if (!owner && !WiFi.mode(WIFI_STA)) {
+    LOG_ERR(TAG, "Could not start picker station");
+    return kScanFailed;
+  }
+  WiFi.disconnect();
+  delay(100);
+  const int result = WiFi.scanNetworks(true);
+  if (result == kScanFailed) LOG_ERR(TAG, "Could not start picker scan");
+  return result;
+}
+
+int RadioManager::pickerScanCount(const char* owner) {
+  if (!pickerScanAllowed(owner)) return kScanFailed;
+  const int count = WiFi.scanComplete();
+  if (count < 0) return count;
+  return count > static_cast<int>(kMaxScanResults) ? static_cast<int>(kMaxScanResults) : count;
+}
+
+bool RadioManager::pickerScanResult(const char* owner, const size_t index, ScanResult& out) {
+  out = {};
+  const int count = pickerScanCount(owner);
+  if (count < 0 || index >= static_cast<size_t>(count)) {
+    LOG_ERR(TAG, "Picker scan result unavailable");
+    return false;
+  }
+  const int i = static_cast<int>(index);
+  const String ssid = WiFi.SSID(i);
+  snprintf(out.ssid, sizeof(out.ssid), "%s", ssid.c_str());
+  const uint8_t* bssid = WiFi.BSSID(i);
+  if (bssid) memcpy(out.bssid, bssid, sizeof(out.bssid));
+  out.rssi = static_cast<int8_t>(WiFi.RSSI(i));
+  out.channel = static_cast<uint8_t>(WiFi.channel(i));
+  out.encrypted = WiFi.encryptionType(i) != WIFI_AUTH_OPEN;
+  return true;
+}
+
+void RadioManager::clearPickerScan(const char* owner) {
+  if (pickerScanAllowed(owner)) WiFi.scanDelete();
 }
 
 int RadioManager::scanNetworks(ScanResult* out, const size_t capacity) {

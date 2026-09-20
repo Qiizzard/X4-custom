@@ -292,7 +292,7 @@ void WifiSelectionActivity::onExit() {
   if (radioAccessDenied || !hasRadioAccess()) return;
 
   // Stop any ongoing WiFi scan
-  WiFi.scanDelete();
+  RADIO.clearPickerScan(parentRadioOwner);
 
   // Successful connections leave WiFi up for the parent activity. Canceled
   // flows own their cleanup because no parent may be present to tear WiFi down.
@@ -318,27 +318,20 @@ void WifiSelectionActivity::startWifiScan(const bool autoScan) {
   networks.clear();
   requestUpdate();
 
-  // Set WiFi mode to station
-  LOG_INF("WIFI", "Starting WiFi scan (mode=%d status=%d/%s heap=%u maxAlloc=%u)", static_cast<int>(WiFi.getMode()),
-          static_cast<int>(WiFi.status()), wifiStatusName(WiFi.status()), ESP.getFreeHeap(), ESP.getMaxAllocHeap());
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
-
-  // Start async scan
-  const int scanStartResult = WiFi.scanNetworks(true);  // true = async scan
+  const int scanStartResult = RADIO.startPickerScan(parentRadioOwner);
+  scanStartFailed = scanStartResult == RadioManager::kScanFailed;
   LOG_INF("WIFI", "WiFi scan requested (result=%d)", scanStartResult);
 }
 
 void WifiSelectionActivity::processWifiScanResults() {
-  const int16_t scanResult = WiFi.scanComplete();
+  const int scanResult = scanStartFailed ? RadioManager::kScanFailed : RADIO.pickerScanCount(parentRadioOwner);
 
-  if (scanResult == WIFI_SCAN_RUNNING) {
+  if (scanResult == RadioManager::kScanRunning) {
     // Scan still in progress
     return;
   }
 
-  if (scanResult == WIFI_SCAN_FAILED) {
+  if (scanResult == RadioManager::kScanFailed) {
     LOG_INF("WIFI", "WiFi scan failed");
     networks.clear();
     realNetworkCount = 0;
@@ -351,21 +344,19 @@ void WifiSelectionActivity::processWifiScanResults() {
     return;
   }
 
-  LOG_INF("WIFI", "WiFi scan complete: rawNetworks=%d", scanResult);
+  LOG_INF("WIFI", "WiFi scan complete: retainedResults=%d", scanResult);
 
   // Scan complete, process results: deduplicate in-place, keeping strongest signal
   networks.clear();
-  networks.reserve(scanResult);
+  networks.reserve(static_cast<size_t>(scanResult) + 1);  // Includes the hidden-network action.
   int hiddenNetworks = 0;
   int duplicateNetworks = 0;
 
   for (int i = 0; i < scanResult; i++) {
-    char ssid[33];
-    std::strncpy(ssid, WiFi.SSID(i).c_str(), sizeof(ssid) - 1);
-    ssid[sizeof(ssid) - 1] = '\0';
-    const int32_t rssi = WiFi.RSSI(i);
-    const int authMode = WiFi.encryptionType(i);
-
+    RadioManager::ScanResult entry{};
+    if (!RADIO.pickerScanResult(parentRadioOwner, static_cast<size_t>(i), entry)) continue;
+    const char* ssid = entry.ssid;
+    const int32_t rssi = entry.rssi;
     // Skip hidden networks (empty SSID)
     if (ssid[0] == '\0') {
       hiddenNetworks++;
@@ -381,12 +372,12 @@ void WifiSelectionActivity::processWifiScanResults() {
       WifiNetworkInfo network;
       network.ssid = ssid;
       network.rssi = rssi;
-      network.isEncrypted = (authMode != WIFI_AUTH_OPEN);
+      network.isEncrypted = entry.encrypted;
       network.hasSavedPassword = WIFI_STORE.hasSavedCredential(network.ssid);
       networks.push_back(std::move(network));
     } else if (rssi > it->rssi) {
       it->rssi = rssi;
-      it->isEncrypted = (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+      it->isEncrypted = entry.encrypted;
     }
   }
 
@@ -401,7 +392,7 @@ void WifiSelectionActivity::processWifiScanResults() {
   realNetworkCount = networks.size();
   appendHiddenNetworkEntry();
 
-  WiFi.scanDelete();
+  RADIO.clearPickerScan(parentRadioOwner);
   LOG_INF("WIFI", "WiFi scan usable networks=%zu hidden=%d duplicates=%d", realNetworkCount, hiddenNetworks,
           duplicateNetworks);
 
@@ -770,7 +761,7 @@ void WifiSelectionActivity::loop() {
 #ifndef SIMULATOR
         sConnectionAttemptLoggingActive = false;
 #endif
-        WiFi.scanDelete();
+        RADIO.clearPickerScan(parentRadioOwner);
         onComplete(false);
         return;
       case WifiSelectionState::CONNECTING:
@@ -813,7 +804,7 @@ void WifiSelectionActivity::loop() {
     sConnectionAttemptLoggingActive = false;
 #endif
     if (state == WifiSelectionState::SCANNING) {
-      WiFi.scanDelete();
+      RADIO.clearPickerScan(parentRadioOwner);
     } else {
       WiFi.disconnect();
     }

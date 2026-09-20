@@ -91,6 +91,7 @@ class WifiSelectionActivity final : public Activity {
   // Optional static parent token. The parent owns the hold through child lifetime.
   const char* const parentRadioOwner;
   bool radioAccessDenied = false;
+  bool scanStartFailed = false;
   bool hasRadioAccess() const;
   bool requireRadioAccess();
 

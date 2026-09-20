@@ -238,3 +238,29 @@ Compile evidence: final C3 default PASS (25.824s),
 `/tmp/x4-p5f-final-build.log`; 6,394,976-byte image, stock OTA free 158,624
 bytes, reserve warning remains. Initial compile passed before the Done-button
 correction; final incremental compile checked the corrected source.
+
+## P5 picker asynchronous scanning checkpoint (2026-09-20)
+
+Picker scan start, polling, result extraction and result cleanup now go through
+RadioManager. Each operation checks the parent's station token. A null token
+is a temporary compatibility path for legacy parents, allowed only with no
+manager hold; it does not acquire or transfer ownership. Simulator scan calls
+fail instead of inventing radio results. Association/status/event SDK calls and
+legacy parent handoff remain next; site 7 is still **wip/unverified**.
+
+The picker retains the first 40 SDK results before deduplication, then sorts
+saved networks first as before. It reserves room for these plus the manual
+hidden-network action, bounding its vector growth; SDK internal scan memory is
+not bounded by this change. Dense scans can omit later networks (manual SSID
+entry remains available). One small stack result replaces direct SDK getters;
+no extra heap buffer was added. Startup failure follows the existing empty-list
+fallback. Credential persistence and association policy are unchanged.
+
+V1/device: scan/cancel/re-scan through clock sync and a legacy Settings caller;
+cover >40 results, duplicate/hidden SSIDs, saved-network ordering, failed scan,
+wrong-owner denial and another network screen after exit. Check C3 heap/largest
+block and SDK scan-buffer release. No cache reset needed. Runtime/device,
+host/simulator suites and soaks remain deferred.
+
+Compile evidence: C3 default PASS (32.470s), `/tmp/x4-p5g-build.log`;
+6,395,600-byte image, stock OTA free 158,000 bytes; reserve warning remains.

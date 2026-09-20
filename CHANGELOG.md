@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Wi-Fi selection (2026-09-20) now uses checked scan access and retains at most
+  40 scan results to bound the picker list on C3 devices. Manual SSID entry
+  remains available. Runtime validation is deferred.
+
 - Wi-Fi selection (2026-09-19) now checks authorization from migrated parent
   screens, preserves their radio hold on return, and cleans up unfinished
   exits. Source integration remains experimental pending device validation.

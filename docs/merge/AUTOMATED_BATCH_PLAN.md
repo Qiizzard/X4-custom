@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker parent authorization integrated (wip), with SDK scan/association migration and legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), with association migration and legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -375,3 +375,13 @@ this schedule does not declare them completed or permanently blocked.
   No host/simulator/soak/device tests. Usage 6% → 17%, weekly 8% → 10%;
   no window rollover (reset timestamp varied by one second). Unrelated work
   preserved. Resume site 7 before OTA; five-hour cadence remains unchanged.
+
+- 2026-09-20 01:15 UTC wakeup, P5 picker scan checkpoint: async scan start,
+  polling, bounded result reads and cleanup moved into owner-checked manager
+  APIs. Retains at most 40 SDK results plus manual SSID entry; SDK internal
+  allocation remains outside that cap. Source wip; association/legacy handoff
+  next. One C3 compile PASS (32.470s), `/tmp/x4-p5g-build.log`; image
+  6,395,600 bytes, stock OTA free 158,000 bytes (reserve warning).
+  No host/simulator/soak/device tests. Usage 8% → 17%, weekly 12% → 13%
+  through compile/checkpoint boundary, no reset. Unrelated work preserved;
+  partitions and OTA/recovery code unchanged. Five-hour cadence continues.

@@ -109,6 +109,16 @@ class RadioManager {
   // number written, or -1 on failure. Blocking; expect a couple of seconds.
   int scanNetworks(ScanResult* out, size_t capacity);
 
+  // Transitional picker API: a static parent token requires its station hold.
+  // nullptr is allowed only with no managed hold, for unmigrated legacy parents.
+  // Results are capped at kMaxScanResults; the SDK's internal scan allocation is not.
+  static constexpr int kScanRunning = -1;
+  static constexpr int kScanFailed = -2;
+  int startPickerScan(const char* owner);
+  int pickerScanCount(const char* owner);
+  bool pickerScanResult(const char* owner, size_t index, ScanResult& out);
+  void clearPickerScan(const char* owner);
+
   // Enter monitor mode and route frames to `sink`. Requires a WifiPromiscuous
   // hold. LISTEN ONLY -- nothing in this firmware transmits a crafted frame.
   bool startPromiscuous(FrameSink sink, void* context, uint8_t channel);
@@ -133,6 +143,7 @@ class RadioManager {
   RadioManager(const RadioManager&) = delete;
   RadioManager& operator=(const RadioManager&) = delete;
 
+  bool pickerScanAllowed(const char* owner) const;
   bool startWifi(Mode mode);
   void stopWifi();
 
