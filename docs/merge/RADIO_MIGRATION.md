@@ -264,3 +264,21 @@ host/simulator suites and soaks remain deferred.
 
 Compile evidence: C3 default PASS (32.470s), `/tmp/x4-p5g-build.log`;
 6,395,600-byte image, stock OTA free 158,000 bytes; reserve warning remains.
+
+## P5 connection setup/disconnect checkpoint (2026-09-20)
+
+Picker radio mutations now use checked manager APIs: prepare, begin, timeout,
+retry, cancel and exit disconnect. The null-owner legacy compatibility path
+still requires no managed hold. Preserves SDK persistence disabled, non-erasing
+1000ms pre-connect disconnect, all-channel/strongest-AP association and existing
+hostname. A 6-byte MAC plus 40-byte hostname buffer replaces transient Strings;
+no credentials retained by the manager. Invalid lengths fail without logging
+secrets. Simulator connection preparation fails. Status/event reads and legacy
+parent ownership handoff remain; site 7 remains **wip/unverified**.
+
+C3 compile PASS (27.781s), `/tmp/x4-p5h-build.log`: image 6,396,144 bytes,
+157,456 bytes free in unchanged OTA slots, below reserve. V1/device: connect to
+open/protected/hidden and multi-AP networks; test wrong password, timeout,
+auto-connect fallback, cancel/global Home and the next radio screen. Verify
+router hostname and saved credentials survive; check wrong-owner refusal.
+No host/simulator suites, soak or device tests run; no cache reset needed.

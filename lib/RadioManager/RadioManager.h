@@ -118,6 +118,11 @@ class RadioManager {
   int pickerScanCount(const char* owner);
   bool pickerScanResult(const char* owner, size_t index, ScanResult& out);
   void clearPickerScan(const char* owner);
+  // Same transitional authorization as scans. No credentials retained here.
+  bool preparePickerConnection(const char* owner);
+  int beginPickerConnection(const char* owner, const char* ssid, const char* password);
+  // finish=true also powers off legacy sessions; managed parents retain their hold.
+  void disconnectPicker(const char* owner, bool finish = false);
 
   // Enter monitor mode and route frames to `sink`. Requires a WifiPromiscuous
   // hold. LISTEN ONLY -- nothing in this firmware transmits a crafted frame.
@@ -143,7 +148,7 @@ class RadioManager {
   RadioManager(const RadioManager&) = delete;
   RadioManager& operator=(const RadioManager&) = delete;
 
-  bool pickerScanAllowed(const char* owner) const;
+  bool pickerAccessAllowed(const char* owner) const;
   bool startWifi(Mode mode);
   void stopWifi();
 

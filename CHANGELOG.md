@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Wi-Fi selection connection setup and disconnect (2026-09-20) now check
+  radio ownership through the manager. Saved-network policy is preserved;
+  device validation remains deferred.
+
 - Wi-Fi selection (2026-09-20) now uses checked scan access and retains at most
   40 scan results to bound the picker list on C3 devices. Manual SSID entry
   remains available. Runtime validation is deferred.

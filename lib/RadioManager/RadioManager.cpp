@@ -67,9 +67,9 @@ bool RadioManager::shutdown(const char* owner) {
   return true;
 }
 
-bool RadioManager::pickerScanAllowed(const char* owner) const {
+bool RadioManager::pickerAccessAllowed(const char* owner) const {
   const bool allowed = owner ? (owner_ == owner && mode_ == Mode::WifiStation) : !isHeld();
-  if (!allowed) LOG_ERR(TAG, "Picker scan denied: owner mismatch");
+  if (!allowed) LOG_ERR(TAG, "Picker operation denied: owner mismatch");
   return allowed;
 }
 
@@ -112,6 +112,9 @@ bool RadioManager::pickerScanResult(const char*, size_t, ScanResult& out) {
   return false;
 }
 void RadioManager::clearPickerScan(const char*) {}
+bool RadioManager::preparePickerConnection(const char*) { return false; }
+int RadioManager::beginPickerConnection(const char*, const char*, const char*) { return -1; }
+void RadioManager::disconnectPicker(const char*, bool) {}
 
 bool RadioManager::startPromiscuous(FrameSink, void*, uint8_t) { return false; }
 bool RadioManager::setChannel(uint8_t) { return false; }
@@ -304,9 +307,54 @@ void RadioManager::stopWifi() {
   WiFi.mode(WIFI_MODE_NULL);
 }
 
+bool RadioManager::preparePickerConnection(const char* owner) {
+  if (!pickerAccessAllowed(owner)) return false;
+  // Credentials belong to WifiCredentialStore, never the SDK's persistent store.
+  WiFi.persistent(false);
+  if (!WiFi.mode(WIFI_STA)) {
+    LOG_ERR(TAG, "Could not start picker station");
+    return false;
+  }
+  // Preserve the existing non-destructive disconnect and timeout before begin.
+  if (!WiFi.disconnect(false, false, 1000)) {
+    LOG_DBG(TAG, "Disconnect before begin timed out; continuing with explicit begin");
+  }
+  delay(100);
+  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+  uint8_t mac[6] = {};
+  char hostname[40];
+  if (WiFi.macAddress(mac)) {
+    snprintf(hostname, sizeof(hostname), "CrossPoint-Reader-%02X%02X%02X%02X%02X%02X", unsigned(mac[0]),
+             unsigned(mac[1]), unsigned(mac[2]), unsigned(mac[3]), unsigned(mac[4]), unsigned(mac[5]));
+    if (!WiFi.setHostname(hostname)) LOG_ERR(TAG, "Could not set picker hostname; retaining SDK hostname");
+  } else {
+    LOG_ERR(TAG, "Could not read station MAC; retaining SDK hostname");
+  }
+  return true;
+}
+
+int RadioManager::beginPickerConnection(const char* owner, const char* ssid, const char* password) {
+  if (!pickerAccessAllowed(owner)) return WL_CONNECT_FAILED;
+  if (!ssid || strnlen(ssid, 33) == 0 || strnlen(ssid, 33) > 32 || (password && strnlen(password, 65) > 64)) {
+    LOG_ERR(TAG, "Invalid picker credential length");
+    return WL_CONNECT_FAILED;
+  }
+  return password ? WiFi.begin(ssid, password) : WiFi.begin(ssid);
+}
+
+void RadioManager::disconnectPicker(const char* owner, const bool finish) {
+  if (!pickerAccessAllowed(owner)) return;
+  if (!WiFi.disconnect(false)) LOG_DBG(TAG, "Picker disconnect did not complete");
+  if (finish) {
+    delay(30);
+    if (!owner && !WiFi.mode(WIFI_OFF)) LOG_ERR(TAG, "Could not stop legacy picker radio");
+  }
+}
+
 int RadioManager::startPickerScan(const char* owner) {
   static_assert(WIFI_SCAN_RUNNING == kScanRunning && WIFI_SCAN_FAILED == kScanFailed);
-  if (!pickerScanAllowed(owner)) return kScanFailed;
+  if (!pickerAccessAllowed(owner)) return kScanFailed;
   // Managed parents already started STA; legacy parents still need startup here.
   if (!owner && !WiFi.mode(WIFI_STA)) {
     LOG_ERR(TAG, "Could not start picker station");
@@ -320,7 +368,7 @@ int RadioManager::startPickerScan(const char* owner) {
 }
 
 int RadioManager::pickerScanCount(const char* owner) {
-  if (!pickerScanAllowed(owner)) return kScanFailed;
+  if (!pickerAccessAllowed(owner)) return kScanFailed;
   const int count = WiFi.scanComplete();
   if (count < 0) return count;
   return count > static_cast<int>(kMaxScanResults) ? static_cast<int>(kMaxScanResults) : count;
@@ -345,7 +393,7 @@ bool RadioManager::pickerScanResult(const char* owner, const size_t index, ScanR
 }
 
 void RadioManager::clearPickerScan(const char* owner) {
-  if (pickerScanAllowed(owner)) WiFi.scanDelete();
+  if (pickerAccessAllowed(owner)) WiFi.scanDelete();
 }
 
 int RadioManager::scanNetworks(ScanResult* out, const size_t capacity) {

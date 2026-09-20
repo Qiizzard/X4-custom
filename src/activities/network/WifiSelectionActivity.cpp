@@ -300,10 +300,7 @@ void WifiSelectionActivity::onExit() {
 #ifndef SIMULATOR
     sConnectionAttemptLoggingActive = false;
 #endif
-    WiFi.disconnect(false);
-    delay(30);
-    // A managed parent releases its own reservation after receiving cancellation.
-    if (!parentRadioOwner) WiFi.mode(WIFI_OFF);
+    RADIO.disconnectPicker(parentRadioOwner, true);
   }
 
   LOG_DBG("WIFI", "Free heap at onExit end: %d bytes", ESP.getFreeHeap());
@@ -540,7 +537,7 @@ bool WifiSelectionActivity::tryNextSavedNetworkFromScan() {
 
 void WifiSelectionActivity::handleAutoConnectFailure() {
   LOG_DBG("WIFI", "Saved network failed: %s", selectedSSID.c_str());
-  WiFi.disconnect();
+  RADIO.disconnectPicker(parentRadioOwner);
 
   if (!networks.empty()) {
     if (tryNextSavedNetworkFromScan()) {
@@ -557,7 +554,7 @@ void WifiSelectionActivity::handleAutoConnectFailure() {
 }
 
 void WifiSelectionActivity::showNetworkListFromAutoConnect() {
-  WiFi.disconnect();
+  RADIO.disconnectPicker(parentRadioOwner);
   autoConnecting = false;
   manualNetworkListRequested = true;
 
@@ -589,37 +586,20 @@ void WifiSelectionActivity::attemptConnection() {
           selectedSSID.c_str(), autoConnecting, usedSavedPassword, selectedRequiresPassword, !enteredPassword.empty(),
           ESP.getFreeHeap(), ESP.getMaxAllocHeap());
 
-  WiFi.persistent(false);  // Credentials are managed by WifiCredentialStore; suppress SDK NVS auto-connect
-  WiFi.mode(WIFI_STA);
-  // Abort any in-progress SDK auto-connect before our explicit begin().
-  // Do not erase the AP config or power-cycle the radio; some routers fail the
-  // next WPA handshake after that heavier reset.
-  if (!WiFi.disconnect(false, false, 1000)) {
-    LOG_DBG("WIFI", "Disconnect before begin timed out; continuing with explicit begin");
+  if (!RADIO.preparePickerConnection(parentRadioOwner)) {
+    connectionError = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    state = WifiSelectionState::CONNECTION_FAILED;
+    requestUpdate();
+    return;
   }
-  delay(100);
 #ifndef SIMULATOR
   sLastStaDisconnectReason = 0;
   sConnectionAttemptLoggingActive = true;
 #endif
 
-  // Scan all channels so networks with multiple APs use the strongest matching
-  // BSSID instead of the first match found by the framework's default fast scan.
-  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
-
-  // Set hostname so routers show "CrossPoint-Reader-AABBCCDDEEFF" instead of "esp32-XXXXXXXXXXXX"
-  String mac = WiFi.macAddress();
-  mac.replace(":", "");
-  String hostname = "CrossPoint-Reader-" + mac;
-  WiFi.setHostname(hostname.c_str());
-
-  wl_status_t beginStatus = WL_IDLE_STATUS;
-  if (selectedRequiresPassword && !enteredPassword.empty()) {
-    beginStatus = WiFi.begin(selectedSSID.c_str(), enteredPassword.c_str());
-  } else {
-    beginStatus = WiFi.begin(selectedSSID.c_str());
-  }
+  const char* password = selectedRequiresPassword && !enteredPassword.empty() ? enteredPassword.c_str() : nullptr;
+  const auto beginStatus =
+      static_cast<wl_status_t>(RADIO.beginPickerConnection(parentRadioOwner, selectedSSID.c_str(), password));
   LOG_INF("WIFI", "WiFi.begin returned status=%d/%s", static_cast<int>(beginStatus), wifiStatusName(beginStatus));
 }
 
@@ -725,7 +705,7 @@ void WifiSelectionActivity::checkConnectionStatus() {
   // Check for timeout
   const unsigned long timeoutMs = autoConnecting ? AUTO_CONNECTION_TIMEOUT_MS : CONNECTION_TIMEOUT_MS;
   if (millis() - connectionStartTime > timeoutMs) {
-    WiFi.disconnect();
+    RADIO.disconnectPicker(parentRadioOwner);
     connectionError = tr(STR_ERROR_CONNECTION_TIMEOUT);
     LOG_INF("WIFI", "Connection timed out: ssid=%s elapsed=%lums lastStatus=%d/%s", selectedSSID.c_str(),
             millis() - connectionStartTime, static_cast<int>(status), wifiStatusName(status));
@@ -769,7 +749,7 @@ void WifiSelectionActivity::loop() {
 #ifndef SIMULATOR
         sConnectionAttemptLoggingActive = false;
 #endif
-        WiFi.disconnect();
+        RADIO.disconnectPicker(parentRadioOwner);
         onComplete(false);
         return;
       case WifiSelectionState::SAVE_PROMPT:
@@ -806,7 +786,7 @@ void WifiSelectionActivity::loop() {
     if (state == WifiSelectionState::SCANNING) {
       RADIO.clearPickerScan(parentRadioOwner);
     } else {
-      WiFi.disconnect();
+      RADIO.disconnectPicker(parentRadioOwner);
     }
     mappedInput.suppressNextBackRelease();
     onComplete(false);
