@@ -3,7 +3,8 @@
 #include <GfxRenderer.h>
 #include <I18n.h>
 #include <Logging.h>
-#include <WiFi.h>
+#include <Memory.h>
+#include <RadioManager.h>
 
 #include "KOReaderCredentialStore.h"
 #include "KOReaderSyncClient.h"
@@ -14,10 +15,12 @@
 #include "components/TouchHeaderBackButton.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
-#include "network/WifiUtils.h"
+namespace {
+constexpr char kRadioOwner[] = "koreader_auth";
+}  // namespace
 
 void KOReaderAuthActivity::onWifiSelectionComplete(const bool success) {
-  if (!success) {
+  if (!success || !RADIO.stationConnected(kRadioOwner)) {
     {
       RenderLock lock(*this);
       state = FAILED;
@@ -43,6 +46,10 @@ void KOReaderAuthActivity::onWifiSelectionComplete(const bool success) {
 }
 
 void KOReaderAuthActivity::performAuthentication() {
+  if (!RADIO.stationConnected(kRadioOwner)) {
+    onWifiSelectionComplete(false);
+    return;
+  }
   const auto result = mode == Mode::SIGN_UP ? KOReaderSyncClient::createUser() : KOReaderSyncClient::authenticate();
 
   {
@@ -63,27 +70,36 @@ void KOReaderAuthActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
 
-  // Check if already connected
-  if (hasActiveStationWifiConnection()) {
-    onWifiSelectionComplete(true);
+  // Minimal network boot must return through restart, except when another
+  // radio session already exists: denied acquisition must leave it untouched.
+  restartOnExit = !RADIO.isHeld() && !RADIO.foreignRadioActive();
+  radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+  if (!radioOwned) {
+    state = FAILED;
+    errorMessage = tr(STR_RADIO_BUSY_OR_UNAVAILABLE);
+    requestUpdate();
     return;
   }
-
-  // Launch WiFi selection
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
+  if (!picker) {
+    LOG_ERR("KOSync", "WiFi picker allocation failed");
+    onWifiSelectionComplete(false);
+    return;
+  }
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
 void KOReaderAuthActivity::onExit() {
   Activity::onExit();
 
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
+  if (radioOwned) {
+    if (!RADIO.shutdown(kRadioOwner)) return;
+    radioOwned = false;
   }
-  // Authentication launches from minimal network boot, so restore the full
-  // app state even if setup failed before WiFi was started.
-  silentRestart();
+  // Restore full app state after minimal network boot, including startup failure.
+  // Never restart over another owner's managed or legacy session.
+  if (restartOnExit && !RADIO.isHeld() && !RADIO.foreignRadioActive()) silentRestart();
 }
 
 void KOReaderAuthActivity::render(RenderLock&&) {

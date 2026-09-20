@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- Settings Wi-Fi and KOReader account authentication (2026-09-20) now own
+  their radio sessions. Settings disconnects when its picker returns; account
+  authentication leaves another owner's session untouched. Device checks pending.
+
 - Wi-Fi selection status and event reporting (2026-09-20) now use the radio
   manager, completing removal of direct Wi-Fi SDK calls from the picker.
   Legacy ownership handoff and device validation remain pending.

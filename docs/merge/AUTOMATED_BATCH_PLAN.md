@@ -41,7 +41,7 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), connection setup/disconnect integrated; status/events integrated; legacy caller handoff next; then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
+| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), connection setup/disconnect integrated; status/events integrated; Settings/KOReader auth parent ownership integrated; OPDS/Calibre handoff next, then OTA in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
@@ -404,3 +404,12 @@ this schedule does not declare them completed or permanently blocked.
   156,832 bytes, reserve warning remains. No deferred suites/device tests.
   Usage 21% → 34%, weekly 17% → 19% through compile/checkpoint, no reset.
   Unrelated work, partitions and five-hour cadence preserved.
+
+- 2026-09-20 18:15 UTC wakeup, P5 parent batch: Settings Wi-Fi and KOReader
+  authentication/sign-up now acquire/pass/release named holds. Settings releases
+  on picker return/global exit; auth preserves own-session restart and refuses
+  foreign-session borrowing/restart. Fallible picker allocation, source wip.
+  One C3 compile PASS (37.353s), `/tmp/x4-p5j-build.log`; image 6,397,296
+  bytes, stock OTA free 156,304 bytes, reserve warning remains. No deferred
+  suites/device tests. Usage 12% → 26%, weekly 22% → 24% at checkpoint,
+  no reset. Next OPDS/Calibre, then OTA. Unrelated work/partitions preserved.

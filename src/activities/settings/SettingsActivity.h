@@ -222,6 +222,7 @@ inline bool settingShowsNavigationCaret(const SettingInfo& setting) {
 }
 
 class SettingsActivity final : public Activity {
+  bool wifiPickerRadioOwned = false;
   ButtonNavigator buttonNavigator;
 
   int selectedCategoryIndex = 0;  // Currently selected category

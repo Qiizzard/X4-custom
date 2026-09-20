@@ -26,6 +26,8 @@ class KOReaderAuthActivity final : public Activity {
  private:
   enum State { WIFI_SELECTION, CONNECTING, AUTHENTICATING, SUCCESS, FAILED };
 
+  bool radioOwned = false;
+  bool restartOnExit = false;
   Mode mode = Mode::AUTHENTICATE;
   State state = WIFI_SELECTION;
   ScreenTransitionRefresh screenTransitionRefresh;

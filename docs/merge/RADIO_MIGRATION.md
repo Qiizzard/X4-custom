@@ -304,3 +304,25 @@ needed; all host/simulator/soak/device tests remain deferred.
 
 Compile evidence: C3 default PASS (27.492s), `/tmp/x4-p5i-build.log`;
 6,396,768-byte image, stock OTA free 156,832 bytes, reserve warning remains.
+
+## P5 Settings and KOReader-auth parents (2026-09-20)
+
+Settings' standalone Wi-Fi picker now holds settings_wifi through the child,
+releases on return (including successful selection) and on global exit, and
+uses the existing unavailable screen on denial. Saved credentials remain;
+Settings no longer leaves an idle connected radio for later screens to borrow.
+KOReader authentication/sign-up acquires koreader_auth, requires its connected
+station before requests, and releases before the minimal-boot return restart.
+Denied ownership cannot borrow, shut down or restart another radio session.
+Both picker allocations are fallible. Authentication/TLS/payload semantics are
+unchanged. Remaining legacy picker callers: OPDS, Calibre and OTA.
+
+Source **wip/unverified**. V1/device: Settings > Network, save/select/cancel,
+return and then run clock sync; expect settings_wifi release at return. In
+KOReader settings test authentication/sign-up with test accounts, wrong
+credentials, cancel and global Home; expect release and normal full-app
+restart after own-session exit. Cover busy foreign radio and allocation failure;
+no cache reset. Host/simulator/soak/device tests remain deferred.
+
+Compile evidence: C3 default PASS (37.353s), `/tmp/x4-p5j-build.log`;
+image 6,397,296 bytes, stock OTA free 156,304 bytes; reserve warning remains.

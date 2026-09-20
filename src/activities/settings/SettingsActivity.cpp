@@ -4,6 +4,8 @@
 #include <GfxRenderer.h>
 #include <HalGPIO.h>
 #include <Logging.h>
+#include <Memory.h>
+#include <RadioManager.h>
 
 #include <algorithm>
 #include <cctype>
@@ -44,6 +46,7 @@
 namespace fui = freeink::ui;
 
 namespace {
+constexpr char kWifiPickerOwner[] = "settings_wifi";
 constexpr fui::ActionId ACTION_ROW = 1;
 constexpr fui::ActionId ACTION_TAB = 2;
 }  // namespace
@@ -669,6 +672,7 @@ void SettingsActivity::onRowEvent(const fui::ActionEvent& event, void* user) {
 }
 
 void SettingsActivity::onExit() {
+  if (wifiPickerRadioOwned && RADIO.shutdown(kWifiPickerOwner)) wifiPickerRadioOwned = false;
   dictionaryRegistry.clear();
   sdFontSystem.releaseRegistry();
   Activity::onExit();
@@ -926,9 +930,21 @@ void SettingsActivity::toggleCurrentSetting() {
       case SettingAction::OPDSBrowser:
         startActivityForResult(std::make_unique<OpdsServerListActivity>(renderer, mappedInput), resultHandler);
         break;
-      case SettingAction::Network:
-        startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput, false), resultHandler);
+      case SettingAction::Network: {
+        auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, false, false, kWifiPickerOwner);
+        if (!picker) {
+          LOG_ERR("Settings", "WiFi picker allocation failed");
+          break;
+        }
+        wifiPickerRadioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kWifiPickerOwner);
+        // The explicit token makes denied acquisition show the picker's unavailable
+        // screen. It cannot borrow or stop the session that denied this request.
+        startActivityForResult(std::move(picker), [this](const ActivityResult&) {
+          if (wifiPickerRadioOwned && RADIO.shutdown(kWifiPickerOwner)) wifiPickerRadioOwned = false;
+          SETTINGS.saveToFile();
+        });
         break;
+      }
       case SettingAction::BackupStats:
         startActivityForResult(std::make_unique<BackupStatsActivity>(renderer, mappedInput), resultHandler);
         break;
