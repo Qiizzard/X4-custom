@@ -18,7 +18,10 @@ class WifiScannerActivity final : public Activity {
   RadioManager::ScanResult results[RadioManager::kMaxScanResults] = {};
   int count = 0;
   int selected = 0;
+  bool channelView = false;
+  int selectedChannel = 1;
   bool scanning = false;
   bool owned = false;
   void scan();
+  void renderChannels() const;
 };
