@@ -28,7 +28,7 @@ coherent, working subset.
 | `lib/RingBuffer` | `done` | Rule 10 primitive. Header-only SPSC framed ring, in-object storage, drops-and-counts on overflow. 11 host tests inc. a concurrent producer/consumer. |
 | `lib/SecureStore` | `done` | Rule 22 crypto: AES-256-GCM + PBKDF2-HMAC-SHA256, per-blob random salt/IV, header authenticated as AAD. 19 host tests inc. single-bit tamper sweep + duress-vault separation. |
 | `lib/RadioManager` | `done` | Rules 7-9 arbitration: one owner, symmetric acquire/shutdown, capped scan, listen-only promiscuous. Simulator builds a no-radio stub. **Not yet exercised on hardware.** |
-| Legacy radio migration | `wip` | Sites 1–6 source integrated; shared picker authorization/async scans integrated; connection setup/disconnect integrated; status/events integrated; Settings/KOReader auth ownership integrated; OPDS/Calibre ownership integrated; OTA and legacy picker fallback removal remain. Runtime/device validation deferred to V1. `acquire()` refuses foreign sessions. See `RADIO_MIGRATION.md`. |
+| Legacy radio migration | `wip` | Eight planned sites and all picker parents source-integrated; mandatory owner tokens. Runtime, device and OTA/recovery validation remain open. See `RADIO_MIGRATION.md`. |
 | App registry + Tools launcher | `done` | `src/activities/apps/AppRegistry.{h,cpp}` (constexpr table in flash, function-pointer factories) + `AppLauncherActivity` (two-level list on the shared FreeInkUI components). Reached from Home → Tools. |
 
 ## Reader / EPUB engine
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-20 UTC, P5 OPDS/Calibre parent batch):
+Latest verified full working-snapshot image (2026-09-21 UTC, P5 OTA/source completion):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,397,440 |
+| Firmware image (`firmware.bin`) | 6,397,552 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 156,160 |
+| Free space | 156,048 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 105,984 |
+| Shortfall against reserve | 106,096 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

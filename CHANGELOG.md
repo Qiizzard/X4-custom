@@ -80,6 +80,10 @@ base is MIT.
 
 ### Changed
 
+- OTA Wi-Fi ownership (2026-09-21): updates now require their own station
+  session, and all Wi-Fi picker callers require explicit ownership. Hardware
+  update/recovery validation remains pending.
+
 - OPDS and Calibre (2026-09-20) now own their Wi-Fi sessions and check the
   connection before network work. Calibre's parent no longer tears down its
   radio. Runtime and device validation remain deferred.

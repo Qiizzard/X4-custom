@@ -109,8 +109,7 @@ class RadioManager {
   // number written, or -1 on failure. Blocking; expect a couple of seconds.
   int scanNetworks(ScanResult* out, size_t capacity);
 
-  // Transitional picker API: a static parent token requires its station hold.
-  // nullptr is allowed only with no managed hold, for unmigrated legacy parents.
+  // Picker API: every operation requires the matching static station-owner token.
   // Results are capped at kMaxScanResults; the SDK's internal scan allocation is not.
   static constexpr int kScanRunning = -1;
   static constexpr int kScanFailed = -2;
@@ -118,10 +117,10 @@ class RadioManager {
   int pickerScanCount(const char* owner);
   bool pickerScanResult(const char* owner, size_t index, ScanResult& out);
   void clearPickerScan(const char* owner);
-  // Same transitional authorization as scans. No credentials retained here.
+  // Same station-owner authorization as scans. No credentials retained here.
   bool preparePickerConnection(const char* owner);
   int beginPickerConnection(const char* owner, const char* ssid, const char* password);
-  // finish=true also powers off legacy sessions; managed parents retain their hold.
+  // finish=true waits briefly after disconnect; the parent retains its hold.
   void disconnectPicker(const char* owner, bool finish = false);
   struct PickerStatus {
     int code = -1;

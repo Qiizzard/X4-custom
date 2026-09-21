@@ -2,7 +2,8 @@
 
 #include <GfxRenderer.h>
 #include <I18n.h>
-#include <WiFi.h>
+#include <Memory.h>
+#include <RadioManager.h>
 
 #include "AppVersion.h"
 #include "MappedInputManager.h"
@@ -15,7 +16,7 @@
 #include "network/OtaUpdater.h"
 
 namespace {
-bool hasActiveWifiConnection() { return WiFi.status() == WL_CONNECTED && WiFi.localIP() != IPAddress(0, 0, 0, 0); }
+constexpr char kRadioOwner[] = "ota_update";
 
 StrId failureMessageFor(const OtaUpdater::OtaUpdaterError error) {
   if (error == OtaUpdater::HASH_MISMATCH_ERROR) return StrId::STR_UPDATE_HASH_MISMATCH;
@@ -39,6 +40,18 @@ bool contains(const Rect& rect, const int x, const int y) {
 }
 }  // namespace
 
+bool OtaUpdateActivity::requireStation() {
+  if (radioOwned && RADIO.stationConnected(kRadioOwner)) return true;
+  LOG_ERR("OTA", "Owned station connection unavailable");
+  {
+    RenderLock lock(*this);
+    state = FAILED;
+    failureMessage = StrId::STR_RADIO_BUSY_OR_UNAVAILABLE;
+  }
+  requestUpdate(true);
+  return false;
+}
+
 void OtaUpdateActivity::onWifiSelectionComplete(const bool success) {
   if (!success) {
     LOG_ERR("OTA", "WiFi connection failed, exiting");
@@ -60,6 +73,7 @@ void OtaUpdateActivity::onWifiSelectionComplete(const bool success) {
     return;
   }
 
+  if (!requireStation()) return;
   const auto res = updater.checkForUpdate();
   if (res != OtaUpdater::OK) {
     LOG_DBG("OTA", "Update check failed: %d", res);
@@ -92,16 +106,22 @@ void OtaUpdateActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
 
-  if (hasActiveWifiConnection()) {
-    onWifiSelectionComplete(true);
+  radioOwned = RADIO.acquire(RadioManager::Mode::WifiStation, kRadioOwner);
+  if (!radioOwned) {
+    state = FAILED;
+    failureMessage = StrId::STR_RADIO_BUSY_OR_UNAVAILABLE;
+    requestUpdate();
     return;
   }
-
-  // Turn on WiFi immediately
-  WiFi.mode(WIFI_STA);
-
-  // Launch WiFi selection subactivity
-  startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput),
+  auto picker = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, true, false, kRadioOwner);
+  if (!picker) {
+    LOG_ERR("OTA", "WiFi picker allocation failed");
+    state = FAILED;
+    failureMessage = StrId::STR_MEMORY_ERROR;
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(picker),
                          [this](const ActivityResult& result) { onWifiSelectionComplete(!result.isCancelled); });
 }
 
@@ -112,9 +132,8 @@ void OtaUpdateActivity::onExit() {
   // (loop() above) so the new firmware boots normally. Back-out paths land
   // here with wifi still active; silent-restart to free the LWIP/mbedTLS
   // fragmentation, same as the other wifi activities.
-  if (WiFi.getMode() != WIFI_MODE_NULL) {
-    WiFi.disconnect(false);
-    delay(30);
+  if (radioOwned && RADIO.shutdown(kRadioOwner)) {
+    radioOwned = false;
     silentRestart();
   }
 }
@@ -214,6 +233,7 @@ void OtaUpdateActivity::runUpdateInstall() {
     requestUpdate(true);
     return;
   }
+  if (!requireStation()) return;
   const auto res = updater.installUpdate(
       [](void* ctx) {
         // immediate=true notifies the render task directly. The default deferred path only

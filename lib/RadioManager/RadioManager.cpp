@@ -70,7 +70,7 @@ bool RadioManager::shutdown(const char* owner) {
 }
 
 bool RadioManager::pickerAccessAllowed(const char* owner) const {
-  const bool allowed = owner ? (owner_ == owner && mode_ == Mode::WifiStation) : !isHeld();
+  const bool allowed = owner && owner_ == owner && mode_ == Mode::WifiStation;
   if (!allowed) LOG_ERR(TAG, "Picker operation denied: owner mismatch");
   return allowed;
 }
@@ -467,18 +467,12 @@ void RadioManager::disconnectPicker(const char* owner, const bool finish) {
   if (!WiFi.disconnect(false)) LOG_DBG(TAG, "Picker disconnect did not complete");
   if (finish) {
     delay(30);
-    if (!owner && !WiFi.mode(WIFI_OFF)) LOG_ERR(TAG, "Could not stop legacy picker radio");
   }
 }
 
 int RadioManager::startPickerScan(const char* owner) {
   static_assert(WIFI_SCAN_RUNNING == kScanRunning && WIFI_SCAN_FAILED == kScanFailed);
   if (!pickerAccessAllowed(owner)) return kScanFailed;
-  // Managed parents already started STA; legacy parents still need startup here.
-  if (!owner && !WiFi.mode(WIFI_STA)) {
-    LOG_ERR(TAG, "Could not start picker station");
-    return kScanFailed;
-  }
   WiFi.disconnect();
   delay(100);
   const int result = WiFi.scanNetworks(true);

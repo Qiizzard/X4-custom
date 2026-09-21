@@ -41,13 +41,13 @@ The historical queue/log below is retained only as history.
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
-| P5 | in progress | ClockSync, FontDownload, KOReaderSync and web-server AP/STA and both nearby ESP-NOW ownership sites source integrated (wip); shared picker authorization and bounded async scanning integrated (wip), connection setup/disconnect integrated; status/events integrated; Settings/KOReader auth parent ownership integrated; OPDS/Calibre ownership integrated; OTA and removal of picker legacy compatibility next in RADIO_MIGRATION. Keep OTA/recovery behavior intact. |
+| P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P5 radio migration is next at the next eligible scheduled wakeup.
+Start with the real source in ../biscuit-reference. P6 approved networking/passive recon source ports are next at the next eligible scheduled wakeup.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -422,3 +422,13 @@ this schedule does not declare them completed or permanently blocked.
   No deferred suites/device tests. Usage 14% → 28%, weekly 27% → 29%
   through checkpoint, no reset. Next OTA then remove picker legacy fallback.
   Unrelated work and shipping partitions preserved; five-hour cadence unchanged.
+
+- 2026-09-21 04:16 UTC wakeup, P5 source completion: OTA owns its station,
+  guards update check/install entry, uses fallible picker allocation and releases
+  on exit. All nine picker callers require tokens; null-owner fallback removed.
+  Updater validation/install/success reboot and partition table unchanged.
+  C3 compile PASS (29.433s), `/tmp/x4-p5l-build.log`; image 6,397,552 bytes,
+  stock OTA free 156,048 bytes, reserve warning remains. Source wip/unverified;
+  no flashing, host/simulator/soak/device tests. Usage 15% → 27%, weekly
+  32% → 34% through checkpoint, no reset. Next P6 approved ports; release
+  hardware/recovery gates stay open. Unrelated work and five-hour cadence preserved.

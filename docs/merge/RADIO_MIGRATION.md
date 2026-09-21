@@ -24,11 +24,10 @@ flow. Picker success leaves the connection for its parent; cancellation can
 stop the driver, followed by the parent's manager cleanup. Startup failures
 cannot trigger font-network retries without a hold. Simulator refuses radio.
 
-Status: sites 1–6 source integrated, **wip/unverified**; sites 7–8 remain pending.
-The shared WifiSelection child still uses direct SDK calls, so this is not a
-claim that every network operation is already behind the manager. Its later
-migration must preserve the parent hold through scanning/association and cancel
-cleanup. Next group is the shared WiFi picker; OTA stays last.
+Status: sites 1–8 source integrated, **wip/unverified**; runtime/OTA recovery gates remain open.
+The shared WifiSelection child now uses manager APIs and mandatory parent
+tokens. Hardware verification remains deferred; source completion does not
+establish that every network operation in the wider repository is managed. Picker and OTA source migrations are recorded in the checkpoints below.
 No OTA/recovery code or shipping partitions changed.
 
 V1/device checks: on X3/X4, Settings > System > Device > Clock sync, connect,
@@ -349,3 +348,27 @@ Host/simulator/soak/device verification remains deferred.
 
 Compile evidence: C3 default PASS (23.453s), `/tmp/x4-p5k-build.log`;
 6,397,440-byte image, stock OTA free 156,160 bytes; reserve warning remains.
+
+## P5 OTA and mandatory picker ownership (2026-09-21)
+
+OTA acquires ota_update before a fallible picker launch. Update check/install
+entry points require its connected station; denied acquisition cannot borrow
+or tear down another session. Exit releases its hold before the existing
+back-out restart. Updater hash/device validation, partitions, installation
+logic and successful plain reboot path are unchanged. No update was executed.
+
+All nine picker call sites now pass a required explicit token. Manager picker
+operations reject null tokens; the legacy startup/shutdown bypass is removed.
+All eight planned sites are source-integrated, **wip/unverified**. Retain this
+record and foreign-radio detection: compile success is not proof that all
+other radio users in the tree are managed. P6 source work can proceed under
+the active queue; OTA/recovery gates remain release gates.
+
+V1/device: check for updates, cancel, deny ownership, drop connection before
+check/install and verify the next radio screen works. Actual update, wrong
+image/hash rejection and known-good rollback require controlled device/recovery
+validation later. No flashing, partition changes, host/simulator suites, soaks
+or hardware checks performed. No cache reset required for this ownership change.
+
+Compile evidence: C3 default PASS (29.433s), `/tmp/x4-p5l-build.log`;
+6,397,552-byte image, stock OTA free 156,048 bytes; reserve warning remains.

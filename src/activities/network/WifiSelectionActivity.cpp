@@ -72,11 +72,7 @@ void WifiSelectionActivity::onRowEvent(const fui::ActionEvent& event, void* user
 }
 
 bool WifiSelectionActivity::hasRadioAccess() const {
-  if (parentRadioOwner) {
-    return RADIO.mode() == RadioManager::Mode::WifiStation && RADIO.owner() == parentRadioOwner;
-  }
-  // Unmigrated callers retain their legacy flow only while no manager owner exists.
-  return !RADIO.isHeld();
+  return parentRadioOwner && RADIO.mode() == RadioManager::Mode::WifiStation && RADIO.owner() == parentRadioOwner;
 }
 
 bool WifiSelectionActivity::requireRadioAccess() {
@@ -157,8 +153,8 @@ void WifiSelectionActivity::onExit() {
   // Stop any ongoing WiFi scan
   RADIO.clearPickerScan(parentRadioOwner);
 
-  // Successful connections leave WiFi up for the parent activity. Canceled
-  // flows own their cleanup because no parent may be present to tear WiFi down.
+  // Success leaves the parent connected. Cancellation disconnects while the
+  // parent retains its reservation and performs final shutdown.
   if (tearDownWifiOnExit) {
     RADIO.setPickerEventLogging(parentRadioOwner, false);
     RADIO.disconnectPicker(parentRadioOwner, true);
