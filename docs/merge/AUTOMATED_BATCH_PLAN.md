@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. Next approved network utilities/passive recon ports; preserve passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail core integrated (wip); finish approved scanner views/export and remaining utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -444,3 +444,20 @@ this schedule does not declare them completed or permanently blocked.
   Device check: Tools > WiFi Networks, connect/save/forget/cancel, global Home,
   then Clock Sync; verify tools_wifi releases and denied entry leaves another
   owner untouched. No cache reset. Next remaining approved P6 utilities/recon.
+
+- 2026-09-21 14:17 UTC wakeup, P6 WiFi Scanner core: adapted Biscuit's
+  snapshot/detail concept with 40 fixed AP records (1,680 bytes in the fallibly
+  allocated activity), passive SDK scans, RSSI ordering, sanitized SSID display,
+  BSSID/channel/security details and manual rescan. No association/export/live
+  charts yet. SDK internal scan memory is not capped by the result buffer.
+  Source wip/unverified; keyboard/button browsing, touch Back supported.
+  Initial compile found a theme API mismatch; corrected final C3 compile PASS
+  (69.013s), `/tmp/x4-p6b-final-build.log`. Image 6,402,160 bytes, stock OTA
+  free 151,440 bytes, reserve warning remains. No host/simulator/soak/device tests.
+  Usage reached 40% from 0%, weekly 44% → 50% at correction/build boundary;
+  implementation stopped for verification/checkpointing. Reset timestamp moved
+  one second without a window rollover. Unrelated work/partitions preserved.
+  Device: Recon > WiFi Scanner, inspect APs with Left/Right, Confirm rescan,
+  Back/global Home then Clock Sync; verify passive-only RF behavior, capped
+  results, failed scan/denied owner, orientation and heap. No cache reset.
+  Next: remaining approved scanner views/export and P6 utilities.

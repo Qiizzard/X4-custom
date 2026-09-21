@@ -107,7 +107,7 @@ class RadioManager {
   // Scan for access points into `out`, capped at `capacity` (never more than
   // kMaxScanResults). Requires a WifiScan or WifiStation hold. Returns the
   // number written, or -1 on failure. Blocking; expect a couple of seconds.
-  int scanNetworks(ScanResult* out, size_t capacity);
+  int scanNetworks(ScanResult* out, size_t capacity, bool passive = false);
 
   // Picker API: every operation requires the matching static station-owner token.
   // Results are capped at kMaxScanResults; the SDK's internal scan allocation is not.

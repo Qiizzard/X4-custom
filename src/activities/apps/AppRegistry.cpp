@@ -28,6 +28,7 @@
 #include "sudoku/SudokuActivity.h"
 #include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
+#include "wifi_scanner/WifiScannerActivity.h"
 
 namespace {
 
@@ -103,11 +104,9 @@ constexpr AppEntry kApps[] = {
 
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
 
-    // ---- Recon / Defense / Comms ----
-    // Empty until the radio tier lands. RadioManager is in the firmware and
-    // arbitration works, but no app uses it yet, and a tile that opens onto a
-    // screen claiming to scan when nothing does is exactly what rule 21 bans.
-    // See docs/merge/PORT_LEDGER.md.
+    // ---- Recon ----
+    {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
+
 };
 
 constexpr size_t kAppCount = sizeof(kApps) / sizeof(kApps[0]);

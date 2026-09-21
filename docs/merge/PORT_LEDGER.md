@@ -115,7 +115,7 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| WiFi Scanner | `todo` | `RADIO.scanNetworks()` already caps at 40. |
+| WiFi Scanner | `wip` | Recon snapshot/detail view: passive scan, 40 fixed results, RSSI sort and manual rescan. Charts/CSV pending; runtime/device validation deferred. |
 | Packet Monitor | `todo` | `RADIO.startPromiscuous()` + `RingBuffer`. Snap length, PCAP streams to SD. |
 | Probe Sniffer | `todo` | |
 | Deauth Detector | `todo` | Counts deauth frames. Detection only. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-21 UTC, P6 WiFi Connect registration):
+Latest verified full working-snapshot image (2026-09-21 UTC, P6 passive scanner core):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,397,824 |
+| Firmware image (`firmware.bin`) | 6,402,160 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 155,776 |
+| Free space | 151,440 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 106,368 |
+| Shortfall against reserve | 110,704 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

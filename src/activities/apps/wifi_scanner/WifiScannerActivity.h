@@ -1,0 +1,24 @@
+#pragma once
+
+#include <RadioManager.h>
+
+#include "activities/Activity.h"
+
+// Bounded adaptation of Biscuit's Wi-Fi snapshot/detail view. Passive only.
+class WifiScannerActivity final : public Activity {
+ public:
+  WifiScannerActivity(GfxRenderer& renderer, MappedInputManager& input) : Activity("WifiScanner", renderer, input) {}
+  void onEnter() override;
+  void onExit() override;
+  void loop() override;
+  void render(RenderLock&&) override;
+
+ private:
+  // Lives in the fallibly allocated activity, never on the task stack.
+  RadioManager::ScanResult results[RadioManager::kMaxScanResults] = {};
+  int count = 0;
+  int selected = 0;
+  bool scanning = false;
+  bool owned = false;
+  void scan();
+};

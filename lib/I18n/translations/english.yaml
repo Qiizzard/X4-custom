@@ -999,3 +999,10 @@ STR_STEGO_SAVED: "Encrypted note saved in new BMP"
 STR_STEGO_ERROR: "Failed. Check key, BMP, SD and output space."
 
 STR_RADIO_BUSY_OR_UNAVAILABLE: "Radio busy or unavailable. Exit and retry later."
+
+STR_APP_WIFI_SCANNER: "WiFi Scanner"
+STR_WIFI_SCAN_FAILED: "Scan failed"
+STR_WIFI_SCAN_HIDDEN: "Hidden network"
+STR_WIFI_SCAN_DETAIL: "Channel %u | %d dBm | %s"
+STR_WIFI_SCAN_PROTECTED: "Protected"
+STR_WIFI_SCAN_RESCAN: "Rescan"

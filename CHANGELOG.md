@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Recon WiFi Scanner snapshot (2026-09-21): passive scans with up to 40 APs,
+  signal-sorted details and manual rescan. Charts/export and device testing pending.
+
 - WiFi Networks in Tools (2026-09-21): scan, select and save networks using
   the existing connection screen; disconnects when leaving. Device testing pending.
 

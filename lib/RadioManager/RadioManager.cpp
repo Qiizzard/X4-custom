@@ -106,7 +106,7 @@ void RadioManager::shutdown() {
   promiscuousActive_ = false;
 }
 
-int RadioManager::scanNetworks(ScanResult*, size_t) { return -1; }
+int RadioManager::scanNetworks(ScanResult*, size_t, bool) { return -1; }
 int RadioManager::startPickerScan(const char*) { return kScanFailed; }
 int RadioManager::pickerScanCount(const char*) { return kScanFailed; }
 bool RadioManager::pickerScanResult(const char*, size_t, ScanResult& out) {
@@ -509,14 +509,14 @@ void RadioManager::clearPickerScan(const char* owner) {
   if (pickerAccessAllowed(owner)) WiFi.scanDelete();
 }
 
-int RadioManager::scanNetworks(ScanResult* out, const size_t capacity) {
+int RadioManager::scanNetworks(ScanResult* out, const size_t capacity, const bool passive) {
   if (out == nullptr || capacity == 0) return -1;
   if (mode_ != Mode::WifiScan && mode_ != Mode::WifiStation) {
     LOG_ERR(TAG, "scanNetworks needs a WifiScan hold (mode is %s)", modeName(mode_));
     return -1;
   }
 
-  const int found = WiFi.scanNetworks(/*async=*/false, /*show_hidden=*/true);
+  const int found = WiFi.scanNetworks(/*async=*/false, /*show_hidden=*/true, passive);
   if (found < 0) {
     LOG_ERR(TAG, "scan failed (%d)", found);
     return -1;
