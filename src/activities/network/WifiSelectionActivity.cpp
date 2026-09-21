@@ -24,6 +24,7 @@ namespace fui = freeink::ui;
 
 namespace {
 
+constexpr char kStandaloneRadioOwner[] = "tools_wifi";
 constexpr fui::ActionId ACTION_ROW = 1;
 
 std::string getDisplayMacAddress() {
@@ -38,6 +39,11 @@ std::string getDisplayMacAddress() {
 }
 
 }  // namespace
+
+WifiSelectionActivity::WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
+    : WifiSelectionActivity(renderer, mappedInput, false, false, kStandaloneRadioOwner) {
+  ownsRadio = true;
+}
 
 WifiSelectionActivity::WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                              const bool autoConnect, const bool useReaderButtonHints,
@@ -90,6 +96,10 @@ bool WifiSelectionActivity::requireRadioAccess() {
 void WifiSelectionActivity::onEnter() {
   Activity::onEnter();
   sdFontSystem.releaseLoadedFont(renderer);
+  if (ownsRadio && !RADIO.acquire(RadioManager::Mode::WifiStation, parentRadioOwner)) {
+    requireRadioAccess();  // Show the translated unavailable state without touching the other session.
+    return;
+  }
   if (!requireRadioAccess()) return;
 
   // Reset state
@@ -160,6 +170,7 @@ void WifiSelectionActivity::onExit() {
     RADIO.disconnectPicker(parentRadioOwner, true);
   }
 
+  if (ownsRadio) RADIO.shutdown(parentRadioOwner);
   LOG_DBG("WIFI", "Free heap at onExit end: %d bytes", ESP.getFreeHeap());
 }
 

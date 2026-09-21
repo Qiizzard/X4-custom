@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- WiFi Networks in Tools (2026-09-21): scan, select and save networks using
+  the existing connection screen; disconnects when leaving. Device testing pending.
+
 - Stego Notes (2026-09-13): select a drawing, compose a bounded encrypted note
   into a new BMP, and unlock notes with timed reveal. Experimental; runtime
   crypto, file failure and device validation remain deferred.

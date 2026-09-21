@@ -90,6 +90,7 @@ class WifiSelectionActivity final : public Activity {
   bool tearDownWifiOnExit = true;
   // Required static parent token. The parent owns the hold through child lifetime.
   const char* const parentRadioOwner;
+  bool ownsRadio = false;
   bool radioAccessDenied = false;
   bool scanStartFailed = false;
   bool hasRadioAccess() const;
@@ -155,6 +156,8 @@ class WifiSelectionActivity final : public Activity {
   void onComplete(bool connected);
 
  public:
+  // Tools entry point: this picker owns and releases its station session.
+  explicit WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
   explicit WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, bool autoConnect,
                                  bool useReaderButtonHints, const char* parentRadioOwner);
   void onEnter() override;

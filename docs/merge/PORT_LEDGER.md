@@ -63,11 +63,11 @@ coherent, working subset.
 | Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
 | Stego Notes | `wip` | Tools: bounded file selection, encrypted BMP note creation and timed reveal. Original preserved; concealment discoverable. Runtime/crypto/device validation deferred. |
 
-## Tools → Network *(all `blocked` on the legacy radio migration)*
+## Tools → Network *(P5 source dependency integrated; device validation deferred)*
 
 | App | Status | Notes |
 |---|---|---|
-| WiFi Connect | `base` | `WifiSelectionActivity` already exists. Register, don't rewrite. |
+| WiFi Connect | `wip` | Tools WiFi Networks entry reuses WifiSelectionActivity with an owned station hold, released at exit. Compile only; runtime validation deferred. |
 | Host Scanner | `todo` | |
 | Ping | `todo` | |
 | DNS Lookup | `todo` | |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-21 UTC, P5 OTA/source completion):
+Latest verified full working-snapshot image (2026-09-21 UTC, P6 WiFi Connect registration):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,397,552 |
+| Firmware image (`firmware.bin`) | 6,397,824 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 156,048 |
+| Free space | 155,776 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 106,096 |
+| Shortfall against reserve | 106,368 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

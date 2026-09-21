@@ -4,6 +4,7 @@
 
 #include "activities/Activity.h"
 #include "activities/home/FileBrowserActivity.h"
+#include "activities/network/WifiSelectionActivity.h"
 #include "barcode/BarcodeActivity.h"
 #include "calculator/CalculatorActivity.h"
 #include "cipher/CipherActivity.h"
@@ -61,6 +62,7 @@ static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
 
 constexpr AppEntry kApps[] = {
     // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_WIFI_NETWORKS, &makeApp<WifiSelectionActivity>},
     {AppCategory::Tools, StrId::STR_APP_CALCULATOR, &makeApp<CalculatorActivity>},
     {AppCategory::Tools, StrId::STR_APP_UNIT_CONVERTER, &makeApp<UnitConverterActivity>},
     {AppCategory::Tools, StrId::STR_APP_MORSE_CODE, &makeApp<MorseCodeActivity>},

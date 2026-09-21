@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | pending | Approved network utilities and passive recon apps, sharing bounded radio/storage infrastructure. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. Next approved network utilities/passive recon ports; preserve passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -432,3 +432,15 @@ this schedule does not declare them completed or permanently blocked.
   no flashing, host/simulator/soak/device tests. Usage 15% → 27%, weekly
   32% → 34% through checkpoint, no reset. Next P6 approved ports; release
   hardware/recovery gates stay open. Unrelated work and five-hour cadence preserved.
+
+- 2026-09-21 09:16 UTC wakeup, P6 WiFi Connect: Tools > WiFi Networks
+  registers the existing picker with a standalone tools_wifi hold. Scan/select,
+  hidden SSIDs and credential persistence are reused; success/cancel/global
+  exit release the hold. Existing parent-owned constructor remains unchanged.
+  Source wip/unverified. One C3 compile PASS (191.767s after dependency restore),
+  `/tmp/x4-p6a-build.log`; image 6,397,824 bytes, OTA free 155,776 bytes,
+  reserve warning remains. No host/simulator/soak/device tests. Usage observed
+  17% → 48%, weekly 38% → 43%, no reset. Unrelated work preserved.
+  Device check: Tools > WiFi Networks, connect/save/forget/cancel, global Home,
+  then Clock Sync; verify tools_wifi releases and denied entry leaves another
+  owner untouched. No cache reset. Next remaining approved P6 utilities/recon.
