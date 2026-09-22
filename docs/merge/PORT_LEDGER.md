@@ -115,7 +115,7 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| WiFi Scanner | `wip` | Recon snapshot/detail view: passive scan, 40 fixed results, RSSI sort, manual rescan and 13-channel count/peak/mean view. Live signal history/CSV pending; runtime/device validation deferred. |
+| WiFi Scanner | `wip` | Recon snapshot/detail view: passive scan, 40 fixed results, RSSI sort, manual rescan and 13-channel count/peak/mean view. Exclusive numbered CSV export integrated; live signal history pending; runtime/device validation deferred. |
 | Packet Monitor | `todo` | `RADIO.startPromiscuous()` + `RingBuffer`. Snap length, PCAP streams to SD. |
 | Probe Sniffer | `todo` | |
 | Deauth Detector | `todo` | Counts deauth frames. Detection only. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-21 UTC, P6 scanner channel view):
+Latest verified full working-snapshot image (2026-09-22 UTC, P6 scanner CSV export):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,403,600 |
+| Firmware image (`firmware.bin`) | 6,405,088 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 150,000 |
+| Free space | 148,512 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 112,144 |
+| Shortfall against reserve | 113,632 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

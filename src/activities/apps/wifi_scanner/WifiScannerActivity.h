@@ -20,8 +20,13 @@ class WifiScannerActivity final : public Activity {
   int selected = 0;
   bool channelView = false;
   int selectedChannel = 1;
+  enum class ExportStatus { None, Saved, Failed };
+  ExportStatus exportStatus = ExportStatus::None;
+  unsigned long exportShownAt = 0;
+  int exportSlot = -1;
   bool scanning = false;
   bool owned = false;
   void scan();
   void renderChannels() const;
+  bool saveCsv(int& slot) const;
 };

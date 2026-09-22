@@ -1007,7 +1007,10 @@ STR_WIFI_SCAN_DETAIL: "Channel %u | %d dBm | %s"
 STR_WIFI_SCAN_PROTECTED: "Protected"
 STR_WIFI_SCAN_RESCAN: "Rescan"
 
-STR_WIFI_SCAN_VIEW_HINT: "Page or Up/Down: switch view"
+STR_WIFI_SCAN_VIEW_HINT: "Page forward: view | Page back: export"
 STR_WIFI_SCAN_CHANNEL_COUNT: "Channel %d: %u observed APs"
 STR_WIFI_SCAN_CHANNEL_SIGNAL: "Peak %d dBm | Mean %d dBm"
 STR_WIFI_SCAN_CAPPED_SNAPSHOT: "AP counts from snapshot (up to 40)"
+
+STR_WIFI_SCAN_EXPORT_SAVED: "Saved /crossink/wifi/scan-%02d.csv"
+STR_WIFI_SCAN_EXPORT_FAILED: "Export failed: check SD or free export slots"

@@ -1,11 +1,13 @@
 #include "WifiScannerActivity.h"
 
 #include <GfxRenderer.h>
+#include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 
 #include "MappedInputManager.h"
 #include "components/TouchHeaderBackButton.h"
@@ -71,15 +73,32 @@ void WifiScannerActivity::loop() {
     return;
   }
   if (!owned) return;
+  if (exportStatus != ExportStatus::None) {
+    if (millis() - exportShownAt >= 5000 || mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+      RenderLock lock(*this);
+      exportStatus = ExportStatus::None;
+      requestUpdate();
+    }
+    return;
+  }
   if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
     scan();
     return;
   }
   if (count <= 0) return;
+  if (mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+    int slot = -1;
+    const bool saved = saveCsv(slot);
+    RenderLock lock(*this);
+    exportSlot = slot;
+    exportShownAt = millis();
+    exportStatus = saved ? ExportStatus::Saved : ExportStatus::Failed;
+    requestUpdate();
+    return;
+  }
   if (mappedInput.wasPressed(MappedInputManager::Button::Up) ||
       mappedInput.wasPressed(MappedInputManager::Button::Down) ||
-      mappedInput.wasPressed(MappedInputManager::Button::PageForward) ||
-      mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+      mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
     RenderLock lock(*this);
     channelView = !channelView;
     requestUpdate();
@@ -108,7 +127,14 @@ void WifiScannerActivity::render(RenderLock&&) {
   const Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
   const int line = renderer.getLineHeight(UI_10_FONT_ID) + 8;
   int y = screen.y + screen.height / 2 - 2 * line;
-  if (!owned || scanning || count <= 0) {
+  if (exportStatus != ExportStatus::None) {
+    char text[96];
+    if (exportStatus == ExportStatus::Saved)
+      snprintf(text, sizeof(text), tr(STR_WIFI_SCAN_EXPORT_SAVED), exportSlot);
+    else
+      snprintf(text, sizeof(text), "%s", tr(STR_WIFI_SCAN_EXPORT_FAILED));
+    UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
+  } else if (!owned || scanning || count <= 0) {
     const char* message = !owned      ? tr(STR_RADIO_BUSY_OR_UNAVAILABLE)
                           : scanning  ? tr(STR_SCANNING)
                           : count < 0 ? tr(STR_WIFI_SCAN_FAILED)
@@ -183,4 +209,55 @@ void WifiScannerActivity::renderChannels() const {
     renderer.drawText(UI_10_FONT_ID, x, chartBottom + 4, text);
   }
   UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, chartBottom + line, tr(STR_WIFI_SCAN_CAPPED_SNAPSHOT));
+}
+
+bool WifiScannerActivity::saveCsv(int& slot) const {
+  constexpr char directory[] = "/crossink/wifi";
+  if (!Storage.exists(directory) && !Storage.mkdir(directory, true)) {
+    LOG_ERR("WSCAN", "Could not create scan export directory");
+    return false;
+  }
+  char path[40];
+  HalFile file;
+  for (slot = 0; slot < 100; ++slot) {
+    snprintf(path, sizeof(path), "%s/scan-%02d.csv", directory, slot);
+    if (Storage.exists(path)) continue;
+    file = Storage.open(path, O_WRITE | O_CREAT | O_EXCL);
+    break;
+  }
+  if (!file) {
+    LOG_ERR("WSCAN", "Could not create scan export (SD error or all slots used)");
+    return false;
+  }
+  static constexpr char header[] = "ssid,bssid,rssi_dbm,channel,protected\n";
+  bool ok = file.write(header, sizeof(header) - 1) == sizeof(header) - 1;
+  for (int i = 0; ok && i < count; ++i) {
+    const auto& ap = results[i];
+    char escaped[66];
+    size_t used = 0;
+    const char* first = ap.ssid;
+    while (*first == ' ') ++first;
+    // Prevent spreadsheet import from interpreting an untrusted SSID as a formula.
+    if (*first && std::strchr("=+-@", *first)) escaped[used++] = '\'';
+    for (const char* c = ap.ssid; *c; ++c) {
+      if (*c == '"') escaped[used++] = '"';
+      escaped[used++] = *c;
+    }
+    escaped[used] = 0;
+    char row[128];
+    const int length =
+        snprintf(row, sizeof(row), "\"%s\",%02X:%02X:%02X:%02X:%02X:%02X,%d,%u,%u\n", escaped, unsigned(ap.bssid[0]),
+                 unsigned(ap.bssid[1]), unsigned(ap.bssid[2]), unsigned(ap.bssid[3]), unsigned(ap.bssid[4]),
+                 unsigned(ap.bssid[5]), int(ap.rssi), unsigned(ap.channel), unsigned(ap.encrypted));
+    ok = length > 0 && size_t(length) < sizeof(row) && file.write(row, size_t(length)) == size_t(length);
+  }
+  if (ok) ok = file.sync();
+  const bool closed = file.close();
+  if (!ok || !closed) {
+    LOG_ERR("WSCAN", "Scan export write/sync/close failed");
+    if (!Storage.remove(path)) LOG_ERR("WSCAN", "Could not remove partial scan export");
+    return false;
+  }
+  LOG_INF("WSCAN", "Saved %d scan rows to %s", count, path);
+  return true;
 }

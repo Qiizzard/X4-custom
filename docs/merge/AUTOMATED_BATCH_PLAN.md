@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); finish approved signal history/export and remaining utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; finish approved signal history and remaining utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -474,3 +474,17 @@ this schedule does not declare them completed or permanently blocked.
   Device: Recon > WiFi Scanner, toggle views, inspect empty/populated channels,
   rescan, rotate and exit to Clock Sync; check chart bounds/ownership. No cache
   reset. Next: approved signal history/CSV export and remaining P6 utilities.
+
+- 2026-09-22 00:21 UTC wakeup, P6 scanner CSV export: Page Back saves up to
+  40 retained rows to exclusive /crossink/wifi/scan-00.csv through scan-99.csv.
+  Streams bounded rows, quotes/doubles SSID quotes and prefixes formula-like
+  SSIDs for spreadsheet safety. Exports sanitized display SSIDs; no credentials.
+  Checked mkdir/open/write/sync/close, best-effort partial-file removal, visible
+  success/failure. No growing CSV string or added radio scan. Source wip.
+  C3 compile PASS (160.48s), `/tmp/x4-p6d-build.log`; image 6,405,088 bytes,
+  stock OTA free 148,512 bytes, reserve warning remains. No deferred suites or
+  hardware tests. Usage 21% → 46%, weekly 63% → 67%, no reset at checkpoint.
+  Device: export repeated snapshots, inspect commas/quotes/formula-like SSIDs,
+  all 100 occupied slots, absent/full/removed SD, then exit and reuse radio.
+  No cache reset. Next signal history, then remaining P6 utilities.
+  Unrelated work and partitions preserved.

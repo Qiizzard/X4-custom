@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- WiFi Scanner CSV export (2026-09-22): Page Back saves the retained snapshot
+  to a new numbered file under `/crossink/wifi/`. Earlier exports are preserved;
+  SD failure and device validation remain pending.
+
 - WiFi Scanner channel view (2026-09-21): observed AP-count chart and per-channel
   peak/mean RSSI from the capped snapshot. Page or Up/Down switches views;
   Left/Right selects the channel. Device validation pending.
