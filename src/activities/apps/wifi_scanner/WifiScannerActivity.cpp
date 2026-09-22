@@ -43,10 +43,12 @@ void WifiScannerActivity::scan() {
     RenderLock lock(*this);
     scanning = false;
     count = -1;
+    recordSample(-1);
+    lastSampleAt = millis();
     requestUpdate();
     return;
   }
-  // Blocking SDK scan; no periodic scanning, association, or probe requests.
+  // Blocking passive SDK scan. Only the signal view schedules repeated scans.
   const int found = RADIO.scanNetworks(results, RadioManager::kMaxScanResults, true);
   if (found > 0) {
     std::sort(results, results + found, [](const auto& a, const auto& b) { return a.rssi > b.rssi; });
@@ -60,6 +62,8 @@ void WifiScannerActivity::scan() {
   {
     RenderLock lock(*this);
     count = found;
+    if (view == View::Signal) recordSample(found);
+    lastSampleAt = millis();
     selected = 0;
     scanning = false;
   }
@@ -85,8 +89,12 @@ void WifiScannerActivity::loop() {
     scan();
     return;
   }
-  if (count <= 0) return;
-  if (mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+  if (view == View::Signal && millis() - lastSampleAt >= 5000) {
+    scan();
+    return;
+  }
+  if (count <= 0 && view != View::Signal) return;
+  if (count > 0 && mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
     int slot = -1;
     const bool saved = saveCsv(slot);
     RenderLock lock(*this);
@@ -100,7 +108,13 @@ void WifiScannerActivity::loop() {
       mappedInput.wasPressed(MappedInputManager::Button::Down) ||
       mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
     RenderLock lock(*this);
-    channelView = !channelView;
+    if (view == View::Details)
+      view = View::Channels;
+    else if (view == View::Channels) {
+      view = View::Signal;
+      beginHistory();
+    } else
+      view = View::Details;
     requestUpdate();
     return;
   }
@@ -109,9 +123,9 @@ void WifiScannerActivity::loop() {
   if (mappedInput.wasPressed(MappedInputManager::Button::Right)) step = 1;
   if (step) {
     RenderLock lock(*this);
-    if (channelView)
+    if (view == View::Channels)
       selectedChannel = (selectedChannel - 1 + step + 13) % 13 + 1;
-    else
+    else if (view == View::Details && count > 0)
       selected = (selected + step + count) % count;
     requestUpdate();
   }
@@ -134,13 +148,15 @@ void WifiScannerActivity::render(RenderLock&&) {
     else
       snprintf(text, sizeof(text), "%s", tr(STR_WIFI_SCAN_EXPORT_FAILED));
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
+  } else if (owned && !scanning && view == View::Signal) {
+    renderSignal();
   } else if (!owned || scanning || count <= 0) {
     const char* message = !owned      ? tr(STR_RADIO_BUSY_OR_UNAVAILABLE)
                           : scanning  ? tr(STR_SCANNING)
                           : count < 0 ? tr(STR_WIFI_SCAN_FAILED)
                                       : tr(STR_NO_NETWORKS);
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, message);
-  } else if (channelView) {
+  } else if (view == View::Channels) {
     renderChannels();
   } else {
     const auto& entry = results[selected];
@@ -260,4 +276,69 @@ bool WifiScannerActivity::saveCsv(int& slot) const {
   }
   LOG_INF("WSCAN", "Saved %d scan rows to %s", count, path);
   return true;
+}
+
+void WifiScannerActivity::beginHistory() {
+  // Called under RenderLock; pin identity, not a sorted result index.
+  historyCount = historyNext = 0;
+  memcpy(targetBssid, results[selected].bssid, sizeof(targetBssid));
+  memcpy(targetSsid, results[selected].ssid, sizeof(targetSsid));
+  recordSample(count);
+  lastSampleAt = millis();
+}
+
+void WifiScannerActivity::recordSample(const int found) {
+  Sample sample{0, uint8_t(found < 0 ? 2 : 0)};
+  for (int i = 0; i < found; ++i) {
+    if (memcmp(results[i].bssid, targetBssid, sizeof(targetBssid)) == 0) {
+      sample = {results[i].rssi, 1};
+      break;
+    }
+  }
+  history[historyNext] = sample;
+  historyNext = (historyNext + 1) % 40;
+  if (historyCount < 40) ++historyCount;
+}
+
+void WifiScannerActivity::renderSignal() const {
+  const Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  const Rect header = TouchHeaderBackButton::headerRect(renderer, mappedInput);
+  const int line = renderer.getLineHeight(UI_10_FONT_ID) + 8;
+  int y = header.y + header.height + line;
+  UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, targetSsid[0] ? targetSsid : tr(STR_WIFI_SCAN_HIDDEN));
+  y += line;
+  if (!historyCount) return;
+  const auto& latest = history[(historyNext + 39) % 40];
+  char text[96];
+  if (latest.status == 1)
+    snprintf(text, sizeof(text), tr(STR_WIFI_SIGNAL_CURRENT), int(latest.rssi));
+  else
+    snprintf(text, sizeof(text), "%s", latest.status == 2 ? tr(STR_WIFI_SCAN_FAILED) : tr(STR_WIFI_SIGNAL_UNSEEN));
+  UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
+  int sum = 0, samples = 0, low = 127, high = -128;
+  for (int i = 0; i < historyCount; ++i) {
+    if (history[i].status != 1) continue;
+    const int rssi = history[i].rssi;
+    sum += rssi;
+    ++samples;
+    low = std::min(low, rssi);
+    high = std::max(high, rssi);
+  }
+  if (samples) {
+    snprintf(text, sizeof(text), tr(STR_WIFI_SIGNAL_RANGE), low, sum / samples, high);
+    UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y + line, text);
+  }
+  const int chartTop = y + 3 * line;
+  const int chartBottom = screen.y + screen.height - 4 * line;
+  const int padding = UITheme::getInstance().getMetrics().contentSidePadding;
+  const int width = (screen.width - 2 * padding) / 40;
+  if (chartBottom <= chartTop || width < 2) return;
+  for (int i = 0; i < historyCount; ++i) {
+    const auto& sample = history[(historyNext + 40 - historyCount + i) % 40];
+    if (sample.status != 1) continue;  // Gaps remain gaps, never stale RSSI.
+    const int normalized = std::max(0, std::min(70, int(sample.rssi) + 100));
+    const int height = std::max(1, normalized * (chartBottom - chartTop) / 70);
+    renderer.fillRect(screen.x + padding + i * width, chartBottom - height, width - 1, height, true);
+  }
+  UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, chartBottom + line, tr(STR_WIFI_SIGNAL_HISTORY));
 }

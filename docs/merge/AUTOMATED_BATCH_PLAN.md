@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; finish approved signal history and remaining utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; next remaining approved utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -488,3 +488,19 @@ this schedule does not declare them completed or permanently blocked.
   all 100 occupied slots, absent/full/removed SD, then exit and reuse radio.
   No cache reset. Next signal history, then remaining P6 utilities.
   Unrelated work and partitions preserved.
+
+- 2026-09-22 05:23 UTC wakeup, P6 scanner signal history: view cycle now
+  details/channels/signal. Pins selected BSSID, stores 40 outcomes in an 80-byte
+  fixed ring, shows current/min/mean/max, and leaves gaps for unseen/failed
+  scans. Passive full scans pause five seconds after completion while signal
+  view is active; no sampling in other views or during export-result display.
+  Missing means absent from the capped snapshot, not proof the AP is offline.
+  Blocking scan behavior remains; charts show scan sequence, not fixed time.
+  Source wip/unverified. C3 compile PASS (142.528s), `/tmp/x4-p6e-build.log`;
+  image 6,406,784 bytes, stock OTA free 146,816 bytes, reserve warning remains.
+  No host/simulator/soak/device tests. Usage 22% → 46%, weekly 72% → 75%,
+  no reset at checkpoint. Unrelated work/partitions preserved.
+  Device: select an AP, cycle to signal view, vary signal/remove AP, run past
+  40 scans, force scan failure, switch views/export/exit and reuse radio.
+  Check graph gaps, BSSID identity, bounds/orientation and heap; no cache reset.
+  Next remaining approved P6 network utilities/recon ports.

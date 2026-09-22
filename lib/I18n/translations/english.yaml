@@ -1014,3 +1014,8 @@ STR_WIFI_SCAN_CAPPED_SNAPSHOT: "AP counts from snapshot (up to 40)"
 
 STR_WIFI_SCAN_EXPORT_SAVED: "Saved /crossink/wifi/scan-%02d.csv"
 STR_WIFI_SCAN_EXPORT_FAILED: "Export failed: check SD or free export slots"
+
+STR_WIFI_SIGNAL_CURRENT: "Current: %d dBm"
+STR_WIFI_SIGNAL_UNSEEN: "Not seen in capped snapshot"
+STR_WIFI_SIGNAL_RANGE: "Min %d | Mean %d | Max %d dBm"
+STR_WIFI_SIGNAL_HISTORY: "Last 40 scans (-100 to -30 dBm); gaps = unseen/error"

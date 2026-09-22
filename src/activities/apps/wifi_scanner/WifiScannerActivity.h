@@ -18,7 +18,18 @@ class WifiScannerActivity final : public Activity {
   RadioManager::ScanResult results[RadioManager::kMaxScanResults] = {};
   int count = 0;
   int selected = 0;
-  bool channelView = false;
+  enum class View { Details, Channels, Signal };
+  View view = View::Details;
+  struct Sample {
+    int8_t rssi;
+    uint8_t status;
+  };  // 0 unseen, 1 measured, 2 failed scan
+  Sample history[40] = {};
+  uint8_t historyCount = 0;
+  uint8_t historyNext = 0;
+  uint8_t targetBssid[6] = {};
+  char targetSsid[33] = {};
+  unsigned long lastSampleAt = 0;
   int selectedChannel = 1;
   enum class ExportStatus { None, Saved, Failed };
   ExportStatus exportStatus = ExportStatus::None;
@@ -28,5 +39,8 @@ class WifiScannerActivity final : public Activity {
   bool owned = false;
   void scan();
   void renderChannels() const;
+  void renderSignal() const;
+  void beginHistory();
+  void recordSample(int found);
   bool saveCsv(int& slot) const;
 };

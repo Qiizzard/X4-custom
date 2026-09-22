@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- WiFi Scanner signal history (2026-09-22): selected-BSSID passive sampling,
+  last 40 outcomes, min/mean/max and explicit missing/error gaps. Sampling pauses
+  outside the signal view. Device validation pending.
+
 - WiFi Scanner CSV export (2026-09-22): Page Back saves the retained snapshot
   to a new numbered file under `/crossink/wifi/`. Earlier exports are preserved;
   SD failure and device validation remain pending.
