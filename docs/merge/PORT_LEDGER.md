@@ -70,7 +70,7 @@ coherent, working subset.
 | WiFi Connect | `wip` | Tools WiFi Networks entry reuses WifiSelectionActivity with an owned station hold, released at exit. Compile only; runtime validation deferred. |
 | Host Scanner | `todo` | |
 | Ping | `todo` | |
-| DNS Lookup | `todo` | |
+| DNS Lookup | `wip` | Tools single-host resolver, named station hold, ASCII hostname bound, IPv4/IPv6 result. SDK timeout/cache policy; runtime/device validation deferred. |
 | HTTP Client | `todo` | TLS via `esp_crt_bundle_attach` only. `setInsecure()` is banned (rule 22). |
 | mDNS Browser | `todo` | |
 
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-22 UTC, P6 scanner signal history):
+Latest verified full working-snapshot image (2026-09-23 UTC, P6 DNS Lookup):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,406,784 |
+| Firmware image (`firmware.bin`) | 6,410,544 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 146,816 |
+| Free space | 143,056 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 115,328 |
+| Shortfall against reserve | 119,088 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

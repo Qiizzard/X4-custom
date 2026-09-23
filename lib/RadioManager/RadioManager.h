@@ -92,6 +92,8 @@ class RadioManager {
   // Connected with a nonzero station IP; excludes association before DHCP.
   // Configure an owned ESP-NOW radio before the activity initializes its protocol.
   bool configureEspNow(const char* owner, uint8_t channel);
+  // One synchronous SDK lookup; caller owns output, SDK controls timeout.
+  bool resolveHostname(const char* owner, const char* hostname, char (&address)[48]);
   bool stationConnected(const char* owner) const;
   int stationRssi(const char* owner) const;  // -127 when not owned/connected
 

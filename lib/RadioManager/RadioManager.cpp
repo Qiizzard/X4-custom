@@ -91,6 +91,10 @@ bool RadioManager::accessPointAddress(const char*, uint8_t (&address)[4]) const 
   return false;
 }
 bool RadioManager::configureEspNow(const char*, uint8_t) { return false; }
+bool RadioManager::resolveHostname(const char*, const char*, char (&address)[48]) {
+  address[0] = 0;
+  return false;
+}
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
 int RadioManager::stationRssi(const char*) const { return -127; }
@@ -422,6 +426,33 @@ void RadioManager::logPickerDisconnectReason(const char* owner) const {
   if (reason)
     LOG_INF(TAG, "Last disconnect reason: %u(%s)", reason,
             WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(reason)));
+}
+
+bool RadioManager::resolveHostname(const char* owner, const char* hostname, char (&address)[48]) {
+  address[0] = 0;
+  if (!stationConnected(owner) || !hostname || !*hostname || strnlen(hostname, 254) > 253) {
+    LOG_ERR(TAG, "DNS requires an owned station and bounded hostname");
+    return false;
+  }
+  for (const char* c = hostname; *c; ++c) {
+    if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || (*c >= '0' && *c <= '9') || *c == '-' || *c == '.')) {
+      LOG_ERR(TAG, "DNS hostname contains unsupported characters");
+      return false;
+    }
+  }
+  IPAddress ip;
+  if (WiFi.hostByName(hostname, ip) != 1 || !stationConnected(owner)) {
+    LOG_ERR(TAG, "DNS lookup failed or station disconnected");
+    return false;
+  }
+  // SDK formats IPv4/IPv6 using one bounded temporary String per submitted lookup.
+  const String formatted = ip.toString();
+  if (formatted.length() >= sizeof(address)) {
+    LOG_ERR(TAG, "DNS address too long");
+    return false;
+  }
+  snprintf(address, sizeof(address), "%s", formatted.c_str());
+  return true;
 }
 
 bool RadioManager::preparePickerConnection(const char* owner) {

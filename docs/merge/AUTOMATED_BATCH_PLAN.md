@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; next remaining approved utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -504,3 +504,17 @@ this schedule does not declare them completed or permanently blocked.
   40 scans, force scan failure, switch views/export/exit and reuse radio.
   Check graph gaps, BSSID identity, bounds/orientation and heap; no cache reset.
   Next remaining approved P6 network utilities/recon ports.
+
+- 2026-09-23 00:03 UTC wakeup, P6 DNS Lookup: Tools entry with named
+  station hold, fallible picker/keyboard, 253-byte ASCII hostname limit and one
+  IPv4/IPv6 result. Manager validates input/ownership and rechecks connection
+  after synchronous SDK resolution. SDK timeout/cache policy retained; no
+  background queries. Fixed activity buffers plus one bounded SDK formatting
+  String per lookup; no recurring allocation loop. Source wip/unverified.
+  C3 compile PASS (201.434s), `/tmp/x4-p6f-build.log`; image 6,410,544 bytes,
+  stock OTA free 143,056 bytes, reserve warning remains. No host/simulator,
+  soak or live network/device tests. Usage 19% → 48%, weekly 80% → 84%
+  at late-build boundary, no reset. Unrelated work/partitions preserved.
+  Device: Tools > DNS Lookup, connect, resolve known/missing/long/invalid names,
+  try IPv4/IPv6 results, drop Wi-Fi and cancel/global Home; verify radio reuse.
+  No cache reset. Next remaining approved P6 utilities/recon ports.

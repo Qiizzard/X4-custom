@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- DNS Lookup in Tools (2026-09-23): connect to Wi-Fi and resolve one hostname
+  to an IPv4/IPv6 address. Network/device validation remains pending.
+
 - WiFi Scanner signal history (2026-09-22): selected-BSSID passive sampling,
   last 40 outcomes, min/mean/max and explicit missing/error gaps. Sampling pauses
   outside the signal view. Device validation pending.

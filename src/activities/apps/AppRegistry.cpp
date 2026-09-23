@@ -11,6 +11,7 @@
 #include "clock/ClockActivity.h"
 #include "countdown/CountdownActivity.h"
 #include "dice_roller/DiceRollerActivity.h"
+#include "dns_lookup/DnsLookupActivity.h"
 #include "etch_a_sketch/EtchASketchActivity.h"
 #include "event_logger/EventLoggerActivity.h"
 #include "flashcards/FlashcardActivity.h"
@@ -63,6 +64,7 @@ static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
 
 constexpr AppEntry kApps[] = {
     // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_APP_DNS_LOOKUP, &makeApp<DnsLookupActivity>},
     {AppCategory::Tools, StrId::STR_WIFI_NETWORKS, &makeApp<WifiSelectionActivity>},
     {AppCategory::Tools, StrId::STR_APP_CALCULATOR, &makeApp<CalculatorActivity>},
     {AppCategory::Tools, StrId::STR_APP_UNIT_CONVERTER, &makeApp<UnitConverterActivity>},
