@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -518,3 +518,20 @@ this schedule does not declare them completed or permanently blocked.
   Device: Tools > DNS Lookup, connect, resolve known/missing/long/invalid names,
   try IPv4/IPv6 results, drop Wi-Fi and cancel/global Home; verify radio reuse.
   No cache reset. Next remaining approved P6 utilities/recon ports.
+
+- 2026-09-23 05:04 UTC wakeup, P6 mDNS Browser core: Tools service selection
+  (ten TCP service types), single 2-second SDK query, eight fixed records with
+  name/hostname/IPv4/port, manual repeat and owned station cleanup. Refuses an
+  existing mDNS responder; frees query results and its responder before returning.
+  Result storage is 1,184 bytes in the fallibly allocated activity; SDK transient
+  TXT/address/task memory still needs measurement. Source wip/unverified; names
+  are display-sanitized/truncated. No all-services aggregation, CSV or IPv6 detail
+  yet; these remain P6 work, alongside other approved utilities/recon.
+  One C3 compile PASS (126.098s), `/tmp/x4-p6g-build.log`; image 6,415,104 bytes,
+  unchanged OTA free 138,496 bytes, reserve warning remains. No host/simulator,
+  live queries, soak or hardware tests. Usage 3% → 16%, weekly 87% → 89% at
+  late-build boundary, no reset. Unrelated work and partitions preserved.
+  Device: Tools > mDNS Browser, connect, select/discover a known TCP service,
+  browse results with Left/Right; check empty, >8, IPv6-only and lost-Wi-Fi cases.
+  Back returns to selection then exits; test global Home, busy responder/radio,
+  repeated-query heap and subsequent Clock Sync/Calibre. No cache reset.

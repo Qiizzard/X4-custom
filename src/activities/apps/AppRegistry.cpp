@@ -19,6 +19,7 @@
 #include "habit_tracker/HabitTrackerActivity.h"
 #include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
+#include "mdns_browser/MdnsBrowserActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
@@ -64,6 +65,7 @@ static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
 
 constexpr AppEntry kApps[] = {
     // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_APP_MDNS_BROWSER, &makeApp<MdnsBrowserActivity>},
     {AppCategory::Tools, StrId::STR_APP_DNS_LOOKUP, &makeApp<DnsLookupActivity>},
     {AppCategory::Tools, StrId::STR_WIFI_NETWORKS, &makeApp<WifiSelectionActivity>},
     {AppCategory::Tools, StrId::STR_APP_CALCULATOR, &makeApp<CalculatorActivity>},

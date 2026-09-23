@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- mDNS Browser in Tools (2026-09-23): choose a TCP service type and inspect
+  up to eight discovered names, IPv4 addresses and ports. Device testing pending.
+
 - DNS Lookup in Tools (2026-09-23): connect to Wi-Fi and resolve one hostname
   to an IPv4/IPv6 address. Network/device validation remains pending.
 

@@ -94,6 +94,16 @@ class RadioManager {
   bool configureEspNow(const char* owner, uint8_t channel);
   // One synchronous SDK lookup; caller owns output, SDK controls timeout.
   bool resolveHostname(const char* owner, const char* hostname, char (&address)[48]);
+  static constexpr size_t kMaxMdnsResults = 8;
+  struct MdnsResult {
+    char instance[65];
+    char hostname[65];
+    char ipv4[16];  // Empty when the result has no IPv4 address.
+    uint16_t port;
+  };
+  // One TCP service query, 2-second SDK timeout, caller-owned bounded results.
+  // Returns retained count or -1; no service advertisements or endpoint connections.
+  int browseMdns(const char* owner, const char* service, MdnsResult* out, size_t capacity);
   bool stationConnected(const char* owner) const;
   int stationRssi(const char* owner) const;  // -127 when not owned/connected
 

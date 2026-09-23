@@ -11,6 +11,7 @@
 #include <WiFi.h>
 #include <esp_mac.h>
 #include <esp_wifi.h>
+#include <mdns.h>
 #endif
 
 namespace {
@@ -95,6 +96,7 @@ bool RadioManager::resolveHostname(const char*, const char*, char (&address)[48]
   address[0] = 0;
   return false;
 }
+int RadioManager::browseMdns(const char*, const char*, MdnsResult*, size_t) { return -1; }
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
 int RadioManager::stationRssi(const char*) const { return -127; }
@@ -453,6 +455,61 @@ bool RadioManager::resolveHostname(const char* owner, const char* hostname, char
   }
   snprintf(address, sizeof(address), "%s", formatted.c_str());
   return true;
+}
+
+int RadioManager::browseMdns(const char* owner, const char* service, MdnsResult* out, size_t capacity) {
+  if (!stationConnected(owner) || !out || !capacity || !service || service[0] != '_' || strnlen(service, 17) < 2 ||
+      strnlen(service, 17) > 16) {
+    LOG_ERR(TAG, "mDNS requires owned station, service and result buffer");
+    return -1;
+  }
+  for (const char* c = service + 1; *c; ++c) {
+    if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '-')) {
+      LOG_ERR(TAG, "Invalid mDNS service type");
+      return -1;
+    }
+  }
+  // Do not take over another subsystem's responder, even if its radio is stale.
+  char existing[MDNS_NAME_BUF_LEN] = {};
+  if (mdns_hostname_get(existing) != ESP_ERR_INVALID_STATE) {
+    LOG_ERR(TAG, "mDNS responder already active");
+    return -1;
+  }
+  if (mdns_init() != ESP_OK) {
+    LOG_ERR(TAG, "mDNS startup failed");
+    return -1;
+  }
+  capacity = capacity < kMaxMdnsResults ? capacity : kMaxMdnsResults;
+  mdns_result_t* results = nullptr;
+  // SDK owns transient query/task allocations; max_results bounds records, not
+  // TXT/address bytes. Copy only fixed fields and free every result before return.
+  const esp_err_t error = mdns_query_ptr(service, "_tcp", 2000, capacity, &results);
+  int count = 0;
+  if (error == ESP_OK && stationConnected(owner)) {
+    for (const mdns_result_t* r = results; r && static_cast<size_t>(count) < capacity; r = r->next) {
+      MdnsResult& item = out[count++];
+      item = {};
+      auto copyName = [](char* target, size_t size, const char* source) {
+        snprintf(target, size, "%s", source ? source : "");
+        for (char* c = target; *c; ++c)
+          if (static_cast<unsigned char>(*c) < 32 || *c == 127) *c = '?';
+      };
+      copyName(item.instance, sizeof(item.instance), r->instance_name);
+      copyName(item.hostname, sizeof(item.hostname), r->hostname);
+      item.port = r->port;
+      for (const mdns_ip_addr_t* ip = r->addr; ip; ip = ip->next) {
+        if (ip->addr.type != ESP_IPADDR_TYPE_V4) continue;
+        snprintf(item.ipv4, sizeof(item.ipv4), IPSTR, IP2STR(&ip->addr.u_addr.ip4));
+        break;
+      }
+    }
+  } else {
+    LOG_ERR(TAG, "mDNS query failed (%d) or station disconnected", static_cast<int>(error));
+    count = -1;
+  }
+  mdns_query_results_free(results);
+  mdns_free();
+  return count;
 }
 
 bool RadioManager::preparePickerConnection(const char* owner) {
