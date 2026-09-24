@@ -1161,3 +1161,6 @@ STR_MAC_OS_UNKNOWN: "Operating system unknown; probe counts do not identify it"
 
 STR_APP_MATRIX_RAIN: "Matrix Rain"
 STR_MATRIX_STATE: "%u ms/frame | Density %d/3 (Up/Down)"
+
+STR_APP_VORONOI: "Voronoi"
+STR_VORONOI_COUNT: "%d points | Left/Right: -/+5 | Confirm: regenerate"

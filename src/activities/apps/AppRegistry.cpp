@@ -37,6 +37,7 @@
 #include "sudoku/SudokuActivity.h"
 #include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
+#include "voronoi/VoronoiActivity.h"
 #include "wifi_scanner/WifiScannerActivity.h"
 
 namespace {
@@ -129,6 +130,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
 
     {AppCategory::Games, StrId::STR_APP_MATRIX_RAIN, &makeApp<MatrixRainActivity>},
+
+    {AppCategory::Games, StrId::STR_APP_VORONOI, &makeApp<VoronoiActivity>},
 
     // ---- Recon ----
     {AppCategory::Recon, StrId::STR_APP_SIGNAL_LOCATOR, &makeApp<SignalLocatorActivity>},

@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain and Voronoi integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -719,3 +719,16 @@ this schedule does not declare them completed or permanently blocked.
   No deferred suites/device tests run. PORT_NOTES records orientation, ghosting,
   input, pause, sleep, timing/battery and heap checks; no cache reset.
   P7 remaining ports next. Unrelated work/partitions preserved; no flashing.
+
+- 2026-09-24 21:09 UTC run, P7 Voronoi: fixed 6,000-byte cell cache and
+  320-byte points, orientation-aware step size within 100x60 cells, clipped
+  edges, 5–40 points, explicit regeneration and dither/boundary rendering.
+  No animation or extra framebuffer. Maximum 240,000 distance comparisons
+  per generation; no measured performance claim. Source wip/unverified.
+  C3 compile PASS (131.944s), `/tmp/x4-p7b-build.log`; image 6,469,536 bytes,
+  OTA free 84,064, reserve warning remains. Usage 8% → 21% five-hour,
+  41% → 43% weekly. No deferred suites/device tests. Other manual repo work
+  not observed; unrelated files preserved. Device checklist in PORT_NOTES:
+  both orientations, point-count bounds, repeated generation, clipped edges,
+  dither visibility, input latency, auto-sleep and entry/exit heap. No cache
+  reset, flashing or partition changes. Remaining P7 ports next.

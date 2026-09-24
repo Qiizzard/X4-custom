@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Voronoi (2026-09-24): generate dithered nearest-point regions with 5–40
+  points and orientation-aware bounded cells. Source wip; device validation
+  remains deferred.
+
 - Matrix Rain (2026-09-24): falling-character animation with density/speed
   controls, pause/resume and normal auto-sleep. Animation capped at one frame
   per second; wip pending device display, timing and battery validation.
