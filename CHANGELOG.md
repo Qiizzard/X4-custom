@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- mDNS Browser CSV export and IPv6 details (2026-09-24): Page Back saves
+  discovered services to new files under `/crossink/mdns/`. Device testing pending.
+
 - mDNS Browser in Tools (2026-09-23): choose a TCP service type and inspect
   up to eight discovered names, IPv4 addresses and ports. Device testing pending.
 

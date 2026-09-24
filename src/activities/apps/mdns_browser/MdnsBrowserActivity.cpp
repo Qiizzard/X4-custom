@@ -1,11 +1,13 @@
 #include "MdnsBrowserActivity.h"
 
 #include <GfxRenderer.h>
+#include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
 
 #include <cstdio>
+#include <cstring>
 
 #include "MappedInputManager.h"
 #include "activities/network/WifiSelectionActivity.h"
@@ -53,6 +55,7 @@ void MdnsBrowserActivity::query() {
   {
     RenderLock lock(*this);
     state = State::Querying;
+    exportStatus = ExportStatus::None;
     count = 0;
     selected = 0;
   }
@@ -73,6 +76,25 @@ void MdnsBrowserActivity::query() {
   requestUpdate();
 }
 void MdnsBrowserActivity::loop() {
+  if (exportStatus != ExportStatus::None) {
+    if (mappedInput.wasPressed(MappedInputManager::Button::Confirm) ||
+        mappedInput.wasPressed(MappedInputManager::Button::Back) ||
+        TouchHeaderBackButton::wasTapped(mappedInput, renderer)) {
+      RenderLock lock(*this);
+      exportStatus = ExportStatus::None;
+      requestUpdate();
+    }
+    return;
+  }
+  if (state == State::Results && count > 0 && mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+    int slot = -1;
+    const bool saved = saveCsv(slot);
+    RenderLock lock(*this);
+    exportSlot = slot;
+    exportStatus = saved ? ExportStatus::Saved : ExportStatus::Failed;
+    requestUpdate();
+    return;
+  }
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
       mappedInput.wasPressed(MappedInputManager::Button::Back)) {
     if (owned && (state == State::Results || state == State::Failed)) {
@@ -112,7 +134,13 @@ void MdnsBrowserActivity::render(RenderLock&&) {
   snprintf(text, sizeof(text), "%s._tcp", kServices[service]);
   UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
   y += line;
-  if (state == State::Results && count > 0) {
+  if (exportStatus != ExportStatus::None) {
+    if (exportStatus == ExportStatus::Saved)
+      snprintf(text, sizeof(text), tr(STR_MDNS_EXPORT_SAVED), exportSlot);
+    else
+      snprintf(text, sizeof(text), "%s", tr(STR_MDNS_EXPORT_FAILED));
+    UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y + line, text);
+  } else if (state == State::Results && count > 0) {
     const auto& item = results[selected];
     snprintf(text, sizeof(text), "%d/%d (%s)", selected + 1, count, tr(STR_MDNS_CAP));
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
@@ -125,6 +153,11 @@ void MdnsBrowserActivity::render(RenderLock&&) {
     y += line;
     snprintf(text, sizeof(text), "%s : %u", item.ipv4[0] ? item.ipv4 : tr(STR_MDNS_NO_IPV4), item.port);
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
+    y += line;
+    // Address text comes from the SDK; show it whole, without inventing an IPv6 result.
+    UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, item.ipv6[0] ? item.ipv6 : tr(STR_MDNS_NO_IPV6));
+    y += line;
+    UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, tr(STR_MDNS_EXPORT_HINT));
   } else {
     const char* message = state == State::Select     ? tr(STR_MDNS_SELECT)
                           : state == State::Querying ? tr(STR_MDNS_QUERYING)
@@ -133,7 +166,70 @@ void MdnsBrowserActivity::render(RenderLock&&) {
                                                      : tr(STR_LOADING);
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y + line, message);
   }
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), owned ? tr(STR_MDNS_QUERY) : "", tr(STR_PREV_NEXT), "");
+  const auto labels = mappedInput.mapLabels(tr(STR_BACK),
+                                            exportStatus != ExportStatus::None ? tr(STR_BACK)
+                                            : owned                            ? tr(STR_MDNS_QUERY)
+                                                                               : "",
+                                            tr(STR_PREV_NEXT), "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   renderer.displayBuffer();
+}
+
+bool MdnsBrowserActivity::saveCsv(int& slot) const {
+  constexpr char directory[] = "/crossink/mdns";
+  if (!Storage.exists(directory) && !Storage.mkdir(directory, true)) {
+    LOG_ERR("MDNS", "Could not create export directory");
+    return false;
+  }
+  char path[40];
+  HalFile file;
+  for (slot = 0; slot < 100; ++slot) {
+    snprintf(path, sizeof(path), "%s/services-%02d.csv", directory, slot);
+    if (Storage.exists(path)) continue;
+    file = Storage.open(path, O_WRITE | O_CREAT | O_EXCL);
+    break;
+  }
+  if (!file) {
+    LOG_ERR("MDNS", "Could not create export (SD error or all slots used)");
+    return false;
+  }
+  // One bounded field at a time, not a heap-grown row or document. Inputs are
+  // fixed records (at most 64 bytes); sanitization occurred during query copy.
+  auto field = [&file](const char* value) {
+    char escaped[132];
+    size_t used = 0;
+    escaped[used++] = '"';
+    const char* first = value;
+    while (*first == ' ') ++first;
+    if (*first && std::strchr("=+-@", *first)) escaped[used++] = '\'';
+    for (const char* c = value; *c; ++c) {
+      if (used + 3 >= sizeof(escaped)) return false;
+      if (*c == '"') escaped[used++] = '"';
+      escaped[used++] = *c;
+    }
+    escaped[used++] = '"';
+    return file.write(escaped, used) == used;
+  };
+  auto separator = [&file](const char c) { return file.write(&c, 1) == 1; };
+  static constexpr char header[] = "instance,hostname,ipv4,ipv6,port,service\n";
+  bool ok = file.write(header, sizeof(header) - 1) == sizeof(header) - 1;
+  for (int i = 0; ok && i < count; ++i) {
+    const auto& item = results[i];
+    char port[6];
+    snprintf(port, sizeof(port), "%u", unsigned(item.port));
+    char type[24];
+    snprintf(type, sizeof(type), "%s._tcp", kServices[service]);
+    ok = field(item.instance) && separator(',') && field(item.hostname) && separator(',') && field(item.ipv4) &&
+         separator(',') && field(item.ipv6) && separator(',') && field(port) && separator(',') && field(type) &&
+         separator('\n');
+  }
+  if (ok) ok = file.sync();
+  const bool closed = file.close();
+  if (!ok || !closed) {
+    LOG_ERR("MDNS", "Export write/sync/close failed");
+    if (!Storage.remove(path)) LOG_ERR("MDNS", "Could not remove partial export");
+    return false;
+  }
+  LOG_INF("MDNS", "Saved %d service rows to %s", count, path);
+  return true;
 }

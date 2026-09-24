@@ -42,7 +42,7 @@ The historical queue/log below is retained only as history.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with IPv6/CSV integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -535,3 +535,20 @@ this schedule does not declare them completed or permanently blocked.
   browse results with Left/Right; check empty, >8, IPv6-only and lost-Wi-Fi cases.
   Back returns to selection then exits; test global Home, busy responder/radio,
   repeated-query heap and subsequent Clock Sync/Calibre. No cache reset.
+
+- 2026-09-24 UTC manual continuation, P6 mDNS IPv6/CSV: records retain first
+  IPv4 and IPv6 addresses (numeric scope when supplied by SDK). Page Back exports
+  up to eight records to exclusive `/crossink/mdns/services-00.csv` through
+  `services-99.csv`; streams quoted fields with formula-prefix protection,
+  checks write/sync/close and attempts partial-file removal on failure.
+  Result storage grows 384 bytes to 1,568 bytes in the activity; export uses
+  bounded stack fields, no document-sized buffer. All-services aggregation
+  remains next; source is wip/unverified. One C3 compile PASS (225.112s),
+  `/tmp/x4-p6h-build.log`; image 6,418,000 bytes, unchanged OTA free 135,600
+  bytes, reserve warning remains. No host/simulator/soak/live network/device
+  tests. Usage 1% → 15%, weekly 0% → 2% at mid-build boundary, no reset.
+  Unrelated work and shipping partitions preserved.
+  Device: discover IPv4-only/IPv6-only/dual-stack services, inspect address
+  display and export columns; check commas/quotes/formula-like names, occupied
+  export slots, absent/full/removed SD, dismiss export result and exit/reuse
+  radio. Earlier exports must remain intact. No cache reset.

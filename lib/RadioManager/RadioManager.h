@@ -99,6 +99,7 @@ class RadioManager {
     char instance[65];
     char hostname[65];
     char ipv4[16];  // Empty when the result has no IPv4 address.
+    char ipv6[48];  // First IPv6 address, with numeric scope when supplied by SDK.
     uint16_t port;
   };
   // One TCP service query, 2-second SDK timeout, caller-owned bounded results.

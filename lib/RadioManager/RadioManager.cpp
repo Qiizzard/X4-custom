@@ -11,6 +11,7 @@
 #include <WiFi.h>
 #include <esp_mac.h>
 #include <esp_wifi.h>
+#include <lwip/ip6_addr.h>
 #include <mdns.h>
 #endif
 
@@ -498,9 +499,23 @@ int RadioManager::browseMdns(const char* owner, const char* service, MdnsResult*
       copyName(item.hostname, sizeof(item.hostname), r->hostname);
       item.port = r->port;
       for (const mdns_ip_addr_t* ip = r->addr; ip; ip = ip->next) {
-        if (ip->addr.type != ESP_IPADDR_TYPE_V4) continue;
-        snprintf(item.ipv4, sizeof(item.ipv4), IPSTR, IP2STR(&ip->addr.u_addr.ip4));
-        break;
+        if (ip->addr.type == ESP_IPADDR_TYPE_V4 && !item.ipv4[0]) {
+          snprintf(item.ipv4, sizeof(item.ipv4), IPSTR, IP2STR(&ip->addr.u_addr.ip4));
+        } else if (ip->addr.type == ESP_IPADDR_TYPE_V6 && !item.ipv6[0]) {
+          ip6_addr_t address = {};
+          memcpy(address.addr, ip->addr.u_addr.ip6.addr, sizeof(address.addr));
+          char formatted[40];
+          if (ip6addr_ntoa_r(&address, formatted, sizeof(formatted))) {
+            const unsigned zone = ip->addr.u_addr.ip6.zone;
+            if (zone)
+              snprintf(item.ipv6, sizeof(item.ipv6), "%s%%%u", formatted, zone);
+            else
+              snprintf(item.ipv6, sizeof(item.ipv6), "%s", formatted);
+          } else {
+            LOG_ERR(TAG, "mDNS IPv6 formatting failed");
+          }
+        }
+        if (item.ipv4[0] && item.ipv6[0]) break;
       }
     }
   } else {

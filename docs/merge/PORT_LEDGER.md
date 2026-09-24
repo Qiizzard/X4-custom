@@ -72,7 +72,7 @@ coherent, working subset.
 | Ping | `todo` | |
 | DNS Lookup | `wip` | Tools single-host resolver, named station hold, ASCII hostname bound, IPv4/IPv6 result. SDK timeout/cache policy; runtime/device validation deferred. |
 | HTTP Client | `todo` | TLS via `esp_crt_bundle_attach` only. `setInsecure()` is banned (rule 22). |
-| mDNS Browser | `wip` | Tools service selection, one 2-second query, up to eight fixed results, named station hold and per-query SDK cleanup. IPv4 detail only; all-services aggregation/CSV remain unported. Runtime/resource/device validation deferred. |
+| mDNS Browser | `wip` | Tools service selection, one 2-second query, up to eight fixed results, named station hold and per-query SDK cleanup. IPv4/IPv6 details and exclusive numbered CSV export integrated; all-services aggregation remains unported. Runtime/resource/device validation deferred. |
 
 ## Tools → Tracking & logging
 
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-23 UTC, P6 mDNS Browser):
+Latest verified full working-snapshot image (2026-09-24 UTC, P6 mDNS IPv6/CSV):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,415,104 |
+| Firmware image (`firmware.bin`) | 6,418,000 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 138,496 |
+| Free space | 135,600 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 123,648 |
+| Shortfall against reserve | 126,544 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
