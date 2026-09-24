@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- mDNS all-services discovery (2026-09-24): query ten TCP service types with
+  an eight-result cap, cancel between queries, and label partial snapshots.
+
 - mDNS Browser CSV export and IPv6 details (2026-09-24): Page Back saves
   discovered services to new files under `/crossink/mdns/`. Device testing pending.
 

@@ -1038,3 +1038,6 @@ STR_MDNS_NO_IPV6: "No IPv6"
 STR_MDNS_EXPORT_HINT: "Page Back: export CSV"
 STR_MDNS_EXPORT_SAVED: "Saved /crossink/mdns/services-%02d.csv"
 STR_MDNS_EXPORT_FAILED: "Export failed: check SD card and free slots"
+
+STR_MDNS_ALL: "All services"
+STR_MDNS_PARTIAL: "partial, up to 8"

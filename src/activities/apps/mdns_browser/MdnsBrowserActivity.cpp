@@ -52,26 +52,42 @@ void MdnsBrowserActivity::onExit() {
   if (owned && RADIO.shutdown(kOwner)) owned = false;
 }
 void MdnsBrowserActivity::query() {
-  {
-    RenderLock lock(*this);
-    state = State::Querying;
-    exportStatus = ExportStatus::None;
-    count = 0;
-    selected = 0;
-  }
+  RenderLock lock(*this);
+  state = State::Querying;
+  exportStatus = ExportStatus::None;
+  count = selected = 0;
+  partial = false;
+  queryService = service == kServiceCount ? 0 : service;
+  requestUpdate();
+}
+void MdnsBrowserActivity::queryNext() {
   if (requestUpdateAndWait() != RequestUpdateResult::Rendered) {
     LOG_ERR("MDNS", "Query screen unavailable");
     RenderLock lock(*this);
-    state = State::Failed;
+    partial = true;
+    state = count ? State::Results : State::Failed;
     requestUpdate();
     return;
   }
-  // Render reads no records while Querying. No background query survives exit.
-  const int found = RADIO.browseMdns(kOwner, kServices[service], results, RadioManager::kMaxMdnsResults);
+  // One bounded blocking query per loop; Back/global Home can run between types.
+  // Render reads no records while Querying. No task survives the query return.
+  const int found =
+      RADIO.browseMdns(kOwner, kServices[queryService], results + count, RadioManager::kMaxMdnsResults - count);
   {
     RenderLock lock(*this);
-    count = found;
-    state = found < 0 ? State::Failed : State::Results;
+    if (found < 0) {
+      partial = true;
+    } else {
+      for (int i = 0; i < found; ++i) resultServices[count + i] = queryService;
+      count += found;
+    }
+    ++queryService;
+    const bool more = service == kServiceCount && queryService < kServiceCount;
+    const bool connected = RADIO.stationConnected(kOwner);
+    if (!more || count == RadioManager::kMaxMdnsResults || !connected) {
+      if (more) partial = true;
+      state = count || !partial ? State::Results : State::Failed;
+    }
   }
   requestUpdate();
 }
@@ -97,7 +113,12 @@ void MdnsBrowserActivity::loop() {
   }
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
       mappedInput.wasPressed(MappedInputManager::Button::Back)) {
-    if (owned && (state == State::Results || state == State::Failed)) {
+    if (state == State::Querying) {
+      RenderLock lock(*this);
+      partial = true;
+      state = count ? State::Results : State::Select;
+      requestUpdate();
+    } else if (owned && (state == State::Results || state == State::Failed)) {
       RenderLock lock(*this);
       state = State::Select;
       requestUpdate();
@@ -106,13 +127,17 @@ void MdnsBrowserActivity::loop() {
     }
     return;
   }
+  if (state == State::Querying) {
+    queryNext();
+    return;
+  }
   const bool next = mappedInput.wasPressed(MappedInputManager::Button::Right) ||
                     mappedInput.wasPressed(MappedInputManager::Button::Down);
   const bool previous = mappedInput.wasPressed(MappedInputManager::Button::Left) ||
                         mappedInput.wasPressed(MappedInputManager::Button::Up);
   if (next || previous) {
     RenderLock lock(*this);
-    if (state == State::Select) service = (service + (next ? 1 : kServiceCount - 1)) % kServiceCount;
+    if (state == State::Select) service = (service + (next ? 1 : kServiceCount)) % (kServiceCount + 1);
     if (state == State::Results && count > 0) selected = (selected + (next ? 1 : count - 1)) % count;
     requestUpdate();
   }
@@ -131,7 +156,15 @@ void MdnsBrowserActivity::render(RenderLock&&) {
   const int line = renderer.getLineHeight(UI_10_FONT_ID) + 8;
   int y = screen.y + line;
   char text[96];
-  snprintf(text, sizeof(text), "%s._tcp", kServices[service]);
+  if (state == State::Querying)
+    snprintf(text, sizeof(text), "%s._tcp (%d/%d)", kServices[queryService],
+             service == kServiceCount ? queryService + 1 : 1, service == kServiceCount ? kServiceCount : 1);
+  else if (state == State::Results && count > 0)
+    snprintf(text, sizeof(text), "%s._tcp", kServices[resultServices[selected]]);
+  else if (service == kServiceCount)
+    snprintf(text, sizeof(text), "%s", tr(STR_MDNS_ALL));
+  else
+    snprintf(text, sizeof(text), "%s._tcp", kServices[service]);
   UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
   y += line;
   if (exportStatus != ExportStatus::None) {
@@ -142,7 +175,7 @@ void MdnsBrowserActivity::render(RenderLock&&) {
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y + line, text);
   } else if (state == State::Results && count > 0) {
     const auto& item = results[selected];
-    snprintf(text, sizeof(text), "%d/%d (%s)", selected + 1, count, tr(STR_MDNS_CAP));
+    snprintf(text, sizeof(text), "%d/%d (%s)", selected + 1, count, partial ? tr(STR_MDNS_PARTIAL) : tr(STR_MDNS_CAP));
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, text);
     y += line;
     snprintf(text, sizeof(text), "%.32s", item.instance);
@@ -218,7 +251,7 @@ bool MdnsBrowserActivity::saveCsv(int& slot) const {
     char port[6];
     snprintf(port, sizeof(port), "%u", unsigned(item.port));
     char type[24];
-    snprintf(type, sizeof(type), "%s._tcp", kServices[service]);
+    snprintf(type, sizeof(type), "%s._tcp", kServices[resultServices[i]]);
     ok = field(item.instance) && separator(',') && field(item.hostname) && separator(',') && field(item.ipv4) &&
          separator(',') && field(item.ipv6) && separator(',') && field(port) && separator(',') && field(type) &&
          separator('\n');

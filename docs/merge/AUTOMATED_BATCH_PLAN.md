@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with IPv6/CSV integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -572,3 +572,14 @@ this schedule does not declare them completed or permanently blocked.
 - 2026-09-23 local: user authorized all available included usage. Removed
   artificial usage deferrals and one-batch-per-wakeup cap from the active
   instructions and saved automation; five-hour cadence and safeguards retained.
+
+- 2026-09-24 06:08 UTC run, P6 mDNS completion checkpoint: all-services
+  selection steps through ten TCP types, one 2-second query per loop. Retains
+  eight total records plus eight service-index bytes; CSV preserves each row's
+  type. Back cancels between queries; failed/cancelled/capped sweeps are marked
+  partial. Source wip/unverified. C3 compile PASS (144.829s),
+  `/tmp/x4-p6i-build.log`; image 6,418,656 bytes, OTA free 134,944, reserve
+  warning remains. No deferred suites/device tests. Usage 10% → 23%, weekly
+  7% → 9%; continuing under full-usage policy. Device: browse All services,
+  cancel midway, exceed cap, drop Wi-Fi, export mixed types and reuse radio.
+  No cache reset. Next Ping/remaining P6 utilities; unrelated work preserved.
