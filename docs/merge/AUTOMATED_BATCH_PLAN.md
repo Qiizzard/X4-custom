@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); remaining approved recon next, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change integrated (wip); remaining approved recon next, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -649,3 +649,19 @@ this schedule does not declare them completed or permanently blocked.
   work/partitions preserved. Device: >24 source MACs, repeat/randomized MACs,
   mixed SSID quoting, saturated channel counters/unequal dwell, pause/export,
   queue drops and burst acknowledge. Check SD failures and radio reuse; no cache reset.
+
+- 2026-09-24 11:09 UTC run, P6 AP journal batch: AP History repeats capped
+  passive observations at 1/5/10/30-minute pauses; Wardriving logs first sightings
+  at 10-second pauses. Both track at most 64 BSSIDs, log to new numbered files
+  capped at 1 MiB, close after each scan, and retain partial logs on failure.
+  Network Change compares at most 40 BSSIDs with new/absent/metadata labels,
+  deduplicates results and persists explicit version-1 CRC-protected baselines
+  in increasing exclusive slots. Invalid latest files fall back to earlier valid
+  slots; failed saves preserve the active baseline. Fixed shared activity buffers
+  ~5.4 KiB. Source wip/unverified. C3 PASS (140.892s), `/tmp/x4-p6n-build.log`;
+  image 6,456,128 bytes, OTA free 97,472, reserve warning persists. No deferred
+  suites/live scan/device tests. Continuing remaining P6; unrelated work preserved.
+  Device: repeated/empty/capped scans, pause/resume, first/last uptime, duplicate
+  BSSIDs, >64 identities, SD removal/full logs; baseline reload, corruption/short
+  files, exhausted slots, channel/security/SSID changes and absent snapshot
+  entries. Check radio reuse and heap. No cache reset or partition changes.

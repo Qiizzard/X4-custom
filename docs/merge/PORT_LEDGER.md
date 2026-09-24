@@ -119,9 +119,9 @@ coherent, working subset.
 | Packet Monitor | `wip` | Fixed 2 KiB queue, frame/type/drop counts, channel/hop/pause controls, 96-byte-prefix PCAP up to 1 MiB per exclusive file. Dequeue uptime timestamps. Channel chart/CSV and 24 tracked source MAC summaries integrated; unequal channel dwell and queue drops remain explicit. Runtime/RF/SD gates open. |
 | Probe Sniffer | `wip` | Passive request-frame count, eight recent source/SSID/RSSI/channel events, bounded parser and protected/truncated handling. 24 tracked source-MAC summaries with latest SSID/RSSI and CSV integrated; not a physical-device count. Runtime/RF validation deferred. |
 | Deauth Detector | `wip` | Passive deauth/disassociation frame counts and eight recent events; no attack attribution or protected-reason decoding. Observed burst indicator (at least five processed deauth frames per roughly two-second interval), explicit elapsed time/acknowledgment; runtime/RF validation deferred. |
-| Wardriving | `todo` | |
-| AP History | `todo` | |
-| Network Change | `todo` | |
+| Wardriving | `wip` | Passive scans, 64 tracked BSSIDs, first-observation CSV, 10-second scan pauses, 1 MiB log cap. Uptime only, no location. Runtime/SD/RF tests deferred. |
+| AP History | `wip` | Passive repeated CSV observations, 40 results/64 tracked BSSIDs, selectable 1/5/10/30-minute scan pauses, bounded exclusive journals. Runtime/SD/RF tests deferred. |
+| Network Change | `wip` | Capped passive baseline/current comparison, new/absent/metadata changes, versioned CRC-protected exclusive baseline slots and valid-file fallback. No offline-device claim; file/runtime/RF validation deferred. |
 | Crowd Density | `todo` | |
 | Device Fingerprint | `todo` | |
 | Vendor Lookup | `todo` | OUI table must be `static const` in flash (rule 4), and it is large — budget it before porting. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-24 UTC, P6 passive monitor summaries):
+Latest verified full working-snapshot image (2026-09-24 UTC, P6 AP journals/snapshots):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,447,456 |
+| Firmware image (`firmware.bin`) | 6,456,128 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 106,144 |
+| Free space | 97,472 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 156,000 |
+| Shortfall against reserve | 164,672 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

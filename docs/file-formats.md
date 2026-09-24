@@ -589,3 +589,14 @@ after a complete CSS rebuild (or the existing eligible partial-rebuild path);
 a failed rebuild preserves old sections. When
 testing, clear the book’s `/.crosspoint/epub_<hash>/` directory and compare a
 cold parse with a reopen at each shipped font size.
+
+
+## Network Change baseline v1
+
+`/crossink/snapshots/base-00.bin` through `base-99.bin`: 8-byte header
+(`X4NC`, version byte 1, count byte 0–40, two zero bytes), then count 42-byte
+records (33-byte terminated SSID, BSSID[6], signed RSSI byte, channel byte,
+protected flag 0/1), then little-endian CRC-32/IEEE over header and records
+(initial/final XOR 0xffffffff). Writes use the next higher exclusive slot;
+loads choose the highest valid slot. Counts, lengths, duplicate BSSIDs, channel
+and flag values are validated. This format is independent of EPUB caches.

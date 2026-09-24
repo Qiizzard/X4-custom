@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- AP History, Wardriving and Network Change (2026-09-24): bounded passive
+  journals and persisted snapshot comparisons. Logs use uptime, not location;
+  missing BSSIDs are absent observations, not proof of an offline device.
+
 - Passive monitor summaries (2026-09-24): channel chart/CSV, up to 24 tracked
   source MACs, probe summaries/CSV and an observed deauth burst indicator.
   Counts are capped observations; validation remains deferred.

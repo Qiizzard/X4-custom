@@ -5,6 +5,7 @@
 #include "activities/Activity.h"
 #include "activities/home/FileBrowserActivity.h"
 #include "activities/network/WifiSelectionActivity.h"
+#include "ap_journal/ApJournalActivity.h"
 #include "barcode/BarcodeActivity.h"
 #include "calculator/CalculatorActivity.h"
 #include "cipher/CipherActivity.h"
@@ -44,6 +45,11 @@ namespace {
 template <typename T>
 std::unique_ptr<Activity> makeApp(GfxRenderer& renderer, MappedInputManager& mappedInput) {
   return makeUniqueNoThrow<T>(renderer, mappedInput);
+}
+
+template <ApJournalActivity::Kind Kind>
+std::unique_ptr<Activity> makeApJournal(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<ApJournalActivity>(renderer, input, Kind);
 }
 
 template <PassiveMonitorActivity::Kind Kind>
@@ -121,6 +127,9 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
 
     // ---- Recon ----
+    {AppCategory::Recon, StrId::STR_APP_AP_HISTORY, &makeApJournal<ApJournalActivity::Kind::History>},
+    {AppCategory::Recon, StrId::STR_APP_WARDRIVING, &makeApJournal<ApJournalActivity::Kind::Wardriving>},
+    {AppCategory::Recon, StrId::STR_APP_NETWORK_CHANGE, &makeApJournal<ApJournalActivity::Kind::Changes>},
     {AppCategory::Recon, StrId::STR_APP_PACKET_MONITOR, &makeMonitor<PassiveMonitorActivity::Kind::Packets>},
     {AppCategory::Recon, StrId::STR_APP_PROBE_SNIFFER, &makeMonitor<PassiveMonitorActivity::Kind::Probes>},
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
