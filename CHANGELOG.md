@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- HTTP Client (2026-09-24): explicit GET/plain-text POST, validated HTTPS and
+  a bounded ASCII response preview. Network/TLS/device validation deferred.
+
 - Ping (TCP) and Host Scanner (2026-09-24): bounded connection timing, local
   IPv4 discovery, selected-host port checks and CSV export. TCP results are
   not ICMP replies or proof that nonresponding hosts are offline. Tests deferred.

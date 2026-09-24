@@ -18,6 +18,7 @@
 #include "game_of_life/GameOfLifeActivity.h"
 #include "habit_tracker/HabitTrackerActivity.h"
 #include "host_scanner/HostScannerActivity.h"
+#include "http_client/HttpClientActivity.h"
 #include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
 #include "mdns_browser/MdnsBrowserActivity.h"
@@ -67,6 +68,7 @@ static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
 
 constexpr AppEntry kApps[] = {
     // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_APP_HTTP_CLIENT, &makeApp<HttpClientActivity>},
     {AppCategory::Tools, StrId::STR_APP_PING_TCP, &makeApp<PingActivity>},
     {AppCategory::Tools, StrId::STR_APP_HOST_SCANNER, &makeApp<HostScannerActivity>},
     {AppCategory::Tools, StrId::STR_APP_MDNS_BROWSER, &makeApp<MdnsBrowserActivity>},

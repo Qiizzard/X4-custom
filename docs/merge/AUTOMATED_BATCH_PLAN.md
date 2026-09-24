@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); next HTTP Client and remaining approved recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); next remaining approved recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -600,3 +600,19 @@ this schedule does not declare them completed or permanently blocked.
   Host Scanner /24 and smaller subnets, DHCP changes, >32 responders, partial
   port checks, missing/full SD and CSV tested/open columns. Check heap and
   orientation. No cache reset; no flashing/partition changes.
+
+- 2026-09-24 06:08 UTC run, P6 HTTP Client: explicit GET/plain-text POST menu,
+  fixed 256-byte URL/512-byte body and 1024-byte response preview. Helper uses
+  esp_crt_bundle_attach, refuses embedded credentials/encoded authorities, does
+  not follow redirects, and always cleans the client. Preview flattens whitespace
+  and replaces non-ASCII bytes; cap is visible. SDK read/connect timeouts apply;
+  write/read loops also check elapsed time and ownership. DNS/TLS setup timing
+  and SDK allocation peaks require hardware measurement; no hard overall deadline
+  claimed. Fixed activity data ~1.8 KiB; large SDK config allocated fallibly off
+  task stack. Source wip/unverified. C3 compile PASS (162.499s),
+  `/tmp/x4-p6k-build.log`; image 6,434,560 bytes, OTA free 119,040, reserve warning.
+  No deferred suites/live requests/device tests. Usage read unavailable at this
+  boundary; continuing with checkpoints per updated policy. Unrelated work kept.
+  Device: valid/invalid TLS, GET/POST, 204/redirect/error/chunked/large responses,
+  timeout/disconnect, paging/orientation and repeated entry/exit heap. No cache
+  reset. Next passive recon; shipping partitions unchanged.
