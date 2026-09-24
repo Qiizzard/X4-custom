@@ -30,6 +30,7 @@
 #include "ping/PingActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
 #include "secure_vault/PasswordManagerActivity.h"
+#include "signal_locator/SignalLocatorActivity.h"
 #include "snake/SnakeActivity.h"
 #include "stego_notes/StegoNotesActivity.h"
 #include "sudoku/SudokuActivity.h"
@@ -127,6 +128,9 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
 
     // ---- Recon ----
+    {AppCategory::Recon, StrId::STR_APP_SIGNAL_LOCATOR, &makeApp<SignalLocatorActivity>},
+    {AppCategory::Recon, StrId::STR_APP_WIFI_HEATMAP, &makeApJournal<ApJournalActivity::Kind::HeatMap>},
+    {AppCategory::Recon, StrId::STR_APP_PERIMETER_WATCH, &makeApJournal<ApJournalActivity::Kind::Watch>},
     {AppCategory::Recon, StrId::STR_APP_AP_HISTORY, &makeApJournal<ApJournalActivity::Kind::History>},
     {AppCategory::Recon, StrId::STR_APP_WARDRIVING, &makeApJournal<ApJournalActivity::Kind::Wardriving>},
     {AppCategory::Recon, StrId::STR_APP_NETWORK_CHANGE, &makeApJournal<ApJournalActivity::Kind::Changes>},

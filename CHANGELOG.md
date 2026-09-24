@@ -7,6 +7,11 @@ base is MIT.
 
 ### Added
 
+- Signal Locator, WiFi Heat Map logging and Perimeter Watch (2026-09-24):
+  compare three RSSI sample positions, save bounded RSSI journals, and track
+  BSSIDs observed after a baseline. No location or intrusion inference; device
+  validation remains deferred.
+
 - AP History, Wardriving and Network Change (2026-09-24): bounded passive
   journals and persisted snapshot comparisons. Logs use uptime, not location;
   missing BSSIDs are absent observations, not proof of an offline device.

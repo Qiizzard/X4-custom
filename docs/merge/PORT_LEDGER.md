@@ -125,9 +125,9 @@ coherent, working subset.
 | Crowd Density | `todo` | |
 | Device Fingerprint | `todo` | |
 | Vendor Lookup | `todo` | OUI table must be `static const` in flash (rule 4), and it is large — budget it before porting. |
-| WiFi Heat Map | `todo` | |
-| Signal Locator | `todo` | |
-| Perimeter Watch | `todo` | |
+| WiFi Heat Map | `wip` | Passive RSSI CSV journal, 5-second scan pauses, 40 results/64 tracked BSSIDs, 1 MiB/10,000-row caps. No spatial coordinates; runtime/SD/RF unverified. |
+| Signal Locator | `wip` | Three positions with three passive scan attempts each; averages only observed target BSSID samples and shows missing readings. No calculated location; runtime/RF unverified. |
+| Perimeter Watch | `wip` | Volatile passive baseline up to 40 BSSIDs; bounded new-observation tracking within 64 total records, pause/resume and CSV export. No intrusion claim; runtime/SD/RF unverified. |
 | Full Sweep | `todo` | Composite; port after its parts. |
 | BLE Scanner | `blocked` | **No BLE stack in this tree.** `lib_ignore = BLE`; nothing links NimBLE. Adding it is a real RAM cost on a C3 and needs a gate decision. |
 | BLE Proximity | `blocked` | Same. |
