@@ -17,12 +17,14 @@
 #include "flashcards/FlashcardActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
 #include "habit_tracker/HabitTrackerActivity.h"
+#include "host_scanner/HostScannerActivity.h"
 #include "key_copier/KeyCopierActivity.h"
 #include "maze/MazeActivity.h"
 #include "mdns_browser/MdnsBrowserActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
+#include "ping/PingActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
 #include "secure_vault/PasswordManagerActivity.h"
 #include "snake/SnakeActivity.h"
@@ -65,6 +67,8 @@ static_assert(sizeof(kCategories) / sizeof(kCategories[0]) == kAppCategoryCount,
 
 constexpr AppEntry kApps[] = {
     // ---- Tools ----
+    {AppCategory::Tools, StrId::STR_APP_PING_TCP, &makeApp<PingActivity>},
+    {AppCategory::Tools, StrId::STR_APP_HOST_SCANNER, &makeApp<HostScannerActivity>},
     {AppCategory::Tools, StrId::STR_APP_MDNS_BROWSER, &makeApp<MdnsBrowserActivity>},
     {AppCategory::Tools, StrId::STR_APP_DNS_LOOKUP, &makeApp<DnsLookupActivity>},
     {AppCategory::Tools, StrId::STR_WIFI_NETWORKS, &makeApp<WifiSelectionActivity>},

@@ -11,8 +11,12 @@
 #include <WiFi.h>
 #include <esp_mac.h>
 #include <esp_wifi.h>
+#include <lwip/inet.h>
 #include <lwip/ip6_addr.h>
+#include <lwip/sockets.h>
 #include <mdns.h>
+
+#include <cerrno>
 #endif
 
 namespace {
@@ -97,7 +101,15 @@ bool RadioManager::resolveHostname(const char*, const char*, char (&address)[48]
   address[0] = 0;
   return false;
 }
+int RadioManager::probeTcp(const char*, const char*, uint16_t, uint32_t, uint32_t& elapsedMs) {
+  elapsedMs = 0;
+  return -1;
+}
 int RadioManager::browseMdns(const char*, const char*, MdnsResult*, size_t) { return -1; }
+bool RadioManager::stationIpv4Range(const char*, uint32_t& first, uint32_t& last, uint32_t& self) const {
+  first = last = self = 0;
+  return false;
+}
 bool RadioManager::foreignRadioActive() { return false; }
 bool RadioManager::stationConnected(const char*) const { return false; }
 int RadioManager::stationRssi(const char*) const { return -127; }
@@ -525,6 +537,112 @@ int RadioManager::browseMdns(const char* owner, const char* service, MdnsResult*
   mdns_query_results_free(results);
   mdns_free();
   return count;
+}
+
+bool RadioManager::stationIpv4Range(const char* owner, uint32_t& first, uint32_t& last, uint32_t& self) const {
+  first = last = self = 0;
+  if (!stationConnected(owner)) {
+    LOG_ERR(TAG, "Subnet requires an owned station");
+    return false;
+  }
+  const IPAddress ip = WiFi.localIP(), mask = WiFi.subnetMask();
+  uint32_t bits = 0;
+  for (int i = 0; i < 4; ++i) {
+    self = (self << 8) | ip[i];
+    bits = (bits << 8) | mask[i];
+  }
+  const uint32_t hostBits = ~bits;
+  if (!bits || hostBits < 3 || (hostBits & (hostBits + 1))) {
+    LOG_ERR(TAG, "Unsupported IPv4 subnet mask");
+    first = last = self = 0;
+    return false;
+  }
+  bits |= 0xffffff00u;
+  first = (self & bits) + 1;
+  last = (self | ~bits) - 1;
+  if (self < first || self > last) {
+    LOG_ERR(TAG, "Station IPv4 is not a host address");
+    first = last = self = 0;
+    return false;
+  }
+  return true;
+}
+
+int RadioManager::probeTcp(const char* owner, const char* address, uint16_t port, uint32_t timeoutMs,
+                           uint32_t& elapsedMs) {
+  elapsedMs = 0;
+  if (!stationConnected(owner) || !address || !*address || !port || !timeoutMs || timeoutMs > 3000) {
+    LOG_ERR(TAG, "TCP probe requires owned station and bounded target/timeout");
+    return -1;
+  }
+  union {
+    sockaddr_in v4;
+    sockaddr_in6 v6;
+  } target = {};
+  int family = AF_INET;
+  socklen_t length = sizeof(target.v4);
+  if (inet_pton(AF_INET, address, &target.v4.sin_addr) == 1) {
+    target.v4.sin_family = AF_INET;
+    target.v4.sin_port = htons(port);
+  } else {
+    memset(&target, 0, sizeof(target));
+    if (inet_pton(AF_INET6, address, &target.v6.sin6_addr) != 1) {
+      LOG_ERR(TAG, "TCP probe needs a numeric IPv4/IPv6 address");
+      return -1;
+    }
+    family = AF_INET6;
+    length = sizeof(target.v6);
+    target.v6.sin6_family = AF_INET6;
+    target.v6.sin6_port = htons(port);
+  }
+  // lwIP owns socket buffers; no application receive buffer or task is allocated.
+  // Close on every path before returning, including partial startup failures.
+  const int socketFd = socket(family, SOCK_STREAM, IPPROTO_TCP);
+  if (socketFd < 0) {
+    LOG_ERR(TAG, "TCP socket allocation failed (%d)", errno);
+    return -1;
+  }
+  const int flags = fcntl(socketFd, F_GETFL, 0);
+  if (flags < 0 || fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+    LOG_ERR(TAG, "TCP nonblocking setup failed (%d)", errno);
+    close(socketFd);
+    return -1;
+  }
+  const uint32_t start = millis();
+  int result = 0;
+  const int connectResult = connect(socketFd, reinterpret_cast<const sockaddr*>(&target), length);
+  if (connectResult == 0) {
+    result = 1;
+  } else if (errno == EINPROGRESS) {
+    fd_set writable;
+    FD_ZERO(&writable);
+    FD_SET(socketFd, &writable);
+    timeval timeout = {static_cast<long>(timeoutMs / 1000), static_cast<long>((timeoutMs % 1000) * 1000)};
+    const int ready = select(socketFd + 1, nullptr, &writable, nullptr, &timeout);
+    if (ready > 0) {
+      int error = 0;
+      socklen_t errorSize = sizeof(error);
+      if (getsockopt(socketFd, SOL_SOCKET, SO_ERROR, &error, &errorSize) < 0) {
+        LOG_ERR(TAG, "TCP socket status failed (%d)", errno);
+        result = -1;
+      } else
+        result = error == 0 ? 1 : 0;
+    } else if (ready < 0) {
+      LOG_ERR(TAG, "TCP wait failed (%d)", errno);
+      result = -1;
+    }
+  }
+  elapsedMs = millis() - start;
+  if (close(socketFd) < 0) {
+    LOG_ERR(TAG, "TCP close failed (%d)", errno);
+    return -1;
+  }
+  if (!stationConnected(owner)) {
+    LOG_ERR(TAG, "TCP station lost during probe");
+    return -1;
+  }
+  if (result == 0) LOG_DBG(TAG, "TCP target did not connect");
+  return result;
 }
 
 bool RadioManager::preparePickerConnection(const char* owner) {

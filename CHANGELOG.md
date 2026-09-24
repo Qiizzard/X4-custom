@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Ping (TCP) and Host Scanner (2026-09-24): bounded connection timing, local
+  IPv4 discovery, selected-host port checks and CSV export. TCP results are
+  not ICMP replies or proof that nonresponding hosts are offline. Tests deferred.
+
 - mDNS all-services discovery (2026-09-24): query ten TCP service types with
   an eight-result cap, cancel between queries, and label partial snapshots.
 

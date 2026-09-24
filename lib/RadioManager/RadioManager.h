@@ -105,6 +105,11 @@ class RadioManager {
   // One TCP service query, 2-second SDK timeout, caller-owned bounded results.
   // Returns retained count or -1; no service advertisements or endpoint connections.
   int browseMdns(const char* owner, const char* service, MdnsResult* out, size_t capacity);
+  // Numeric IP only; no DNS in probe timing. Returns 1 connected, 0 refused/
+  // timed out, -1 invalid request, unavailable radio, or local socket failure.
+  int probeTcp(const char* owner, const char* address, uint16_t port, uint32_t timeoutMs, uint32_t& elapsedMs);
+  // Big-endian numeric IPv4 range, restricted to the local /24 slice or smaller subnet.
+  bool stationIpv4Range(const char* owner, uint32_t& first, uint32_t& last, uint32_t& self) const;
   bool stationConnected(const char* owner) const;
   int stationRssi(const char* owner) const;  // -127 when not owned/connected
 

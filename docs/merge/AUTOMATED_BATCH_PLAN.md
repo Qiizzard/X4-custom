@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); next remaining approved utilities/recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); next HTTP Client and remaining approved recon, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -583,3 +583,20 @@ this schedule does not declare them completed or permanently blocked.
   7% → 9%; continuing under full-usage policy. Device: browse All services,
   cancel midway, exceed cap, drop Wi-Fi, export mixed types and reuse radio.
   No cache reset. Next Ping/remaining P6 utilities; unrelated work preserved.
+
+- 2026-09-24 06:08 UTC run, P6 TCP utilities batch: Ping (TCP) performs five
+  port-80 attempts with connection timings, no ICMP/loss claim. Host Scanner
+  discovers TCP-80 responders in the owned station's local /24 slice or smaller
+  subnet, excludes own/network/broadcast addresses, caps at 32 eight-byte records,
+  checks 14 common TCP ports on explicit selection and streams numbered CSV.
+  Shared manager uses nonblocking sockets with bounded waits, explicit close,
+  owner checks and subnet-change aborts. UI cancels between probes; no worker
+  tasks or application receive buffers. SDK socket memory needs device checks.
+  Source wip/unverified. C3 compile PASS (173.720s), `/tmp/x4-p6j-build.log`;
+  image 6,428,800 bytes, OTA free 124,800, reserve warning persists. No deferred
+  suites/live network/device tests. Usage 44% five-hour/13% weekly at boundary;
+  continuing HTTP Client under full-usage policy. Unrelated files preserved.
+  Device: Ping reachable/closed/unresolved targets, cancel and radio reuse;
+  Host Scanner /24 and smaller subnets, DHCP changes, >32 responders, partial
+  port checks, missing/full SD and CSV tested/open columns. Check heap and
+  orientation. No cache reset; no flashing/partition changes.

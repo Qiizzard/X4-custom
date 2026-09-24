@@ -68,8 +68,8 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | WiFi Connect | `wip` | Tools WiFi Networks entry reuses WifiSelectionActivity with an owned station hold, released at exit. Compile only; runtime validation deferred. |
-| Host Scanner | `todo` | |
-| Ping | `todo` | |
+| Host Scanner | `wip` | Local /24 slice or smaller IPv4 subnet, TCP 80 discovery, 32 records, selected-host 14-port check, CSV. Cancel between probes; excludes own/network/broadcast addresses. Runtime/heap/device validation deferred. |
+| Ping | `wip` | Ping (TCP), matching Biscuit TCP-80 semantics honestly: five attempts, 1-second connect waits, success timing, bounded DNS input, named station hold. Not ICMP; device validation deferred. |
 | DNS Lookup | `wip` | Tools single-host resolver, named station hold, ASCII hostname bound, IPv4/IPv6 result. SDK timeout/cache policy; runtime/device validation deferred. |
 | HTTP Client | `todo` | TLS via `esp_crt_bundle_attach` only. `setInsecure()` is banned (rule 22). |
 | mDNS Browser | `wip` | Tools service selection, one 2-second query, up to eight fixed results, named station hold and per-query SDK cleanup. IPv4/IPv6 details and exclusive numbered CSV export integrated; all-services discovery integrated with between-query cancellation and partial-result labels. Runtime/resource/device validation deferred. |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-24 UTC, P6 mDNS all-services):
+Latest verified full working-snapshot image (2026-09-24 UTC, P6 Ping/Host Scanner):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,418,656 |
+| Firmware image (`firmware.bin`) | 6,428,800 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 134,944 |
+| Free space | 124,800 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 127,200 |
+| Shortfall against reserve | 137,344 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean
