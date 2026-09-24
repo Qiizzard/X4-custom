@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -708,3 +708,14 @@ this schedule does not declare them completed or permanently blocked.
   Device: global/local/multicast MACs, repeated/overflow observations, CSV
   escaping/SD errors, chart wrap/orientations, pause/resume and owner release.
   No cache reset. Unrelated work and shipping partitions preserved.
+
+- 2026-09-24 16:09 UTC run, P7 Matrix Rain: reference falling-character
+  effect ported with fixed ~3.4 KiB grid/column arrays, runtime safe-area layout,
+  cosmetic local PRNG, translated UI, pause/density/speed controls and normal
+  auto-sleep. Animation intervals 1/2/3 seconds; no busy-loop override or extra
+  framebuffer. Source wip/unverified; wide screens may leave unused columns.
+  C3 compile PASS (137.983s), `/tmp/x4-p7a-build.log`; image 6,467,440 bytes,
+  OTA free 86,160, reserve warning remains. Usage boundary 36%/weekly 38%.
+  No deferred suites/device tests run. PORT_NOTES records orientation, ghosting,
+  input, pause, sleep, timing/battery and heap checks; no cache reset.
+  P7 remaining ports next. Unrelated work/partitions preserved; no flashing.

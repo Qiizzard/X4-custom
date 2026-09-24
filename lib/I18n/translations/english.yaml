@@ -1158,3 +1158,6 @@ STR_APP_FINGERPRINT: "Device Fingerprint (observations)"
 STR_MAC_LOCAL: "Locally administered MAC; vendor cannot be inferred"
 STR_MAC_GLOBAL: "Universally administered MAC; identity is not verified"
 STR_MAC_OS_UNKNOWN: "Operating system unknown; probe counts do not identify it"
+
+STR_APP_MATRIX_RAIN: "Matrix Rain"
+STR_MATRIX_STATE: "%u ms/frame | Density %d/3 (Up/Down)"

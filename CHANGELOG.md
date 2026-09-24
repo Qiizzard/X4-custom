@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Matrix Rain (2026-09-24): falling-character animation with density/speed
+  controls, pause/resume and normal auto-sleep. Animation capped at one frame
+  per second; wip pending device display, timing and battery validation.
+
 - Device Fingerprint observation view and Crowd Density chart (2026-09-24):
   inspect capped probe-source metadata and MAC administration bits, with OS
   explicitly unknown. Both remain wip pending device validation.

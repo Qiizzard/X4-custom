@@ -21,6 +21,7 @@
 #include "host_scanner/HostScannerActivity.h"
 #include "http_client/HttpClientActivity.h"
 #include "key_copier/KeyCopierActivity.h"
+#include "matrix_rain/MatrixRainActivity.h"
 #include "maze/MazeActivity.h"
 #include "mdns_browser/MdnsBrowserActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
@@ -126,6 +127,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_SUDOKU, &makeApp<SudokuActivity>},
 
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
+
+    {AppCategory::Games, StrId::STR_APP_MATRIX_RAIN, &makeApp<MatrixRainActivity>},
 
     // ---- Recon ----
     {AppCategory::Recon, StrId::STR_APP_SIGNAL_LOCATOR, &makeApp<SignalLocatorActivity>},
