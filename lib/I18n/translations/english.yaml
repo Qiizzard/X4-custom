@@ -1153,3 +1153,8 @@ STR_CROWD_WINDOW: "Window %u/%u newest first: %u MACs in %lu ms"
 STR_CROWD_SKIPPED: "Untracked source frames: %lu; queue drops shown above"
 STR_CROWD_HISTORY: "60 processing windows, about 30s each; resume resets partial window"
 STR_CROWD_CONTROLS: "Up/Down: history | Page Forward: channel hopping"
+
+STR_APP_FINGERPRINT: "Device Fingerprint (observations)"
+STR_MAC_LOCAL: "Locally administered MAC; vendor cannot be inferred"
+STR_MAC_GLOBAL: "Universally administered MAC; identity is not verified"
+STR_MAC_OS_UNKNOWN: "Operating system unknown; probe counts do not identify it"

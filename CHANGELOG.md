@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Device Fingerprint observation view and Crowd Density chart (2026-09-24):
+  inspect capped probe-source metadata and MAC administration bits, with OS
+  explicitly unknown. Both remain wip pending device validation.
+
 - Crowd Density observation history (2026-09-24): bounded probe-source MAC
   counts over 60 processing windows, with sampling limits shown. These are
   not estimates of people or physical devices; wip, device validation deferred.

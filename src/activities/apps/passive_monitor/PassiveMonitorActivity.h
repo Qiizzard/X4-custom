@@ -6,7 +6,7 @@
 
 class PassiveMonitorActivity final : public Activity {
  public:
-  enum class Kind { Packets, Probes, Deauth, Crowd };
+  enum class Kind { Packets, Probes, Deauth, Crowd, Fingerprint };
   PassiveMonitorActivity(GfxRenderer& renderer, MappedInputManager& input, Kind kind)
       : Activity("PassiveMonitor", renderer, input), kind(kind) {}
   void onEnter() override;
@@ -60,6 +60,7 @@ class PassiveMonitorActivity final : public Activity {
   void track(const uint8_t* mac, const char* ssid, int8_t rssi, uint8_t channel);
   bool saveCsv();
   void renderChannels(int top);
+  bool probeView() const { return kind == Kind::Probes || kind == Kind::Fingerprint; }
   // Fixed callback queue/scratch/history, about 2.6 KiB, owned by fallible activity.
   RingBuffer<2048> packets;
   Packet scratch = {};

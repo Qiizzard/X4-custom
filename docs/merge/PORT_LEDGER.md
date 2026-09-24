@@ -122,9 +122,9 @@ coherent, working subset.
 | Wardriving | `wip` | Passive scans, 64 tracked BSSIDs, first-observation CSV, 10-second scan pauses, 1 MiB log cap. Uptime only, no location. Runtime/SD/RF tests deferred. |
 | AP History | `wip` | Passive repeated CSV observations, 40 results/64 tracked BSSIDs, selectable 1/5/10/30-minute scan pauses, bounded exclusive journals. Runtime/SD/RF tests deferred. |
 | Network Change | `wip` | Capped passive baseline/current comparison, new/absent/metadata changes, versioned CRC-protected exclusive baseline slots and valid-file fallback. No offline-device claim; file/runtime/RF validation deferred. |
-| Crowd Density | `wip` | Passive probe-source MAC observations: 24 identities per approximately 30-second processing window, 60 fixed history rows, actual elapsed times and untracked-frame/drop labels. No people/device estimate; chart and runtime/RF validation remain. |
-| Device Fingerprint | `todo` | |
-| Vendor Lookup | `todo` | OUI table must be `static const` in flash (rule 4), and it is large — budget it before porting. |
+| Crowd Density | `wip` | Passive probe-source MAC observations: 24 identities per approximately 30-second processing window, 60 fixed history rows, actual elapsed times and untracked-frame/drop labels. No people/device estimate; fixed-scale history chart integrated; runtime/RF validation remains. |
+| Device Fingerprint | `wip` | 24 passive probe-source observations, local/universal MAC bit, RSSI/channel/count/SSID and CSV. OS explicitly unknown: source probe-count heuristics are not reliable identification. Vendor database unavailable; runtime/RF validation deferred. |
+| Vendor Lookup | `blocked` | Reference reads external /biscuit/oui.txt; no dataset ships in reference. Ledger requires a flash static-const table. Dataset/distribution and flash budget decision needed before a complete lookup port. |
 | WiFi Heat Map | `wip` | Passive RSSI CSV journal, 5-second scan pauses, 40 results/64 tracked BSSIDs, 1 MiB/10,000-row caps. No spatial coordinates; runtime/SD/RF unverified. |
 | Signal Locator | `wip` | Three positions with three passive scan attempts each; averages only observed target BSSID samples and shows missing readings. No calculated location; runtime/RF unverified. |
 | Perimeter Watch | `wip` | Volatile passive baseline up to 40 BSSIDs; bounded new-observation tracking within 64 total records, pause/resume and CSV export. No intrusion claim; runtime/SD/RF unverified. |

@@ -58,12 +58,12 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density observation history integrated (wip); remaining approved recon next, preserving passive-only scope. |
+| P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P6 approved networking/passive recon source ports are next at the next eligible scheduled wakeup.
+Start with the real source in ../biscuit-reference. P7 approved remaining ports are next; skip the documented P6 dataset/composite/BLE gates.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -693,3 +693,18 @@ this schedule does not declare them completed or permanently blocked.
   Device: repeated/randomized/>24 source MACs, 60-window wrap, browsing,
   pause/resume, channel switching/hopping and queue pressure; check exit radio
   release/heap. No cache reset, flashing or partition changes.
+
+- 2026-09-24 16:09 UTC run, P6 metadata/chart batch: Device Fingerprint
+  reuses the 24-row probe summary/CSV and owner-checked capture; displays MAC
+  administration bit, RSSI/channel/count/SSID and explicitly unknown OS.
+  Reference probe-count OS guesses are not reliable identification. Crowd
+  history chart uses the fixed 24-MAC scale and existing 60 windows. No new
+  capture buffers. Both wip/unverified. C3 PASS (138.882s),
+  `/tmp/x4-p6q-build.log`; image 6,464,672 bytes, OTA free 88,928, reserve warning.
+  No deferred suites/device tests run. Vendor Lookup awaits absent external
+  dataset versus ledger flash-table choice; Full Sweep/BLE gates stay open.
+  Actionable P6 source work checkpointed; P7 next. Usage at prior boundary
+  19% five-hour/35% weekly, no artificial usage stop.
+  Device: global/local/multicast MACs, repeated/overflow observations, CSV
+  escaping/SD errors, chart wrap/orientations, pause/resume and owner release.
+  No cache reset. Unrelated work and shipping partitions preserved.
