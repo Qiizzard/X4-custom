@@ -6,7 +6,7 @@
 
 class PassiveMonitorActivity final : public Activity {
  public:
-  enum class Kind { Packets, Probes, Deauth };
+  enum class Kind { Packets, Probes, Deauth, Crowd };
   PassiveMonitorActivity(GfxRenderer& renderer, MappedInputManager& input, Kind kind)
       : Activity("PassiveMonitor", renderer, input), kind(kind) {}
   void onEnter() override;
@@ -46,6 +46,13 @@ class PassiveMonitorActivity final : public Activity {
   Peer peers[24] = {};
   uint8_t peerCount = 0;
   uint32_t untracked = 0, channelFrames[14] = {};
+  // Sixty fixed observation windows (720 bytes), never a people estimate.
+  struct Window {
+    uint32_t elapsed, skipped;
+    uint8_t count;
+  };
+  Window windows[60] = {};
+  uint8_t windowHead = 0, windowCount = 0;
   bool chart = false, spike = false;
   uint32_t intervalStart = 0, intervalCount = 0, spikeFrames = 0, spikeElapsed = 0;
   int csvStatus = 0;

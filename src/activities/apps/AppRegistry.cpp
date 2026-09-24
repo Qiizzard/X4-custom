@@ -136,6 +136,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_NETWORK_CHANGE, &makeApJournal<ApJournalActivity::Kind::Changes>},
     {AppCategory::Recon, StrId::STR_APP_PACKET_MONITOR, &makeMonitor<PassiveMonitorActivity::Kind::Packets>},
     {AppCategory::Recon, StrId::STR_APP_PROBE_SNIFFER, &makeMonitor<PassiveMonitorActivity::Kind::Probes>},
+    {AppCategory::Recon, StrId::STR_APP_CROWD_DENSITY, &makeMonitor<PassiveMonitorActivity::Kind::Crowd>},
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 

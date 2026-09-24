@@ -20,7 +20,10 @@ void put32(uint8_t* out, uint32_t value) {
 }
 }  // namespace
 const char* PassiveMonitorActivity::owner() const {
-  return kind == Kind::Packets ? kPacketOwner : kind == Kind::Probes ? kProbeOwner : kDeauthOwner;
+  return kind == Kind::Crowd     ? "crowd_density"
+         : kind == Kind::Packets ? kPacketOwner
+         : kind == Kind::Probes  ? kProbeOwner
+                                 : kDeauthOwner;
 }
 void PassiveMonitorActivity::receive(void* context, const uint8_t* bytes, uint16_t length, int8_t rssi,
                                      uint8_t channel) {
@@ -74,6 +77,10 @@ void PassiveMonitorActivity::process(const Packet& packet) {
     ++intervalCount;
   } else if (subtype == 10)
     ++disassoc;
+  if (kind == Kind::Crowd && subtype == 4) {
+    track(packet.bytes + 10, nullptr, packet.rssi, packet.channel);
+    return;
+  }
   const bool wanted = kind == Kind::Probes ? subtype == 4 : kind == Kind::Deauth && (subtype == 12 || subtype == 10);
   if (!wanted) return;
   Event& event = events[eventHead];
@@ -148,6 +155,11 @@ void PassiveMonitorActivity::loop() {
       failed = !running;
       intervalStart = millis();
       intervalCount = 0;
+      if (kind == Kind::Crowd) {
+        peerCount = 0;
+        untracked = 0;
+        for (auto& peer : peers) peer = {};
+      }
     }
     requestUpdate();
   }
@@ -173,7 +185,7 @@ void PassiveMonitorActivity::loop() {
   }
   const bool up = mappedInput.wasPressed(MappedInputManager::Button::Up);
   const bool down = mappedInput.wasPressed(MappedInputManager::Button::Down);
-  const uint8_t rows = kind == Kind::Probes ? peerCount : eventCount;
+  const uint8_t rows = kind == Kind::Crowd ? windowCount : kind == Kind::Probes ? peerCount : eventCount;
   if (kind == Kind::Packets && up) {
     chart = !chart;
     requestUpdate();
@@ -196,8 +208,19 @@ void PassiveMonitorActivity::loop() {
     const uint16_t n = packets.pop(reinterpret_cast<uint8_t*>(&scratch), sizeof(scratch));
     if (!n) break;
     if (n < 4 || n != 4 + std::min<uint16_t>(scratch.original, sizeof(scratch.bytes))) continue;
-    process(scratch);
+    if (kind != Kind::Crowd || running) process(scratch);
     if (captureStatus == 1) writeCapture(scratch);
+  }
+  if (running && kind == Kind::Crowd && millis() - intervalStart >= 30000) {
+    const uint32_t now = millis();
+    windows[windowHead] = {now - intervalStart, untracked, peerCount};
+    windowHead = (windowHead + 1) % 60;
+    if (windowCount < 60) ++windowCount;
+    peerCount = 0;
+    untracked = 0;
+    for (auto& peer : peers) peer = {};
+    intervalStart = now;
+    requestUpdate();
   }
   if (running && kind == Kind::Deauth && millis() - intervalStart >= 2000) {
     const uint32_t now = millis();
@@ -216,9 +239,10 @@ void PassiveMonitorActivity::loop() {
 }
 void PassiveMonitorActivity::render(RenderLock&&) {
   renderer.clearScreen();
-  const char* title = kind == Kind::Packets  ? tr(STR_APP_PACKET_MONITOR)
-                      : kind == Kind::Probes ? tr(STR_APP_PROBE_SNIFFER)
-                                             : tr(STR_APP_DEAUTH_DETECTOR);
+  const char* title = kind == Kind::Crowd     ? tr(STR_APP_CROWD_DENSITY)
+                      : kind == Kind::Packets ? tr(STR_APP_PACKET_MONITOR)
+                      : kind == Kind::Probes  ? tr(STR_APP_PROBE_SNIFFER)
+                                              : tr(STR_APP_DEAUTH_DETECTOR);
   const Rect header = TouchHeaderBackButton::headerRect(renderer, mappedInput);
   if (mappedInput.hasTouchHardware())
     TouchHeaderBackButton::draw(renderer, header, title, false);
@@ -248,7 +272,20 @@ void PassiveMonitorActivity::render(RenderLock&&) {
     renderer.displayBuffer();
     return;
   }
-  if (kind == Kind::Packets) {
+  if (kind == Kind::Crowd) {
+    snprintf(text, sizeof(text), tr(STR_CROWD_CURRENT), unsigned(peerCount), static_cast<unsigned long>(untracked));
+    draw(text);
+    draw(tr(STR_CROWD_LIMIT));
+    if (windowCount) {
+      const auto& sample = windows[(windowHead + 59 - selected) % 60];
+      snprintf(text, sizeof(text), tr(STR_CROWD_WINDOW), unsigned(selected + 1), unsigned(windowCount),
+               unsigned(sample.count), static_cast<unsigned long>(sample.elapsed));
+      draw(text);
+      snprintf(text, sizeof(text), tr(STR_CROWD_SKIPPED), static_cast<unsigned long>(sample.skipped));
+      draw(text);
+    }
+    draw(tr(STR_CROWD_HISTORY));
+  } else if (kind == Kind::Packets) {
     snprintf(text, sizeof(text), tr(STR_MONITOR_TRACKED), unsigned(peerCount), static_cast<unsigned long>(untracked));
     draw(text);
     snprintf(text, sizeof(text), tr(STR_MONITOR_TYPES), static_cast<unsigned long>(management),
@@ -306,9 +343,10 @@ void PassiveMonitorActivity::render(RenderLock&&) {
     }
     draw(tr(STR_MONITOR_OBSERVATION));
   }
-  draw(kind == Kind::Packets  ? tr(STR_PACKET_MORE_CONTROLS)
-       : kind == Kind::Probes ? tr(STR_PROBE_MORE_CONTROLS)
-                              : tr(STR_DEAUTH_MORE_CONTROLS));
+  draw(kind == Kind::Crowd     ? tr(STR_CROWD_CONTROLS)
+       : kind == Kind::Packets ? tr(STR_PACKET_MORE_CONTROLS)
+       : kind == Kind::Probes  ? tr(STR_PROBE_MORE_CONTROLS)
+                               : tr(STR_DEAUTH_MORE_CONTROLS));
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), running ? tr(STR_MONITOR_PAUSE) : tr(STR_MONITOR_RESUME),
                                             tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);

@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Crowd Density observation history (2026-09-24): bounded probe-source MAC
+  counts over 60 processing windows, with sampling limits shown. These are
+  not estimates of people or physical devices; wip, device validation deferred.
+
 - Signal Locator, WiFi Heat Map logging and Perimeter Watch (2026-09-24):
   compare three RSSI sample positions, save bounded RSSI journals, and track
   BSSIDs observed after a baseline. No location or intrusion inference; device
