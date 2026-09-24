@@ -39,7 +39,7 @@ void PassiveMonitorActivity::onEnter() {
   owned = RADIO.acquire(RadioManager::Mode::WifiPromiscuous, owner());
   running = owned && RADIO.startPromiscuous(owner(), receive, this, channel);
   failed = !running;
-  lastRefresh = lastHop = millis();
+  intervalStart = lastRefresh = lastHop = millis();
   requestUpdate();
 }
 void PassiveMonitorActivity::onExit() {
@@ -55,6 +55,7 @@ void PassiveMonitorActivity::process(const Packet& packet) {
   const uint16_t n = std::min<uint16_t>(packet.original, sizeof(packet.bytes));
   if (n < 2) return;
   ++total;
+  if (packet.channel >= 1 && packet.channel <= 13) ++channelFrames[packet.channel];
   const uint8_t type = (packet.bytes[0] >> 2) & 3;
   const uint8_t subtype = packet.bytes[0] >> 4;
   if (type == 0)
@@ -63,12 +64,15 @@ void PassiveMonitorActivity::process(const Packet& packet) {
     ++control;
   else if (type == 2)
     ++dataFrames;
+  if (kind == Kind::Packets && (type == 0 || type == 2) && n >= 16)
+    track(packet.bytes + 10, nullptr, packet.rssi, packet.channel);
   if (type != 0 || n < 24) return;
   if (subtype == 4)
     ++probes;
-  else if (subtype == 12)
+  else if (subtype == 12) {
     ++deauth;
-  else if (subtype == 10)
+    ++intervalCount;
+  } else if (subtype == 10)
     ++disassoc;
   const bool wanted = kind == Kind::Probes ? subtype == 4 : kind == Kind::Deauth && (subtype == 12 || subtype == 10);
   if (!wanted) return;
@@ -101,8 +105,29 @@ void PassiveMonitorActivity::process(const Packet& packet) {
       at += size;
     }
   }
+  if (kind == Kind::Probes) track(event.source, event.ssid, event.rssi, event.channel);
   eventHead = (eventHead + 1) % 8;
   if (eventCount < 8) ++eventCount;
+}
+void PassiveMonitorActivity::track(const uint8_t* mac, const char* ssid, int8_t rssi, uint8_t seenChannel) {
+  // Source MACs may be randomized; do not interpret the table as a device count.
+  if (mac[0] & 1) return;
+  uint8_t i = 0;
+  for (; i < peerCount; ++i)
+    if (memcmp(peers[i].mac, mac, 6) == 0) break;
+  if (i == peerCount) {
+    if (peerCount == 24) {
+      ++untracked;
+      return;
+    }
+    memcpy(peers[i].mac, mac, 6);
+    ++peerCount;
+  }
+  Peer& peer = peers[i];
+  if (peer.frames != UINT32_MAX) ++peer.frames;
+  peer.rssi = rssi;
+  peer.channel = seenChannel;
+  if (ssid) snprintf(peer.ssid, sizeof(peer.ssid), "%s", ssid);
 }
 void PassiveMonitorActivity::loop() {
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
@@ -111,13 +136,18 @@ void PassiveMonitorActivity::loop() {
     return;
   }
   RenderLock lock(*this);
-  if (owned && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+  if (csvStatus && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+    csvStatus = 0;
+    requestUpdate();
+  } else if (owned && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
     if (running) {
       RADIO.stopPromiscuous(owner());
       running = false;
     } else {
       running = RADIO.startPromiscuous(owner(), receive, this, channel);
       failed = !running;
+      intervalStart = millis();
+      intervalCount = 0;
     }
     requestUpdate();
   }
@@ -141,14 +171,24 @@ void PassiveMonitorActivity::loop() {
     lastHop = millis();
     requestUpdate();
   }
-  if (eventCount && (mappedInput.wasPressed(MappedInputManager::Button::Up) ||
-                     mappedInput.wasPressed(MappedInputManager::Button::Down))) {
-    selected =
-        (selected + (mappedInput.wasPressed(MappedInputManager::Button::Down) ? 1 : eventCount - 1)) % eventCount;
+  const bool up = mappedInput.wasPressed(MappedInputManager::Button::Up);
+  const bool down = mappedInput.wasPressed(MappedInputManager::Button::Down);
+  const uint8_t rows = kind == Kind::Probes ? peerCount : eventCount;
+  if (kind == Kind::Packets && up) {
+    chart = !chart;
+    requestUpdate();
+  } else if (rows && (up || down)) {
+    selected = (selected + (down ? 1 : rows - 1)) % rows;
     requestUpdate();
   }
-  if (kind == Kind::Packets && owned && mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
-    toggleCapture();
+  if (owned && ((kind == Kind::Packets && down) ||
+                (kind == Kind::Probes && mappedInput.wasPressed(MappedInputManager::Button::PageBack)))) {
+    csvStatus = saveCsv() ? 1 : -1;
+    requestUpdate();
+  }
+  if (owned && mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+    if (kind == Kind::Packets) toggleCapture();
+    if (kind == Kind::Deauth) spike = false;
     requestUpdate();
   }
   // Bound work per loop so a busy channel cannot starve input/exit handling.
@@ -158,6 +198,16 @@ void PassiveMonitorActivity::loop() {
     if (n < 4 || n != 4 + std::min<uint16_t>(scratch.original, sizeof(scratch.bytes))) continue;
     process(scratch);
     if (captureStatus == 1) writeCapture(scratch);
+  }
+  if (running && kind == Kind::Deauth && millis() - intervalStart >= 2000) {
+    const uint32_t now = millis();
+    if (intervalCount >= 5) {
+      spike = true;
+      spikeFrames = intervalCount;
+      spikeElapsed = now - intervalStart;
+    }
+    intervalCount = 0;
+    intervalStart = now;
   }
   if (running && millis() - lastRefresh >= 1000) {
     lastRefresh = millis();
@@ -190,7 +240,17 @@ void PassiveMonitorActivity::render(RenderLock&&) {
   snprintf(text, sizeof(text), tr(STR_MONITOR_COUNTS), static_cast<unsigned long>(total),
            static_cast<unsigned long>(packets.droppedFrames()));
   draw(text);
+  if (csvStatus) draw(csvStatus > 0 ? csvPath : tr(STR_MDNS_EXPORT_FAILED));
+  if (kind == Kind::Packets && chart && !csvStatus) {
+    renderChannels(y);
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_MONITOR_PAUSE), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+    renderer.displayBuffer();
+    return;
+  }
   if (kind == Kind::Packets) {
+    snprintf(text, sizeof(text), tr(STR_MONITOR_TRACKED), unsigned(peerCount), static_cast<unsigned long>(untracked));
+    draw(text);
     snprintf(text, sizeof(text), tr(STR_MONITOR_TYPES), static_cast<unsigned long>(management),
              static_cast<unsigned long>(dataFrames), static_cast<unsigned long>(control));
     draw(text);
@@ -208,7 +268,20 @@ void PassiveMonitorActivity::render(RenderLock&&) {
       snprintf(text, sizeof(text), tr(STR_MONITOR_DEAUTH), static_cast<unsigned long>(deauth),
                static_cast<unsigned long>(disassoc));
     draw(text);
-    if (eventCount) {
+    if (kind == Kind::Probes) {
+      snprintf(text, sizeof(text), tr(STR_MONITOR_TRACKED), unsigned(peerCount), static_cast<unsigned long>(untracked));
+      draw(text);
+      if (peerCount) {
+        const Peer& peer = peers[selected % peerCount];
+        snprintf(text, sizeof(text), "%02X:%02X:%02X:%02X:%02X:%02X", peer.mac[0], peer.mac[1], peer.mac[2],
+                 peer.mac[3], peer.mac[4], peer.mac[5]);
+        draw(text);
+        draw(peer.ssid[0] ? peer.ssid : tr(STR_MONITOR_SSID_UNKNOWN));
+        snprintf(text, sizeof(text), tr(STR_PROBE_SUMMARY), static_cast<unsigned long>(peer.frames), int(peer.rssi),
+                 unsigned(peer.channel));
+        draw(text);
+      }
+    } else if (eventCount) {
       const Event& event = events[(eventHead + 7 - selected) % 8];
       snprintf(text, sizeof(text), "%02X:%02X:%02X:%02X:%02X:%02X", event.source[0], event.source[1], event.source[2],
                event.source[3], event.source[4], event.source[5]);
@@ -226,9 +299,16 @@ void PassiveMonitorActivity::render(RenderLock&&) {
       } else
         draw(tr(STR_MONITOR_REASON_UNKNOWN));
     }
+    if (kind == Kind::Deauth && spike) {
+      snprintf(text, sizeof(text), tr(STR_DEAUTH_SPIKE), static_cast<unsigned long>(spikeFrames),
+               static_cast<unsigned long>(spikeElapsed));
+      draw(text);
+    }
     draw(tr(STR_MONITOR_OBSERVATION));
   }
-  draw(tr(STR_MONITOR_CONTROLS));
+  draw(kind == Kind::Packets  ? tr(STR_PACKET_MORE_CONTROLS)
+       : kind == Kind::Probes ? tr(STR_PROBE_MORE_CONTROLS)
+                              : tr(STR_DEAUTH_MORE_CONTROLS));
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), running ? tr(STR_MONITOR_PAUSE) : tr(STR_MONITOR_RESUME),
                                             tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
@@ -305,4 +385,90 @@ void PassiveMonitorActivity::writeCapture(const Packet& packet) {
     }
     syncedBytes = captureBytes;
   }
+}
+
+void PassiveMonitorActivity::renderChannels(int top) {
+  const Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  const int line = renderer.getLineHeight(UI_10_FONT_ID) + 6;
+  const int bottom = screen.y + screen.height - 3 * line;
+  const int height = bottom - top;
+  const int width = (screen.width - 24) / 13;
+  if (height <= 0 || width < 3) return;
+  uint32_t maximum = 1;
+  for (int c = 1; c <= 13; ++c) maximum = std::max(maximum, channelFrames[c]);
+  char text[8];
+  for (int c = 1; c <= 13; ++c) {
+    const int x = screen.x + 12 + (c - 1) * width;
+    const int bar = int(uint64_t(channelFrames[c]) * height / maximum);
+    if (bar) renderer.fillRect(x + 1, bottom - bar, width - 2, bar, true);
+    snprintf(text, sizeof(text), "%d", c);
+    renderer.drawText(UI_10_FONT_ID, x, bottom + 2, text);
+  }
+  UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, bottom + line, tr(STR_PACKET_CHANNEL_NOTE));
+}
+bool PassiveMonitorActivity::saveCsv() {
+  constexpr char dir[] = "/crossink/monitor";
+  if (!Storage.exists(dir) && !Storage.mkdir(dir, true)) {
+    LOG_ERR("MON", "CSV mkdir failed");
+    return false;
+  }
+  HalFile file;
+  for (int slot = 0; slot < 100; ++slot) {
+    snprintf(csvPath, sizeof(csvPath), "%s/%s-%02d.csv", dir, kind == Kind::Probes ? "probes" : "channels", slot);
+    if (Storage.exists(csvPath)) continue;
+    file = Storage.open(csvPath, O_WRITE | O_CREAT | O_EXCL);
+    break;
+  }
+  if (!file) {
+    LOG_ERR("MON", "CSV open failed or slots exhausted");
+    return false;
+  }
+  auto write = [&file](const char* value) {
+    const size_t n = strlen(value);
+    return file.write(value, n) == n;
+  };
+  char row[96];
+  bool ok = write(kind == Kind::Probes ? "source_mac,ssid,last_rssi_dbm,channel,frames\n" : "metric,key,count\n");
+  if (kind == Kind::Packets) {
+    for (int c = 1; ok && c <= 13; ++c) {
+      snprintf(row, sizeof(row), "channel,%d,%lu\n", c, static_cast<unsigned long>(channelFrames[c]));
+      ok = write(row);
+    }
+    snprintf(row, sizeof(row), "queue_drops,,%lu\nuntracked_source_frames,,%lu\n",
+             static_cast<unsigned long>(packets.droppedFrames()), static_cast<unsigned long>(untracked));
+    ok = ok && write(row);
+  }
+  for (int i = 0; ok && i < peerCount; ++i) {
+    const Peer& peer = peers[i];
+    snprintf(row, sizeof(row), "%s%02X:%02X:%02X:%02X:%02X:%02X,", kind == Kind::Packets ? "transmitter," : "",
+             peer.mac[0], peer.mac[1], peer.mac[2], peer.mac[3], peer.mac[4], peer.mac[5]);
+    ok = write(row);
+    if (kind == Kind::Probes) {
+      char quoted[68];
+      size_t n = 0;
+      quoted[n++] = '"';
+      const char* first = peer.ssid;
+      while (*first == ' ') ++first;
+      if (*first && strchr("=+-@", *first)) quoted[n++] = '\'';
+      for (const char* c = peer.ssid; *c; ++c) {
+        if (*c == '"') quoted[n++] = '"';
+        quoted[n++] = *c;
+      }
+      quoted[n++] = '"';
+      quoted[n] = 0;
+      ok = ok && write(quoted);
+      snprintf(row, sizeof(row), ",%d,%u,%lu\n", int(peer.rssi), unsigned(peer.channel),
+               static_cast<unsigned long>(peer.frames));
+    } else
+      snprintf(row, sizeof(row), "%lu\n", static_cast<unsigned long>(peer.frames));
+    ok = ok && write(row);
+  }
+  if (ok) ok = file.sync();
+  const bool closed = file.close();
+  if (!ok || !closed) {
+    LOG_ERR("MON", "CSV write/sync/close failed");
+    if (!Storage.remove(csvPath)) LOG_ERR("MON", "Partial CSV cleanup failed");
+    return false;
+  }
+  return true;
 }

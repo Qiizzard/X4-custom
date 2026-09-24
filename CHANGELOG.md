@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Passive monitor summaries (2026-09-24): channel chart/CSV, up to 24 tracked
+  source MACs, probe summaries/CSV and an observed deauth burst indicator.
+  Counts are capped observations; validation remains deferred.
+
 - Passive Packet Monitor, Probe Sniffer and Deauth Detector cores (2026-09-24):
   bounded frame queue, recent events, channel controls and capped PCAP recording.
   Observed frames are not proof of an attack; device/RF validation deferred.

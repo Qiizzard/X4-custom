@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector cores integrated (wip); remaining views and approved recon next, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); remaining approved recon next, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -636,3 +636,16 @@ this schedule does not declare them completed or permanently blocked.
   radio app; malformed/protected/short frames, queue pressure and heap. Packet
   Monitor: inspect PCAP prefix lengths/uptime, cap, all slots, SD removal/failure
   and partial-file status. No cache reset; RF passivity remains a hardware gate.
+
+- 2026-09-24 11:09 UTC run, P6 monitor summaries: channel frame chart/CSV,
+  24 fixed source-MAC rows (1,152 bytes), probe last-SSID/RSSI/count summaries
+  and quoted/formula-safe CSV. Packet Up toggles chart, Down exports; Probe
+  Page Back exports. Deauth burst threshold matches reference (five frames in
+  approximately two seconds), labels actual processing interval, Page Back
+  clears; no device-count or attack claim. Source wip/unverified. One C3
+  compile PASS (152.545s), `/tmp/x4-p6m-build.log`; image 6,447,456 bytes,
+  OTA free 106,144, reserve warning. No deferred suites/device/live capture tests.
+  Usage 16% → 33%, weekly 24% → 27%; continuing snapshot/logger ports. Unrelated
+  work/partitions preserved. Device: >24 source MACs, repeat/randomized MACs,
+  mixed SSID quoting, saturated channel counters/unequal dwell, pause/export,
+  queue drops and burst acknowledge. Check SD failures and radio reuse; no cache reset.

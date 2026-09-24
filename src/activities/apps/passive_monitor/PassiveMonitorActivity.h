@@ -35,6 +35,24 @@ class PassiveMonitorActivity final : public Activity {
   uint8_t channel = 1, eventHead = 0, eventCount = 0, selected = 0;
   uint32_t total = 0, management = 0, dataFrames = 0, control = 0, probes = 0, deauth = 0, disassoc = 0;
   uint32_t lastRefresh = 0, lastHop = 0;
+  struct Peer {
+    uint8_t mac[6];
+    char ssid[33];
+    int8_t rssi;
+    uint8_t channel;
+    uint32_t frames;
+  };
+  // Fixed 24-row summary (1,152 bytes); no growing MAC/SSID collections.
+  Peer peers[24] = {};
+  uint8_t peerCount = 0;
+  uint32_t untracked = 0, channelFrames[14] = {};
+  bool chart = false, spike = false;
+  uint32_t intervalStart = 0, intervalCount = 0, spikeFrames = 0, spikeElapsed = 0;
+  int csvStatus = 0;
+  char csvPath[48] = {};
+  void track(const uint8_t* mac, const char* ssid, int8_t rssi, uint8_t channel);
+  bool saveCsv();
+  void renderChannels(int top);
   // Fixed callback queue/scratch/history, about 2.6 KiB, owned by fallible activity.
   RingBuffer<2048> packets;
   Packet scratch = {};
