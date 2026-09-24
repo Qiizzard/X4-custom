@@ -25,6 +25,7 @@
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
+#include "passive_monitor/PassiveMonitorActivity.h"
 #include "ping/PingActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
 #include "secure_vault/PasswordManagerActivity.h"
@@ -43,6 +44,11 @@ namespace {
 template <typename T>
 std::unique_ptr<Activity> makeApp(GfxRenderer& renderer, MappedInputManager& mappedInput) {
   return makeUniqueNoThrow<T>(renderer, mappedInput);
+}
+
+template <PassiveMonitorActivity::Kind Kind>
+std::unique_ptr<Activity> makeMonitor(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PassiveMonitorActivity>(renderer, input, Kind);
 }
 
 std::unique_ptr<Activity> makeAuthenticator(GfxRenderer& renderer, MappedInputManager& input) {
@@ -115,6 +121,9 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_MAZE, &makeApp<MazeActivity>},
 
     // ---- Recon ----
+    {AppCategory::Recon, StrId::STR_APP_PACKET_MONITOR, &makeMonitor<PassiveMonitorActivity::Kind::Packets>},
+    {AppCategory::Recon, StrId::STR_APP_PROBE_SNIFFER, &makeMonitor<PassiveMonitorActivity::Kind::Probes>},
+    {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
 };

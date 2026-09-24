@@ -116,9 +116,9 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | WiFi Scanner | `wip` | Recon snapshot/detail view: passive scan, 40 fixed results, RSSI sort, manual rescan and 13-channel count/peak/mean view. Exclusive numbered CSV export integrated; BSSID-pinned 40-sample passive history integrated; runtime/device validation deferred. |
-| Packet Monitor | `todo` | `RADIO.startPromiscuous()` + `RingBuffer`. Snap length, PCAP streams to SD. |
-| Probe Sniffer | `todo` | |
-| Deauth Detector | `todo` | Counts deauth frames. Detection only. |
+| Packet Monitor | `wip` | Fixed 2 KiB queue, frame/type/drop counts, channel/hop/pause controls, 96-byte-prefix PCAP up to 1 MiB per exclusive file. Dequeue uptime timestamps. Per-channel chart/CSV/unique-MAC view still pending; runtime/RF/SD gates open. |
+| Probe Sniffer | `wip` | Passive request-frame count, eight recent source/SSID/RSSI/channel events, bounded parser and protected/truncated handling. Aggregate device view and CSV pending; runtime/RF validation deferred. |
+| Deauth Detector | `wip` | Passive deauth/disassociation frame counts and eight recent events; no attack attribution or protected-reason decoding. Rate-spike view pending; runtime/RF validation deferred. |
 | Wardriving | `todo` | |
 | AP History | `todo` | |
 | Network Change | `todo` | |
@@ -181,15 +181,15 @@ verify, so it is recorded here rather than guessed at.
 
 ## The flash budget — current gate and measured headroom
 
-Latest verified full working-snapshot image (2026-09-24 UTC, P6 HTTP Client):
+Latest verified full working-snapshot image (2026-09-24 UTC, P6 passive monitor cores):
 
 | Quantity | Bytes |
 |---|---:|
-| Firmware image (`firmware.bin`) | 6,434,560 |
+| Firmware image (`firmware.bin`) | 6,443,728 |
 | Smallest configured OTA app slot | 6,553,600 |
-| Free space | 119,040 |
+| Free space | 109,872 |
 | Warning reserve | 262,144 |
-| Shortfall against reserve | 143,104 |
+| Shortfall against reserve | 152,272 |
 
 The image fits, but the low-headroom warning remains. This measurement
 includes the inherited local app work; it is not a measurement of a clean

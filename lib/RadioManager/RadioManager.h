@@ -159,6 +159,9 @@ class RadioManager {
   // Enter monitor mode and route frames to `sink`. Requires a WifiPromiscuous
   // hold. LISTEN ONLY -- nothing in this firmware transmits a crafted frame.
   bool startPromiscuous(FrameSink sink, void* context, uint8_t channel);
+  bool startPromiscuous(const char* owner, FrameSink sink, void* context, uint8_t channel);
+  bool setChannel(const char* owner, uint8_t channel);
+  bool stopPromiscuous(const char* owner);
   // Retune while capturing, for channel-hopping captures.
   bool setChannel(uint8_t channel);
   uint8_t channel() const { return channel_; }

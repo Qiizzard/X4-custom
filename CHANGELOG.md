@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Passive Packet Monitor, Probe Sniffer and Deauth Detector cores (2026-09-24):
+  bounded frame queue, recent events, channel controls and capped PCAP recording.
+  Observed frames are not proof of an attack; device/RF validation deferred.
+
 - HTTP Client (2026-09-24): explicit GET/plain-text POST, validated HTTPS and
   a bounded ASCII response preview. Network/TLS/device validation deferred.
 

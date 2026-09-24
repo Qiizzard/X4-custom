@@ -75,6 +75,29 @@ bool RadioManager::shutdown(const char* owner) {
   return true;
 }
 
+bool RadioManager::startPromiscuous(const char* owner, FrameSink sink, void* context, uint8_t channel) {
+  if (!owner || owner_ != owner || mode_ != Mode::WifiPromiscuous) {
+    LOG_ERR(TAG, "Monitor start denied: owner mismatch");
+    return false;
+  }
+  return startPromiscuous(sink, context, channel);
+}
+bool RadioManager::setChannel(const char* owner, uint8_t channel) {
+  if (!owner || owner_ != owner || mode_ != Mode::WifiPromiscuous) {
+    LOG_ERR(TAG, "Monitor channel denied: owner mismatch");
+    return false;
+  }
+  return setChannel(channel);
+}
+bool RadioManager::stopPromiscuous(const char* owner) {
+  if (!owner || owner_ != owner || mode_ != Mode::WifiPromiscuous) {
+    LOG_ERR(TAG, "Monitor stop denied: owner mismatch");
+    return false;
+  }
+  stopPromiscuous();
+  return true;
+}
+
 bool RadioManager::pickerAccessAllowed(const char* owner) const {
   const bool allowed = owner && owner_ == owner && mode_ == Mode::WifiStation;
   if (!allowed) LOG_ERR(TAG, "Picker operation denied: owner mismatch");
@@ -217,26 +240,27 @@ const char* wifiStatusName(const wl_status_t status) {
   }
 }
 
-// Promiscuous frames arrive on a WiFi-task callback, not the activity task, so
-// the sink and its context have to be reachable from there. File-scope pointers
-// are the simplest thing that is correct: they are written only while the radio
-// is stopped and read only while it is running.
+// Callback runs on the WiFi task. A short critical section protects the pair
+// and waits out the bounded sink copy before teardown can free its context.
+portMUX_TYPE g_sinkMux = portMUX_INITIALIZER_UNLOCKED;
 RadioManager::FrameSink g_sink = nullptr;
 void* g_sinkContext = nullptr;
-
-// Trampoline from the WiFi driver's promiscuous callback to the app's sink.
-// RULESET rule 10: this function allocates nothing, parses nothing, and does no
-// SD or string work. It reads a header, hands over a pointer and a length, and
-// returns. Anything slower here drops frames or trips the watchdog.
+void setFrameSink(RadioManager::FrameSink sink, void* context) {
+  portENTER_CRITICAL(&g_sinkMux);
+  g_sink = sink;
+  g_sinkContext = context;
+  portEXIT_CRITICAL(&g_sinkMux);
+}
 void promiscuousTrampoline(void* buf, const wifi_promiscuous_pkt_type_t type) {
-  if (g_sink == nullptr || buf == nullptr) return;
-  // Control frames carry no payload worth capturing and arrive in floods.
-  if (type == WIFI_PKT_MISC) return;
+  if (!buf || type == WIFI_PKT_MISC) return;
   const auto* packet = static_cast<const wifi_promiscuous_pkt_t*>(buf);
   const uint16_t length = static_cast<uint16_t>(packet->rx_ctrl.sig_len);
-  if (length == 0) return;
-  g_sink(g_sinkContext, packet->payload, length, static_cast<int8_t>(packet->rx_ctrl.rssi),
-         static_cast<uint8_t>(packet->rx_ctrl.channel));
+  if (!length) return;
+  portENTER_CRITICAL(&g_sinkMux);
+  if (g_sink)
+    g_sink(g_sinkContext, packet->payload, length, static_cast<int8_t>(packet->rx_ctrl.rssi),
+           static_cast<uint8_t>(packet->rx_ctrl.channel));
+  portEXIT_CRITICAL(&g_sinkMux);
 }
 
 }  // namespace
@@ -784,30 +808,27 @@ bool RadioManager::startPromiscuous(const FrameSink sink, void* context, const u
     return false;
   }
 
-  // Publish the sink before enabling the callback, so no frame can arrive while
-  // g_sink is still null.
-  g_sink = sink;
-  g_sinkContext = context;
-
+  if (promiscuousActive_) {
+    LOG_ERR(TAG, "Monitor already active");
+    return false;
+  }
+  if (esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
+    LOG_ERR(TAG, "Could not set initial monitor channel");
+    return false;
+  }
   if (esp_wifi_set_promiscuous_rx_cb(promiscuousTrampoline) != ESP_OK) {
-    LOG_ERR(TAG, "could not install the promiscuous callback");
-    g_sink = nullptr;
-    g_sinkContext = nullptr;
+    LOG_ERR(TAG, "Could not install monitor callback");
     return false;
   }
+  setFrameSink(sink, context);
   if (esp_wifi_set_promiscuous(true) != ESP_OK) {
-    LOG_ERR(TAG, "could not enter promiscuous mode");
+    setFrameSink(nullptr, nullptr);
     esp_wifi_set_promiscuous_rx_cb(nullptr);
-    g_sink = nullptr;
-    g_sinkContext = nullptr;
+    LOG_ERR(TAG, "Could not enable monitor");
     return false;
   }
-
+  channel_ = channel;
   promiscuousActive_ = true;
-  if (!setChannel(channel)) {
-    stopPromiscuous();
-    return false;
-  }
   LOG_INF(TAG, "%s listening on channel %u", owner(), static_cast<unsigned>(channel));
   return true;
 }
@@ -828,12 +849,11 @@ bool RadioManager::setChannel(const uint8_t channel) {
 
 void RadioManager::stopPromiscuous() {
   if (!promiscuousActive_) return;
-  // Stop delivery before dropping the sink, so the trampoline can never run
-  // against a stale context pointer.
-  esp_wifi_set_promiscuous(false);
-  esp_wifi_set_promiscuous_rx_cb(nullptr);
-  g_sink = nullptr;
-  g_sinkContext = nullptr;
+  // Detach first under the same lock as dispatch. Even if driver shutdown
+  // fails, future callbacks cannot dereference the activity being destroyed.
+  setFrameSink(nullptr, nullptr);
+  if (esp_wifi_set_promiscuous(false) != ESP_OK) LOG_ERR(TAG, "Monitor disable failed");
+  if (esp_wifi_set_promiscuous_rx_cb(nullptr) != ESP_OK) LOG_ERR(TAG, "Monitor callback removal failed");
   promiscuousActive_ = false;
 }
 

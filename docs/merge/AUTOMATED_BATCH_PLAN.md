@@ -58,7 +58,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert awaits network infrastructure. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
-| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); next remaining approved recon, preserving passive-only scope. |
+| P6 | in progress | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector cores integrated (wip); remaining views and approved recon next, preserving passive-only scope. |
 | P7 | pending | Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
@@ -616,3 +616,23 @@ this schedule does not declare them completed or permanently blocked.
   Device: valid/invalid TLS, GET/POST, 204/redirect/error/chunked/large responses,
   timeout/disconnect, paging/orientation and repeated entry/exit heap. No cache
   reset. Next passive recon; shipping partitions unchanged.
+
+- 2026-09-24 06:08 UTC run, P6 passive monitor batch: shared fixed 2 KiB
+  callback queue, 96-byte frame prefix, eight recent events, channel/hop/pause
+  controls. Packet Monitor counts types/drops and writes exclusive PCAP files
+  capped at 1 MiB; timestamps are dequeue uptime, FCS stripped per native SDK
+  length contract. Probe Sniffer displays source/SSID/RSSI; Deauth Detector
+  counts deauth/disassociation frames and reports protected/short reasons as
+  unavailable. No attack attribution. Callback only copies; bounded loop parses
+  and writes SD. Manager owner checks plus short dispatch/detach critical section
+  prevent context teardown racing an in-flight copy. Runtime/RF behavior unverified.
+  Source wip; channel chart/CSV, probe aggregation/CSV and deauth spike view remain.
+  Initial compile rejected category ordering; corrected final C3 PASS (110.438s),
+  `/tmp/x4-p6l-final-build.log`. Image 6,443,728 bytes, OTA free 109,872, reserve
+  warning persists. No deferred suites, live capture or device tests. Usage
+  84% five-hour/19% weekly at correction boundary; durable checkpoint before
+  more work. Unrelated work preserved; no flashing or partition changes.
+  Device: each Recon entry, fixed/hopping channels, pause/resume/Home and next
+  radio app; malformed/protected/short frames, queue pressure and heap. Packet
+  Monitor: inspect PCAP prefix lengths/uptime, cap, all slots, SD removal/failure
+  and partial-file status. No cache reset; RF passivity remains a hardware gate.
