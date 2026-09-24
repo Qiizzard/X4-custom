@@ -3,7 +3,7 @@
 Requested 2026-09-05: start one bounded batch every five hours, targeting
 roughly half the account's five-hour Codex allowance. This is a best-effort
 usage target, not a guaranteed quota reservation or 2.5 hours of runtime.
-No firmware work resumes until the scheduled wakeup.
+Scheduled work uses the five-hour cadence; explicit manual continuation is allowed.
 
 ## User direction — feature ports first (2026-09-09 UTC)
 
@@ -28,10 +28,26 @@ The historical queue/log below is retained only as history.
 - Preserve the approved PORT_LEDGER scope; skip genuinely unresolved product
   choices and unsupported hardware without stalling other features. No new
   offensive/capture scope is authorized by this change of testing order.
-- Preserve the five-hour cadence and existing approximate allowance limits:
-  defer at starting usage >40% or weekly >=90%; target <=40 percentage points
-  of work plus 10 checkpointing, stop at +50 or 85% total. If the window resets,
-  checkpoint. Never buy/redeem credits. Do not overlap other active work.
+- Preserve the five-hour cadence. Never buy credits or redeem resets, and do
+  not overlap active manual work.
+
+## User direction — full available usage (2026-09-23 local)
+
+Use all available included account usage to accelerate the approved ports.
+This supersedes all earlier percentage budgets, starting/weekly deferral
+thresholds, reset-stop rules, unavailable-usage subtask limits and the
+one-batch-per-wakeup restriction, including historical instructions below.
+
+- Continue through larger coherent batches in the earliest actionable wave
+  while actual account capacity and actionable work remain. Do not restart P1.
+- Check usage at start and major boundaries for visibility, not reservation.
+  A window reset or missing usage report is not a reason to stop.
+- Checkpoint frequently so actual rate limits or interruptions do not lose
+  work; resume at the next wakeup. Compile once per related porting batch,
+  commit and push completed batches, then continue when capacity permits.
+- Keep comprehensive testing in V1 and mark ports wip/unverified. Existing
+  C3, flash-size, scope, security, hardware/recovery and no-purchase/no-reset
+  constraints remain in force. Keep progress notes short.
 
 ## Active implementation queue
 
@@ -552,3 +568,7 @@ this schedule does not declare them completed or permanently blocked.
   display and export columns; check commas/quotes/formula-like names, occupied
   export slots, absent/full/removed SD, dismiss export result and exit/reuse
   radio. Earlier exports must remain intact. No cache reset.
+
+- 2026-09-23 local: user authorized all available included usage. Removed
+  artificial usage deferrals and one-batch-per-wakeup cap from the active
+  instructions and saved automation; five-hour cadence and safeguards retained.
