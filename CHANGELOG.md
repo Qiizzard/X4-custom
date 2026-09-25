@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Simplified Chess (2026-09-25): two-player and random-move bot modes, bounded
+  move lists, king-safety checks and explicit rule limitations. Source wip;
+  gameplay/device verification deferred.
+
 - Voronoi (2026-09-24): generate dithered nearest-point regions with 5–40
   points and orientation-aware bounded cells. Source wip; device validation
   remains deferred.

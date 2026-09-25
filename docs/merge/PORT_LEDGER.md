@@ -108,7 +108,7 @@ coherent, working subset.
 | Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |
 | Voronoi | `wip` | Fixed 6,000-byte nearest-cell cache plus 40 points; at most 240,000 distance comparisons per explicit regeneration, no animation. Runtime safe-area layout in both orientations. C3 timing/display/heap validation deferred. |
 | Matrix Rain | `wip` | Bounded 48x57 character grid and fixed column state (~3.4 KiB), runtime safe-area layout, 1/2/3-second cadence, pause/density controls and normal auto-sleep. Device display/timing/battery checks deferred. |
-| Chess (with bot) | `todo` | Largest of the tile: search depth is a RAM/CPU budget question, not a feature question. |
+| Chess (with bot) | `wip` | Simplified reference rules, two-player/random bot, fixed 28-pair move lists and reservoir move selection; no recursive search or move-vector allocations. Missing king/king capture handled. Castling/en passant/underpromotion/draw omissions disclosed. Gameplay/device/stack/latency validation deferred. |
 | Casino (multi-mode) | `todo` | Play credits only. `casino.dat` never touches anything real — state that in its PORT_NOTES. |
 
 ## Recon *(passive only — listen, never transmit)*

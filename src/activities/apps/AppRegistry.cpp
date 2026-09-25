@@ -8,6 +8,7 @@
 #include "ap_journal/ApJournalActivity.h"
 #include "barcode/BarcodeActivity.h"
 #include "calculator/CalculatorActivity.h"
+#include "chess/ChessActivity.h"
 #include "cipher/CipherActivity.h"
 #include "clock/ClockActivity.h"
 #include "countdown/CountdownActivity.h"
@@ -132,6 +133,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Games, StrId::STR_APP_MATRIX_RAIN, &makeApp<MatrixRainActivity>},
 
     {AppCategory::Games, StrId::STR_APP_VORONOI, &makeApp<VoronoiActivity>},
+
+    {AppCategory::Games, StrId::STR_APP_CHESS, &makeApp<ChessActivity>},
 
     // ---- Recon ----
     {AppCategory::Recon, StrId::STR_APP_SIGNAL_LOCATOR, &makeApp<SignalLocatorActivity>},
