@@ -141,7 +141,7 @@ coherent, working subset.
 | Quick Wipe | `todo` | Destructive. Needs a confirm flow and must never touch the OTA/SD recovery path (rule 23). |
 | SD Encryption | `todo` | Scope it honestly: per-file via `SecureStore`, not "full-disk". |
 | Security Sweep | `todo` | |
-| Network Monitor | `todo` | |
+| Network Monitor | `wip` | Passive frame-monitor child plus capped shared-SSID/BSSID/channel/open-protected observations in WiFi Scanner. 40-byte group index; hidden identities separate; no rogue/attack claim. Reference event aggregation/rate history remains; runtime/RF validation deferred. |
 | Ghost Mode | `todo` | Define precisely what it disables; must not disable the recovery path. |
 | Emergency SOS | `todo` | Decide what it can actually do with no cellular radio. |
 | Phone Tether | `todo` | |

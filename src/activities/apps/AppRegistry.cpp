@@ -27,6 +27,7 @@
 #include "mdns_browser/MdnsBrowserActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
+#include "network_monitor/NetworkMonitorActivity.h"
 #include "otp_generator/OtpGeneratorActivity.h"
 #include "passive_monitor/PassiveMonitorActivity.h"
 #include "ping/PingActivity.h"
@@ -154,6 +155,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Defense, StrId::STR_APP_NETWORK_MONITOR, &makeApp<NetworkMonitorActivity>},
     {AppCategory::Defense, StrId::STR_APP_SCREEN_DECOY, &makeApp<ScreenDecoyActivity>},
 };
 

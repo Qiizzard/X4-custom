@@ -52,6 +52,17 @@ void WifiScannerActivity::scan() {
   const int found = RADIO.scanNetworks(results, RadioManager::kMaxScanResults, true);
   if (found > 0) {
     std::sort(results, results + found, [](const auto& a, const auto& b) { return a.rssi > b.rssi; });
+    // Compare original bytes before control-character display sanitization.
+    // Hidden SSIDs are separate unknown identities, never one shared-name group.
+    for (int i = 0; i < found; ++i) {
+      groupIds[i] = i;
+      if (!results[i].ssid[0]) continue;
+      for (int j = 0; j < i; ++j)
+        if (strcmp(results[i].ssid, results[j].ssid) == 0) {
+          groupIds[i] = groupIds[j];
+          break;
+        }
+    }
     for (int i = 0; i < found; ++i) {
       for (char& c : results[i].ssid) {
         if (!c) break;
@@ -113,7 +124,9 @@ void WifiScannerActivity::loop() {
     else if (view == View::Channels) {
       view = View::Signal;
       beginHistory();
-    } else
+    } else if (view == View::Signal)
+      view = View::Groups;
+    else
       view = View::Details;
     requestUpdate();
     return;
@@ -125,7 +138,7 @@ void WifiScannerActivity::loop() {
     RenderLock lock(*this);
     if (view == View::Channels)
       selectedChannel = (selectedChannel - 1 + step + 13) % 13 + 1;
-    else if (view == View::Details && count > 0)
+    else if ((view == View::Details || view == View::Groups) && count > 0)
       selected = (selected + step + count) % count;
     requestUpdate();
   }
@@ -156,6 +169,8 @@ void WifiScannerActivity::render(RenderLock&&) {
                           : count < 0 ? tr(STR_WIFI_SCAN_FAILED)
                                       : tr(STR_NO_NETWORKS);
     UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, message);
+  } else if (view == View::Groups) {
+    renderGroups();
   } else if (view == View::Channels) {
     renderChannels();
   } else {
@@ -341,4 +356,43 @@ void WifiScannerActivity::renderSignal() const {
     renderer.fillRect(screen.x + padding + i * width, chartBottom - height, width - 1, height, true);
   }
   UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, chartBottom + line, tr(STR_WIFI_SIGNAL_HISTORY));
+}
+
+void WifiScannerActivity::renderGroups() const {
+  const Rect area = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  const int line = renderer.getLineHeight(UI_10_FONT_ID) + 8;
+  int y = area.y + line;
+  auto draw = [&](const char* text) {
+    UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y, text);
+    y += line;
+  };
+  unsigned open = 0, protectedCount = 0, channels = 0, distinct = 0;
+  uint16_t channelBits = 0;
+  for (int i = 0; i < count; ++i) {
+    if (groupIds[i] != groupIds[selected]) continue;
+    bool duplicate = false;
+    for (int j = 0; j < i; ++j)
+      if (groupIds[j] == groupIds[i] && memcmp(results[j].bssid, results[i].bssid, 6) == 0) {
+        duplicate = true;
+        break;
+      }
+    if (duplicate) continue;
+    ++distinct;
+    if (results[i].encrypted)
+      ++protectedCount;
+    else
+      ++open;
+    if (results[i].channel >= 1 && results[i].channel <= 13) channelBits |= uint16_t(1u << results[i].channel);
+  }
+  for (unsigned i = 1; i <= 13; ++i)
+    if (channelBits & (1u << i)) ++channels;
+  char text[112];
+  draw(tr(STR_NET_GROUP_TITLE));
+  draw(results[selected].ssid[0] ? results[selected].ssid : tr(STR_WIFI_SCAN_HIDDEN));
+  snprintf(text, sizeof(text), tr(STR_NET_GROUP_COUNTS), distinct, channels);
+  draw(text);
+  snprintf(text, sizeof(text), tr(STR_NET_GROUP_SECURITY), open, protectedCount);
+  draw(text);
+  draw(tr(STR_NET_GROUP_LIMIT));
+  draw(tr(STR_WIFI_SCAN_CAPPED_SNAPSHOT));
 }

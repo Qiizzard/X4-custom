@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Network Monitor passive views (2026-09-25): reuse deauthentication
+  observations and compare distinct BSSIDs sharing an SSID, including observed
+  channels and open/protected counts. No rogue-AP or attack attribution; wip.
+
 - Task Manager diagnostics (2026-09-25): separate internal RAM/PSRAM metrics,
   SD readiness, display dimensions and managed-radio ownership. Read-only,
   with five-second refresh; source wip, hardware verification deferred.

@@ -7,7 +7,8 @@
 // Bounded adaptation of Biscuit's Wi-Fi snapshot/detail view. Passive only.
 class WifiScannerActivity final : public Activity {
  public:
-  WifiScannerActivity(GfxRenderer& renderer, MappedInputManager& input) : Activity("WifiScanner", renderer, input) {}
+  WifiScannerActivity(GfxRenderer& renderer, MappedInputManager& input, bool groups = false)
+      : Activity("WifiScanner", renderer, input), view(groups ? View::Groups : View::Details) {}
   void onEnter() override;
   void onExit() override;
   void loop() override;
@@ -18,7 +19,7 @@ class WifiScannerActivity final : public Activity {
   RadioManager::ScanResult results[RadioManager::kMaxScanResults] = {};
   int count = 0;
   int selected = 0;
-  enum class View { Details, Channels, Signal };
+  enum class View { Details, Channels, Signal, Groups };
   View view = View::Details;
   struct Sample {
     int8_t rssi;
@@ -38,6 +39,8 @@ class WifiScannerActivity final : public Activity {
   bool scanning = false;
   bool owned = false;
   void scan();
+  uint8_t groupIds[RadioManager::kMaxScanResults] = {};
+  void renderGroups() const;
   void renderChannels() const;
   void renderSignal() const;
   void beginHistory();

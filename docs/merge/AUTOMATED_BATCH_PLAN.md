@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views integrated, aggregation/rate history pending. Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -772,3 +772,17 @@ this schedule does not declare them completed or permanently blocked.
   files/partitions preserved. Device: compare serial allocator readings,
   C3 absent/S3 separate PSRAM, SD/radio status, refresh/page/orientation/sleep
   and repeated entry/exit heap (PORT_NOTES). No cache reset or flashing.
+
+- 2026-09-25 12:11 UTC run, P7 Network Monitor views: menu reuses owned
+  Deauth monitor and WiFi Scanner with new shared-SSID observations. Forty-byte
+  group index compares pre-sanitization SSIDs; hidden names stay separate,
+  BSSIDs deduplicated within groups, channel/open-protected counts bounded by
+  the 40-result snapshot. No rogue/attack attribution. Child allocation checked;
+  parent owns no radio. Source wip: source/BSSID aggregation and rate graph next.
+  C3 PASS (137.374s), `/tmp/x4-p7f-build.log`; image 6,485,280 bytes, OTA free
+  68,320, reserve warning persists. Deferred suites/device/RF tests not run.
+  Usage initially 55%/weekly 60%, then reset to 16%/weekly 62%; no usage
+  deferral applied. No overlapping active repo task observed; unrelated work
+  and partitions preserved. Device checklist in PORT_NOTES covers both modes,
+  radio handoff/reuse, hidden/duplicate/same-display names, mixed security,
+  capped scans, CSV, orientation and heap. No cache reset or flashing.
