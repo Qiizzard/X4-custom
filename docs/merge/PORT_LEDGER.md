@@ -137,7 +137,7 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | PIN Security (with duress vault) | `todo` | `SecureStore` proves the duress separation cryptographically; the redirect still has to be wired and, per rule 22, actually invoked. |
-| Screen Decoy | `todo` | |
+| Screen Decoy | `wip` | Four translated cosmetic views, selection/preview/activation and Back/Confirm exit. No power, radio, storage or security state changes; normal sleep may replace the view. Device/input validation deferred. |
 | Quick Wipe | `todo` | Destructive. Needs a confirm flow and must never touch the OTA/SD recovery path (rule 23). |
 | SD Encryption | `todo` | Scope it honestly: per-file via `SecureStore`, not "full-disk". |
 | Security Sweep | `todo` | |

@@ -31,6 +31,7 @@
 #include "passive_monitor/PassiveMonitorActivity.h"
 #include "ping/PingActivity.h"
 #include "qr_generator/QrGeneratorActivity.h"
+#include "screen_decoy/ScreenDecoyActivity.h"
 #include "secure_vault/PasswordManagerActivity.h"
 #include "signal_locator/SignalLocatorActivity.h"
 #include "snake/SnakeActivity.h"
@@ -150,6 +151,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Defense, StrId::STR_APP_SCREEN_DECOY, &makeApp<ScreenDecoyActivity>},
 };
 
 constexpr size_t kAppCount = sizeof(kApps) / sizeof(kApps[0]);

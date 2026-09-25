@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Screen Decoy (2026-09-25): preview and activate four cosmetic views, with
+  explicit exit controls and no locking/encryption/shutdown claim. Normal
+  sleep may replace the view; source wip, device validation deferred.
+
 - Simplified Chess (2026-09-25): two-player and random-move bot modes, bounded
   move lists, king-safety checks and explicit rule limitations. Source wip;
   gameplay/device verification deferred.
