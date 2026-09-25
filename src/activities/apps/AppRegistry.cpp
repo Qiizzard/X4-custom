@@ -37,6 +37,7 @@
 #include "snake/SnakeActivity.h"
 #include "stego_notes/StegoNotesActivity.h"
 #include "sudoku/SudokuActivity.h"
+#include "task_manager/TaskManagerActivity.h"
 #include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
 #include "voronoi/VoronoiActivity.h"
@@ -118,6 +119,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_TOTP_QR_APP, &makeTotpQr},
 
     {AppCategory::Tools, StrId::STR_STEGO_APP, &makeApp<StegoNotesActivity>},
+
+    {AppCategory::Tools, StrId::STR_APP_TASK_MANAGER, &makeApp<TaskManagerActivity>},
 
     // ---- Games ----
     {AppCategory::Games, StrId::STR_APP_DICE_ROLLER, &makeApp<DiceRollerActivity>},

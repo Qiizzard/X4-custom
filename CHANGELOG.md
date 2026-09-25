@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Task Manager diagnostics (2026-09-25): separate internal RAM/PSRAM metrics,
+  SD readiness, display dimensions and managed-radio ownership. Read-only,
+  with five-second refresh; source wip, hardware verification deferred.
+
 - Screen Decoy (2026-09-25): preview and activate four cosmetic views, with
   explicit exit controls and no locking/encryption/shutdown claim. Normal
   sleep may replace the view; source wip, device validation deferred.

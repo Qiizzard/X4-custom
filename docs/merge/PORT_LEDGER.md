@@ -167,7 +167,7 @@ coherent, working subset.
 | Battery | `base` | Settings > Device. |
 | Device Info | `base` | Settings > Device. |
 | Background | `base` | Sleep-screen settings. |
-| Task Manager | `todo` | Genuinely new. `RADIO.holdReport()` gives it the radio row for free. |
+| Task Manager | `wip` | Read-only internal/PSRAM allocator snapshots through MemoryStats platform helper, SD/display/boot ticks and managed radio owner/duration. Five-second refresh, no task termination or cache clearing. CPU/flash detail remains in base Settings; runtime/device validation deferred. |
 | Automation | `todo` | Genuinely new. Scope it against `SCOPE.md` before building. |
 
 **No X4 Pro firmware target exists.** `platformio.ini` has `x4-pro-simulator`

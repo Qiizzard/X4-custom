@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain, Voronoi, simplified Chess and Screen Decoy integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip). Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -758,3 +758,17 @@ this schedule does not declare them completed or permanently blocked.
   Device: four views, preview/cancel/activate, blank-screen exit, orientations,
   sleep/wake/recovery and unchanged storage/radio/security state (PORT_NOTES).
   No cache reset or flashing. Unrelated files preserved. Remaining P7 next.
+
+- 2026-09-25 07:11 UTC run, P7 Task Manager diagnostics: platform-isolated
+  internal/PSRAM total/free/largest/low-water reads, absent/simulator metrics
+  explicitly unavailable, five-second refresh, SD/display/boot ticks and
+  managed-radio owner/duration. Fixed snapshot/48-byte owner buffer; no task
+  termination, memory clearing, radio acquisition or writes. CPU/flash detail
+  stays in base Settings. Independent readings/low-water caveats visible.
+  Source wip/unverified. C3 PASS (203.701s including dependency refresh),
+  `/tmp/x4-p7e-build.log`; image 6,482,144 bytes, OTA free 71,456, reserve
+  warning persists. Usage 11% → 36% five-hour, 53% → 57% weekly. Deferred
+  suites/device tests not run. No other active repo work observed; unrelated
+  files/partitions preserved. Device: compare serial allocator readings,
+  C3 absent/S3 separate PSRAM, SD/radio status, refresh/page/orientation/sleep
+  and repeated entry/exit heap (PORT_NOTES). No cache reset or flashing.
