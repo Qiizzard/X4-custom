@@ -109,7 +109,7 @@ coherent, working subset.
 | Voronoi | `wip` | Fixed 6,000-byte nearest-cell cache plus 40 points; at most 240,000 distance comparisons per explicit regeneration, no animation. Runtime safe-area layout in both orientations. C3 timing/display/heap validation deferred. |
 | Matrix Rain | `wip` | Bounded 48x57 character grid and fixed column state (~3.4 KiB), runtime safe-area layout, 1/2/3-second cadence, pause/density controls and normal auto-sleep. Device display/timing/battery checks deferred. |
 | Chess (with bot) | `wip` | Simplified reference rules, two-player/random bot, fixed 28-pair move lists and reservoir move selection; no recursive search or move-vector allocations. Missing king/king capture handled. Castling/en passant/underpromotion/draw omissions disclosed. Gameplay/device/stack/latency validation deferred. |
-| Casino (multi-mode) | `todo` | Play credits only. `casino.dat` never touches anything real — state that in its PORT_NOTES. |
+| Casino (multi-mode) | `wip` | Coin Flip, Higher/Lower and single-zero Roulette core modes; session-only play credits, fixed 52-card rank deck, 1M credit/pot cap and confirmed reset. No cash value, purchases or storage writes. Slots/Blackjack/Loot Box/persistence remain; gameplay/device validation deferred. |
 
 ## Recon *(passive only — listen, never transmit)*
 

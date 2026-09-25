@@ -7,6 +7,11 @@ base is MIT.
 
 ### Added
 
+- Casino core modes (2026-09-25): Coin Flip, Higher/Lower and single-zero
+  Roulette with session-only play credits, explicit stakes, capped arithmetic
+  and confirmed reset. No cash value or purchases. Other modes/save progress
+  remain pending; source wip, gameplay/device validation deferred.
+
 - Network Monitor summaries (2026-09-25): bounded source/BSSID event
   aggregation, timed frame-rate history and CSV export with drop/untracked
   counts. Observations remain unverified on device; no attack attribution.
