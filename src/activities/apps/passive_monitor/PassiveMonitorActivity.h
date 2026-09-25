@@ -30,6 +30,20 @@ class PassiveMonitorActivity final : public Activity {
     uint8_t channel, subtype;
     bool protectedFrame, reasonKnown;
   };
+  struct Summary {
+    Event event;
+    uint8_t bssid[6];
+    uint32_t count, first, last;
+  };
+  Summary summaries[24] = {};
+  uint8_t summaryCount = 0;
+  uint32_t skippedEvents = 0, rateCount = 0;
+  struct Rate {
+    uint32_t count, elapsed;
+  };
+  Rate rates[40] = {};
+  uint8_t rateHead = 0, rateSize = 0;
+  void renderRates(int top);
   Kind kind;
   bool owned = false, running = false, failed = false, hopping = false;
   uint8_t channel = 1, eventHead = 0, eventCount = 0, selected = 0;

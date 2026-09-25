@@ -13,8 +13,12 @@ cipher suites. Same SSID, channel differences and mixed protection are normal
 in some networks and are never labeled rogue/attacker evidence. Capped snapshots
 are not exhaustive surveys. Generic scan CSV export remains available.
 
-The reference's source/BSSID event aggregation and rate-history graph are still
-pending; existing bounded recent-event/burst views are available. All runtime,
+Source/BSSID/subtype aggregation now uses 24 fixed entries, with first/last
+processing uptime and last observed metadata. Forty timed windows provide a
+processed-frame rate chart; queue drops/untracked events stay explicit. Page
+Back exports exclusive numbered event CSV and acknowledges the burst indicator.
+Unknown/protected reasons export as -1; first/last are not arrival timestamps.
+These fixed summary/rate arrays add approximately 2 KiB to the shared activity. All runtime,
 RF, heap and SD checks remain deferred. No active probing, extra framebuffer,
 background monitor, dynamic grouping collection or attack attribution added.
 

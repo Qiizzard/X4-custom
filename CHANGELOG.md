@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Network Monitor summaries (2026-09-25): bounded source/BSSID event
+  aggregation, timed frame-rate history and CSV export with drop/untracked
+  counts. Observations remain unverified on device; no attack attribution.
+
 - Network Monitor passive views (2026-09-25): reuse deauthentication
   observations and compare distinct BSSIDs sharing an SSID, including observed
   channels and open/protected counts. No rogue-AP or attack attribution; wip.

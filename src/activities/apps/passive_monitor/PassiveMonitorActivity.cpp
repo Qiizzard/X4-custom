@@ -114,6 +114,27 @@ void PassiveMonitorActivity::process(const Packet& packet) {
     }
   }
   if (probeView()) track(event.source, event.ssid, event.rssi, event.channel);
+  if (kind == Kind::Deauth) {
+    if (rateCount != UINT32_MAX) ++rateCount;
+    unsigned i = 0;
+    for (; i < summaryCount; ++i)
+      if (summaries[i].event.subtype == subtype && memcmp(summaries[i].event.source, event.source, 6) == 0 &&
+          memcmp(summaries[i].bssid, packet.bytes + 16, 6) == 0)
+        break;
+    if (i == summaryCount && summaryCount == 24) {
+      if (skippedEvents != UINT32_MAX) ++skippedEvents;
+    } else {
+      auto& summary = summaries[i];
+      if (i == summaryCount) {
+        ++summaryCount;
+        summary.first = millis();
+        memcpy(summary.bssid, packet.bytes + 16, 6);
+      }
+      summary.event = event;
+      summary.last = millis();
+      if (summary.count != UINT32_MAX) ++summary.count;
+    }
+  }
   eventHead = (eventHead + 1) % 8;
   if (eventCount < 8) ++eventCount;
 }
@@ -156,6 +177,7 @@ void PassiveMonitorActivity::loop() {
       failed = !running;
       intervalStart = millis();
       intervalCount = 0;
+      rateCount = 0;
       if (kind == Kind::Crowd) {
         peerCount = 0;
         untracked = 0;
@@ -186,16 +208,19 @@ void PassiveMonitorActivity::loop() {
   }
   const bool up = mappedInput.wasPressed(MappedInputManager::Button::Up);
   const bool down = mappedInput.wasPressed(MappedInputManager::Button::Down);
-  const uint8_t rows = kind == Kind::Crowd ? windowCount : probeView() ? peerCount : eventCount;
-  if (kind == Kind::Packets && up) {
+  const uint8_t rows = kind == Kind::Deauth  ? summaryCount
+                       : kind == Kind::Crowd ? windowCount
+                       : probeView()         ? peerCount
+                                             : eventCount;
+  if ((kind == Kind::Packets || kind == Kind::Deauth) && up) {
     chart = !chart;
     requestUpdate();
   } else if (rows && (up || down)) {
     selected = (selected + (down ? 1 : rows - 1)) % rows;
     requestUpdate();
   }
-  if (owned && ((kind == Kind::Packets && down) ||
-                (probeView() && mappedInput.wasPressed(MappedInputManager::Button::PageBack)))) {
+  if (owned && ((kind == Kind::Packets && down) || ((probeView() || kind == Kind::Deauth) &&
+                                                    mappedInput.wasPressed(MappedInputManager::Button::PageBack)))) {
     csvStatus = saveCsv() ? 1 : -1;
     requestUpdate();
   }
@@ -225,6 +250,10 @@ void PassiveMonitorActivity::loop() {
   }
   if (running && kind == Kind::Deauth && millis() - intervalStart >= 2000) {
     const uint32_t now = millis();
+    rates[rateHead] = {rateCount, now - intervalStart};
+    rateHead = (rateHead + 1) % 40;
+    if (rateSize < 40) ++rateSize;
+    rateCount = 0;
     if (intervalCount >= 5) {
       spike = true;
       spikeFrames = intervalCount;
@@ -267,6 +296,14 @@ void PassiveMonitorActivity::render(RenderLock&&) {
            static_cast<unsigned long>(packets.droppedFrames()));
   draw(text);
   if (csvStatus) draw(csvStatus > 0 ? csvPath : tr(STR_MDNS_EXPORT_FAILED));
+  if (kind == Kind::Deauth && chart && !csvStatus) {
+    renderRates(y);
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), running ? tr(STR_MONITOR_PAUSE) : tr(STR_MONITOR_RESUME),
+                                              tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+    renderer.displayBuffer();
+    return;
+  }
   if (kind == Kind::Packets && chart && !csvStatus) {
     renderChannels(y);
     const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_MONITOR_PAUSE), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
@@ -334,8 +371,15 @@ void PassiveMonitorActivity::render(RenderLock&&) {
                  unsigned(peer.channel));
         draw(text);
       }
-    } else if (eventCount) {
-      const Event& event = events[(eventHead + 7 - selected) % 8];
+    } else if (summaryCount) {
+      const auto& summary = summaries[selected % summaryCount];
+      const Event& event = summary.event;
+      snprintf(text, sizeof(text), tr(STR_NET_EVENT_COUNT), unsigned(summaryCount),
+               static_cast<unsigned long>(summary.count), static_cast<unsigned long>(skippedEvents));
+      draw(text);
+      snprintf(text, sizeof(text), tr(STR_NET_BSSID), summary.bssid[0], summary.bssid[1], summary.bssid[2],
+               summary.bssid[3], summary.bssid[4], summary.bssid[5]);
+      draw(text);
       snprintf(text, sizeof(text), "%02X:%02X:%02X:%02X:%02X:%02X", event.source[0], event.source[1], event.source[2],
                event.source[3], event.source[4], event.source[5]);
       draw(text);
@@ -362,7 +406,7 @@ void PassiveMonitorActivity::render(RenderLock&&) {
   draw(kind == Kind::Crowd     ? tr(STR_CROWD_CONTROLS)
        : kind == Kind::Packets ? tr(STR_PACKET_MORE_CONTROLS)
        : probeView()           ? tr(STR_PROBE_MORE_CONTROLS)
-                               : tr(STR_DEAUTH_MORE_CONTROLS));
+                               : tr(STR_NET_EVENT_CONTROLS));
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), running ? tr(STR_MONITOR_PAUSE) : tr(STR_MONITOR_RESUME),
                                             tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
@@ -468,7 +512,11 @@ bool PassiveMonitorActivity::saveCsv() {
   }
   HalFile file;
   for (int slot = 0; slot < 100; ++slot) {
-    snprintf(csvPath, sizeof(csvPath), "%s/%s-%02d.csv", dir, probeView() ? "probes" : "channels", slot);
+    snprintf(csvPath, sizeof(csvPath), "%s/%s-%02d.csv", dir,
+             kind == Kind::Deauth ? "events"
+             : probeView()        ? "probes"
+                                  : "channels",
+             slot);
     if (Storage.exists(csvPath)) continue;
     file = Storage.open(csvPath, O_WRITE | O_CREAT | O_EXCL);
     break;
@@ -482,7 +530,26 @@ bool PassiveMonitorActivity::saveCsv() {
     return file.write(value, n) == n;
   };
   char row[96];
-  bool ok = write(probeView() ? "source_mac,ssid,last_rssi_dbm,channel,frames\n" : "metric,key,count\n");
+  bool ok = write(kind == Kind::Deauth ? "kind,source,bssid,count,first_ms,last_ms,rssi,channel,subtype,reason\n"
+                  : probeView()        ? "source_mac,ssid,last_rssi_dbm,channel,frames\n"
+                                       : "metric,key,count\n");
+  if (kind == Kind::Deauth) {
+    for (unsigned i = 0; ok && i < summaryCount; ++i) {
+      const auto& item = summaries[i];
+      const auto& e = item.event;
+      snprintf(row, sizeof(row), "event,%02X:%02X:%02X:%02X:%02X:%02X,%02X:%02X:%02X:%02X:%02X:%02X,", e.source[0],
+               e.source[1], e.source[2], e.source[3], e.source[4], e.source[5], item.bssid[0], item.bssid[1],
+               item.bssid[2], item.bssid[3], item.bssid[4], item.bssid[5]);
+      ok = write(row);
+      snprintf(row, sizeof(row), "%lu,%lu,%lu,%d,%u,%u,%d\n", static_cast<unsigned long>(item.count),
+               static_cast<unsigned long>(item.first), static_cast<unsigned long>(item.last), int(e.rssi),
+               unsigned(e.channel), unsigned(e.subtype), e.reasonKnown ? int(e.reason) : -1);
+      ok = ok && write(row);
+    }
+    snprintf(row, sizeof(row), "queue_drops,,,%lu,,,,,,\nuntracked_events,,,%lu,,,,,,\n",
+             static_cast<unsigned long>(packets.droppedFrames()), static_cast<unsigned long>(skippedEvents));
+    ok = ok && write(row);
+  }
   if (kind == Kind::Packets) {
     for (int c = 1; ok && c <= 13; ++c) {
       snprintf(row, sizeof(row), "channel,%d,%lu\n", c, static_cast<unsigned long>(channelFrames[c]));
@@ -525,4 +592,34 @@ bool PassiveMonitorActivity::saveCsv() {
     return false;
   }
   return true;
+}
+
+void PassiveMonitorActivity::renderRates(int top) {
+  const Rect area = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  const int line = renderer.getLineHeight(UI_10_FONT_ID) + 6;
+  const int bottom = area.y + area.height - 3 * line;
+  const int height = bottom - top - 2 * line;
+  const int width = (area.width - 24) / 40;
+  char text[112];
+  UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, top, tr(STR_NET_RATE_LABEL));
+  if (rateSize) {
+    const auto& latest = rates[(rateHead + 39) % 40];
+    snprintf(text, sizeof(text), tr(STR_NET_RATE_LATEST), static_cast<unsigned long>(latest.count),
+             static_cast<unsigned long>(latest.elapsed));
+    UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, top + line, text);
+  }
+  uint64_t maximum = 1;
+  for (unsigned i = 0; i < rateSize; ++i) {
+    const auto& r = rates[(rateHead + 40 - rateSize + i) % 40];
+    const uint64_t rate = uint64_t(r.count) * 1000000 / std::max<uint32_t>(1, r.elapsed);
+    maximum = std::max(maximum, rate);
+  }
+  if (height > 0 && width >= 2)
+    for (unsigned i = 0; i < rateSize; ++i) {
+      const auto& r = rates[(rateHead + 40 - rateSize + i) % 40];
+      const uint64_t rate = uint64_t(r.count) * 1000000 / std::max<uint32_t>(1, r.elapsed);
+      const int bar = int(rate * height / maximum);
+      if (bar) renderer.fillRect(area.x + 12 + i * width, bottom - bar, width - 1, bar, true);
+    }
+  UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, bottom + line, tr(STR_NET_EVENT_CONTROLS));
 }
