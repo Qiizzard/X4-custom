@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Casino Blackjack (2026-09-25): fixed hands, fresh single-deck rounds,
+  natural-blackjack/push settlement and dealer standing on 17. Play credits
+  only; split/double/insurance/surrender omitted, gameplay tests deferred.
+
 - Casino core modes (2026-09-25): Coin Flip, Higher/Lower and single-zero
   Roulette with session-only play credits, explicit stakes, capped arithmetic
   and confirmed reset. No cash value or purchases. Other modes/save progress

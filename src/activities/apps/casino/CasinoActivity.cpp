@@ -2,6 +2,7 @@
 
 #include <GfxRenderer.h>
 #include <I18n.h>
+#include <Logging.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -37,7 +38,19 @@ void CasinoActivity::play() {
     return;
   }
   insufficient = false;
+  pushed = false;
   credits -= bet;
+  if (mode == 3) {
+    position = 52;  // Fresh single deck for each Blackjack round.
+    playerCount = dealerCount = 2;
+    player[0] = drawCard();
+    dealer[0] = drawCard();
+    player[1] = drawCard();
+    dealer[1] = drawCard();
+    state = State::Blackjack;
+    if (handValue(player, 2) == 21 || handValue(dealer, 2) == 21) settleBlackjack(false);
+    return;
+  }
   if (mode == 1) {
     pot = bet;
     streak = 0;
@@ -118,7 +131,9 @@ void CasinoActivity::loop() {
   }
   RenderLock lock(*this);
   if (back) {
-    if (state == State::HighLow)
+    if (state == State::Blackjack)
+      settleBlackjack(true);
+    else if (state == State::HighLow)
       cashOut();
     else
       state = state == State::Result ? State::Bet : State::Menu;
@@ -133,7 +148,7 @@ void CasinoActivity::loop() {
   bool changed = left || right || up || down || confirm;
   if (state == State::Menu) {
     if (left || right) {
-      mode = (mode + (right ? 1 : 2)) % 3;
+      mode = (mode + (right ? 1 : 3)) % 4;
       choice = 0;
     }
     if (confirm) {
@@ -152,6 +167,16 @@ void CasinoActivity::loop() {
     }
   } else if (state == State::Result) {
     if (confirm) state = State::Bet;
+  } else if (state == State::Blackjack) {
+    if (right)
+      settleBlackjack(true);
+    else if (confirm) {
+      if (playerCount < 12)
+        player[playerCount++] = drawCard();
+      else
+        LOG_ERR("CASINO", "Player hand cap reached");
+      if (handValue(player, playerCount) >= 21 || playerCount == 12) settleBlackjack(true);
+    }
   } else if (state == State::HighLow) {
     if (confirm)
       cashOut();
@@ -160,7 +185,7 @@ void CasinoActivity::loop() {
   } else {
     if (left && betIndex) --betIndex;
     if (right && betIndex < 6) ++betIndex;
-    if ((up || down) && mode != 1) {
+    if ((up || down) && (mode == 0 || mode == 2)) {
       const unsigned choices = mode == 0 ? 2 : 10;
       choice = (choice + (down ? 1 : choices - 1)) % choices;
     }
@@ -196,7 +221,10 @@ void CasinoActivity::render(RenderLock&&) {
   draw(tr(STR_CASINO_PLAY_ONLY));
   snprintf(text, sizeof(text), tr(STR_CASINO_CREDITS), static_cast<unsigned long>(credits));
   draw(text);
-  draw(mode == 0 ? tr(STR_CASINO_COIN) : mode == 1 ? tr(STR_CASINO_HIGHLOW) : tr(STR_CASINO_ROULETTE));
+  draw(mode == 0   ? tr(STR_CASINO_COIN)
+       : mode == 1 ? tr(STR_CASINO_HIGHLOW)
+       : mode == 2 ? tr(STR_CASINO_ROULETTE)
+                   : tr(STR_CASINO_BLACKJACK));
   if (state == State::Menu) {
     draw(tr(STR_CASINO_SESSION));
     draw(tr(STR_CASINO_MENU));
@@ -207,8 +235,24 @@ void CasinoActivity::render(RenderLock&&) {
              static_cast<unsigned long>(streak));
     draw(text);
     draw(tr(STR_CASINO_GUESS));
+  } else if (state == State::Blackjack) {
+    snprintf(text, sizeof(text), tr(STR_CASINO_BJ_HAND), handValue(player, playerCount), unsigned(dealer[0]));
+    draw(text);
+    size_t used = 0;
+    for (unsigned i = 0; i < playerCount && used < sizeof(text); ++i) {
+      const int n = snprintf(text + used, sizeof(text) - used, "%s%u", i ? " " : "", unsigned(player[i]));
+      if (n < 0 || size_t(n) >= sizeof(text) - used) break;
+      used += size_t(n);
+    }
+    draw(text);
+    draw(tr(STR_CASINO_BJ_CONTROLS));
   } else if (state == State::Result) {
-    draw(won ? tr(STR_CASINO_WIN) : tr(STR_CASINO_LOSS));
+    if (mode == 3) {
+      snprintf(text, sizeof(text), tr(STR_CASINO_BJ_TOTALS), handValue(player, playerCount),
+               handValue(dealer, dealerCount));
+      draw(text);
+    }
+    draw(pushed ? tr(STR_CASINO_PUSH) : won ? tr(STR_CASINO_WIN) : tr(STR_CASINO_LOSS));
     snprintf(text, sizeof(text), tr(STR_CASINO_OUTCOME), outcome);
     draw(text);
   } else {
@@ -216,6 +260,10 @@ void CasinoActivity::render(RenderLock&&) {
     draw(text);
     if (mode == 0) draw(choice ? tr(STR_CASINO_TAILS) : tr(STR_CASINO_HEADS));
     if (mode == 1) draw(tr(STR_CASINO_HIGHLOW_RULE));
+    if (mode == 3) {
+      draw(tr(STR_CASINO_BJ_RULE));
+      draw(tr(STR_CASINO_BJ_LIMIT));
+    }
     if (mode == 2) {
       static constexpr StrId choices[] = {StrId::STR_CASINO_RED,    StrId::STR_CASINO_BLACK,  StrId::STR_CASINO_ODD,
                                           StrId::STR_CASINO_EVEN,   StrId::STR_CASINO_LOW,    StrId::STR_CASINO_HIGH,
@@ -233,4 +281,46 @@ void CasinoActivity::render(RenderLock&&) {
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_CONFIRM), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   renderer.displayBuffer();
+}
+
+unsigned CasinoActivity::handValue(const uint8_t* hand, unsigned count) {
+  unsigned value = 0, aces = 0;
+  for (unsigned i = 0; i < count; ++i) {
+    if (hand[i] == 1) {
+      value += 11;
+      ++aces;
+    } else
+      value += std::min<unsigned>(10, hand[i]);
+  }
+  while (value > 21 && aces) {
+    value -= 10;
+    --aces;
+  }
+  return value;
+}
+void CasinoActivity::settleBlackjack(bool drawDealer) {
+  const unsigned p = handValue(player, playerCount);
+  const bool natural = playerCount == 2 && p == 21;
+  if (drawDealer && p <= 21 && !natural) {
+    while (handValue(dealer, dealerCount) < 17 && dealerCount < 12) dealer[dealerCount++] = drawCard();
+  }
+  const unsigned d = handValue(dealer, dealerCount);
+  const bool dealerNatural = dealerCount == 2 && d == 21;
+  const uint64_t bet = bets[betIndex];
+  uint64_t returned = 0;
+  if (p > 21)
+    returned = 0;
+  else if (natural && !dealerNatural)
+    returned = bet * 5 / 2;
+  else if (dealerNatural && !natural)
+    returned = 0;
+  else if (d > 21 || p > d)
+    returned = bet * 2;
+  else if (p == d)
+    returned = bet;
+  won = returned > bet;
+  pushed = returned == bet;
+  credits = uint32_t(std::min<uint64_t>(cap, uint64_t(credits) + returned));
+  outcome = p;
+  state = State::Result;
 }

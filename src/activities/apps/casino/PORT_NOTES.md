@@ -9,7 +9,7 @@ Higher/Lower cashes out on Confirm or Back; ranks 1–13 use a shuffled fixed
 
 Play credits only: no cash value, purchases, cash transactions or prizes.
 No `casino.dat` or other storage is read/written. Saved progress, Slots,
-Blackjack and Loot Box remain pending. Cosmetic xorshift and modulo selection
+and Loot Box remain pending. Cosmetic xorshift and modulo selection
 are not cryptographic or claimed perfectly uniform. No real-money suitability.
 
 Fixed scalar state and 52-byte deck; no move/card vectors, growing strings,
@@ -21,3 +21,11 @@ Deferred V1/device: all roulette bet boundaries (especially zero), exact-number
 selection, outcomes/returns, insufficient funds, caps/reset cancel, Higher/Lower
 ties, deck exhaustion, cash-out/Back, mode changes, orientations, sleep and
 repeated entry/exit heap. No cache reset; gameplay tests not performed yet.
+
+Blackjack adds two fixed 12-card rank arrays (24 bytes), a fresh deck per round,
+ace adjustment, natural-blackjack precedence, pushes and dealer stand on soft
+or hard 17. Natural pays 3:2 profit rounded down; other wins return 2x stake,
+push returns stake. No split/double/insurance/surrender. Confirm hits; Right or
+Back stands. Dealer hole-card total is withheld until settlement. Final tests
+must cover both/player/dealer natural, multi-card 21, soft aces, busts, pushes,
+odd-stake rounding, credit cap, repeated rounds and hidden dealer information.
