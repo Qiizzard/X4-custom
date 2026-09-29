@@ -8,7 +8,7 @@ Higher/Lower cashes out on Confirm or Back; ranks 1–13 use a shuffled fixed
 52-card rank deck, reshuffled when exhausted and before a round if nearly empty.
 
 Play credits only: no cash value, purchases, cash transactions or prizes.
-No `casino.dat` or other storage is read/written. Saved progress, Slots,
+No `casino.dat` or other storage is read/written. Saved progress, additional slot machines/powerups,
 and Loot Box remain pending. Cosmetic xorshift and modulo selection
 are not cryptographic or claimed perfectly uniform. No real-money suitability.
 
@@ -29,3 +29,13 @@ push returns stake. No split/double/insurance/surrender. Confirm hits; Right or
 Back stands. Dealer hole-card total is withheld until settlement. Final tests
 must cover both/player/dealer natural, multi-card 21, soft aces, busts, pushes,
 odd-stake rounding, credit cap, repeated rounds and hidden dealer information.
+
+Classic Slots adds three bytes of reel state and flash-resident symbol/payout
+lookup tables. Six symbols follow the reference Classic machine: matching
+triples return 50/20/10/8/5/3 times stake; any pair returns 2x; otherwise zero.
+The deducted stake is included in these total returns. No holds/powerups,
+rapid animation or storage writes. Maximum uncapped return is 50,000 with
+the existing 1,000 maximum stake. Modulo selection has slight bias.
+Deferred device checks: Casino -> Classic Slots, stake selection, all three
+pair positions/triples, insufficient credits, cap, Back/Confirm navigation,
+portrait/landscape layout and sleep/wake. No cache reset required.

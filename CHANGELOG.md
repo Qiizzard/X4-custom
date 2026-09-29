@@ -7,6 +7,9 @@ base is MIT.
 
 ### Added
 
+- Classic Slots (2026-09-29): three reels, translated symbols and visible
+  pair/triple payouts using session-only play credits. No purchases; wip.
+
 - Casino Blackjack (2026-09-25): fixed hands, fresh single-deck rounds,
   natural-blackjack/push settlement and dealer standing on 17. Play credits
   only; split/double/insurance/surrender omitted, gameplay tests deferred.

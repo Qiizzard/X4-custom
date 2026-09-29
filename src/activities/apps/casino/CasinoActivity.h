@@ -16,6 +16,7 @@ class CasinoActivity final : public Activity {
   uint32_t credits = 1000, pot = 0, rng = 1, streak = 0;
   static constexpr uint32_t cap = 1000000;
   static constexpr uint32_t bets[] = {10, 25, 50, 100, 250, 500, 1000};
+  uint8_t reels[3] = {};
   uint8_t deck[52] = {}, position = 52, card = 0;
   bool won = false, insufficient = false, pushed = false;
   uint8_t player[12] = {}, dealer[12] = {}, playerCount = 0, dealerCount = 0;

@@ -40,6 +40,21 @@ void CasinoActivity::play() {
   insufficient = false;
   pushed = false;
   credits -= bet;
+  if (mode == 4) {
+    // Classic reference machine: six equally weighted symbols, no powerups.
+    static constexpr uint8_t payouts[] = {50, 20, 10, 8, 5, 3};
+    for (auto& reel : reels) reel = randomValue() % 6;
+    unsigned multiplier = 0;
+    if (reels[0] == reels[1] && reels[1] == reels[2])
+      multiplier = payouts[reels[0]];
+    else if (reels[0] == reels[1] || reels[0] == reels[2] || reels[1] == reels[2])
+      multiplier = 2;
+    outcome = bet * multiplier;
+    won = multiplier != 0;
+    credits = uint32_t(std::min<uint64_t>(cap, uint64_t(credits) + outcome));
+    state = State::Result;
+    return;
+  }
   if (mode == 3) {
     position = 52;  // Fresh single deck for each Blackjack round.
     playerCount = dealerCount = 2;
@@ -148,7 +163,7 @@ void CasinoActivity::loop() {
   bool changed = left || right || up || down || confirm;
   if (state == State::Menu) {
     if (left || right) {
-      mode = (mode + (right ? 1 : 3)) % 4;
+      mode = (mode + (right ? 1 : 4)) % 5;
       choice = 0;
     }
     if (confirm) {
@@ -224,7 +239,8 @@ void CasinoActivity::render(RenderLock&&) {
   draw(mode == 0   ? tr(STR_CASINO_COIN)
        : mode == 1 ? tr(STR_CASINO_HIGHLOW)
        : mode == 2 ? tr(STR_CASINO_ROULETTE)
-                   : tr(STR_CASINO_BLACKJACK));
+       : mode == 3 ? tr(STR_CASINO_BLACKJACK)
+                   : tr(STR_CASINO_SLOTS));
   if (state == State::Menu) {
     draw(tr(STR_CASINO_SESSION));
     draw(tr(STR_CASINO_MENU));
@@ -247,19 +263,32 @@ void CasinoActivity::render(RenderLock&&) {
     draw(text);
     draw(tr(STR_CASINO_BJ_CONTROLS));
   } else if (state == State::Result) {
+    if (mode == 4) {
+      static constexpr StrId symbols[] = {StrId::STR_CASINO_SEVEN, StrId::STR_CASINO_BAR,  StrId::STR_CASINO_CHERRY,
+                                          StrId::STR_CASINO_BELL,  StrId::STR_CASINO_STAR, StrId::STR_CASINO_DIAMOND};
+      snprintf(text, sizeof(text), tr(STR_CASINO_REELS), I18N.get(symbols[reels[0]]), I18N.get(symbols[reels[1]]),
+               I18N.get(symbols[reels[2]]));
+      draw(text);
+    }
     if (mode == 3) {
       snprintf(text, sizeof(text), tr(STR_CASINO_BJ_TOTALS), handValue(player, playerCount),
                handValue(dealer, dealerCount));
       draw(text);
     }
     draw(pushed ? tr(STR_CASINO_PUSH) : won ? tr(STR_CASINO_WIN) : tr(STR_CASINO_LOSS));
-    snprintf(text, sizeof(text), tr(STR_CASINO_OUTCOME), outcome);
+    snprintf(text, sizeof(text), mode == 4 ? tr(STR_CASINO_RETURN) : tr(STR_CASINO_OUTCOME), outcome);
     draw(text);
   } else {
     snprintf(text, sizeof(text), tr(STR_CASINO_BET), static_cast<unsigned long>(bets[betIndex]));
     draw(text);
     if (mode == 0) draw(choice ? tr(STR_CASINO_TAILS) : tr(STR_CASINO_HEADS));
     if (mode == 1) draw(tr(STR_CASINO_HIGHLOW_RULE));
+    if (mode == 4) {
+      draw(tr(STR_CASINO_SLOTS_RULE));
+      draw(tr(STR_CASINO_SLOTS_PAY1));
+      draw(tr(STR_CASINO_SLOTS_PAY2));
+      draw(tr(STR_CASINO_SLOTS_LIMIT));
+    }
     if (mode == 3) {
       draw(tr(STR_CASINO_BJ_RULE));
       draw(tr(STR_CASINO_BJ_LIMIT));
