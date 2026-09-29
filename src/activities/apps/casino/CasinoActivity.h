@@ -16,6 +16,11 @@ class CasinoActivity final : public Activity {
   uint32_t credits = 1000, pot = 0, rng = 1, streak = 0;
   static constexpr uint32_t cap = 1000000;
   static constexpr uint32_t bets[] = {10, 25, 50, 100, 250, 500, 1000};
+  int8_t saveSlot = -1;
+  uint32_t saveGeneration = 0;
+  bool saveBlocked = false, saveError = false, dirty = true;
+  void loadProgress();
+  void saveProgress();
   uint8_t collected[7] = {}, pulls[5] = {}, pullCount = 0, collectionIndex = 0;
   bool pullNew[5] = {};
   bool hasItem(unsigned item) const;

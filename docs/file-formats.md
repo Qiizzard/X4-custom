@@ -600,3 +600,20 @@ protected flag 0/1), then little-endian CRC-32/IEEE over header and records
 (initial/final XOR 0xffffffff). Writes use the next higher exclusive slot;
 loads choose the highest valid slot. Counts, lengths, duplicate BSSIDs, channel
 and flag values are validated. This format is independent of EPUB caches.
+
+## Casino progress (`/crossink/casino-a.dat`, `/crossink/casino-b.dat`)
+
+Version 1: exactly 23 bytes. All integers are explicit little-endian, without
+native-struct padding. Offset 0: magic `CAS1` (4 bytes); offset 4: nonzero
+uint32 generation; offset 8: uint32 play credits (0–1,000,000); offset 12:
+7-byte collectible bitset (item i = bit i%8 of byte i/8, 50 items, upper six
+bits of last byte zero); offset 19: uint32 FNV-1a over bytes 0–18 (offset basis
+2166136261, multiplier 16777619). This detects corruption, not malicious edits.
+
+Choose the valid record with greatest generation; equal generations prefer A.
+Explicit menu saving writes/syncs/closes the inactive slot, advancing generation
+only on success. Generation UINT32_MAX blocks further saves. Invalid records
+are preserved if neither slot is valid; restore known-good records or back up
+and remove these files outside the app before re-entry to start fresh. Legacy
+Biscuit saves are not imported. Only credits/collection persist, not active
+rounds, random state or slot powerups. No shipping partition/cache changes.

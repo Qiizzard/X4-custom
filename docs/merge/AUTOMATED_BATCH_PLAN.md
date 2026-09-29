@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino Coin Flip/Higher-Lower/Roulette/Blackjack/Classic Slots/Loot Box integrated (wip), other slot machines/powerups and persistence pending. Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino Coin Flip/Higher-Lower/Roulette/Blackjack/Classic Slots/Loot Box integrated (wip), explicit saved credits/collection integrated; other slot machines/powerups pending. Remaining approved defense, comms, games and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -841,3 +841,9 @@ this schedule does not declare them completed or permanently blocked.
   compile PASS (134.31s), image 6,503,616 bytes; 49,984 bytes OTA space
   remains below reserve. Gameplay/device tests deferred. Next: explicit saved
   progress, remaining slot machines/powerups. Log: firmware-builds/logs/2026-09-29-loot-c3.log.
+
+- 2026-09-29 P7 Casino persistence: explicit menu save/load of credits and
+  collection via two checked 23-byte records; no per-play writes or legacy
+  import. C3 compile PASS (141.21s), image 6,505,520 bytes; 48,080 bytes
+  OTA headroom below reserve. SD fault/power-loss/device validation deferred.
+  Next: remaining slot machines/powerups. Log: firmware-builds/logs/2026-09-29-casino-save-c3.log.

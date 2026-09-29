@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Casino saved progress (2026-09-29): explicitly save credits and collectibles
+  from the menu; checked alternating SD records retain a previous snapshot.
+  Source wip; removable-card/power-loss testing deferred.
+
 - Casino Loot Box (2026-09-29): 50 session collectibles, single/five draws,
   rarity guarantee, duplicate refunds and collection browsing. Play credits
   only; no purchases. Source wip; gameplay/device testing deferred.

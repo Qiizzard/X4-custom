@@ -46,6 +46,7 @@ void CasinoActivity::pullLoot() {
   insufficient = credits < cost;
   if (insufficient) return;
   credits -= cost;
+  dirty = true;
   pullCount = choice == 0 ? 1 : 5;
   bool rare = false;
   for (unsigned i = 0; i < pullCount; ++i) {
@@ -90,6 +91,7 @@ uint8_t CasinoActivity::drawCard() {
 void CasinoActivity::onEnter() {
   Activity::onEnter();
   rng = millis() | 1u;
+  loadProgress();
   requestUpdate();
 }
 void CasinoActivity::play() {
@@ -106,6 +108,7 @@ void CasinoActivity::play() {
   insufficient = false;
   pushed = false;
   credits -= bet;
+  dirty = true;
   if (mode == 4) {
     // Classic reference machine: six equally weighted symbols, no powerups.
     static constexpr uint8_t payouts[] = {50, 20, 10, 8, 5, 3};
@@ -243,6 +246,7 @@ void CasinoActivity::loop() {
   } else if (state == State::Reset) {
     if (confirm) {
       credits = 1000;
+      dirty = true;
       pot = 0;
       state = State::Menu;
     }
@@ -290,6 +294,10 @@ void CasinoActivity::loop() {
     }
     if (confirm) play();
   }
+  if (state == State::Menu && mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
+    saveProgress();
+    changed = true;
+  }
   if (changed) requestUpdate();
 }
 void CasinoActivity::render(RenderLock&&) {
@@ -318,6 +326,7 @@ void CasinoActivity::render(RenderLock&&) {
                    : tr(STR_CASINO_LOOT));
   if (state == State::Menu) {
     draw(tr(STR_CASINO_SESSION));
+    draw(saveError ? tr(STR_CASINO_SAVE_ERROR) : dirty ? tr(STR_CASINO_UNSAVED) : tr(STR_CASINO_SAVED));
     draw(tr(STR_CASINO_MENU));
   } else if (state == State::Reset)
     draw(tr(STR_CASINO_RESET));
