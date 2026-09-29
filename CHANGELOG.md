@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Casino slot variants (2026-09-29): Fruit Frenzy, Lucky 7s, Diamond Deluxe
+  and High Roller, visible payouts, bounded free spins, wild/double powerups
+  and optional reel holds. Play credits only; gameplay validation deferred.
+
 - Casino saved progress (2026-09-29): explicitly save credits and collectibles
   from the menu; checked alternating SD records retain a previous snapshot.
   Source wip; removable-card/power-loss testing deferred.

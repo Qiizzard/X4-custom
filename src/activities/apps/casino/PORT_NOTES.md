@@ -1,4 +1,4 @@
-# Casino — core modes, partial source port, unverified
+# Casino — six core modes, source port, unverified
 
 Adapts Biscuit's Coin Flip (2x total return), Higher/Lower (ties win, integer
 1.5x pot growth) and single-zero Roulette (2x/3x/36x returns). Seven fixed stakes
@@ -8,7 +8,7 @@ Higher/Lower cashes out on Confirm or Back; ranks 1–13 use a shuffled fixed
 52-card rank deck, reshuffled when exhausted and before a round if nearly empty.
 
 Play credits only: no cash value, purchases, cash transactions or prizes.
-Legacy Biscuit `casino.dat` is not imported. Additional slot machines/powerups remain pending. Cosmetic xorshift and modulo selection
+Legacy Biscuit `casino.dat` is not imported. All six core modes are now implemented; reference animations/icons are omitted. Cosmetic xorshift and modulo selection
 are not cryptographic or claimed perfectly uniform. No real-money suitability.
 
 Fixed scalar state and 52-byte deck; no move/card vectors, growing strings,
@@ -32,7 +32,7 @@ odd-stake rounding, credit cap, repeated rounds and hidden dealer information.
 Classic Slots adds three bytes of reel state and flash-resident symbol/payout
 lookup tables. Six symbols follow the reference Classic machine: matching
 triples return 50/20/10/8/5/3 times stake; any pair returns 2x; otherwise zero.
-The deducted stake is included in these total returns. No holds/powerups,
+The deducted stake is included in these total returns. Classic has no holds; there is no
 rapid animation or automatic storage writes. Maximum uncapped return is 50,000 with
 the existing 1,000 maximum stake. Modulo selection has slight bias.
 Deferred device checks: Casino -> Classic Slots, stake selection, all three
@@ -66,3 +66,26 @@ Deferred device: explicit save/re-entry, unsaved exit, alternating-slot damage,
 full/removed SD and interrupted write, no-write browsing, reset then save,
 and collection/credits recovered together. Back up the two records before
 intentional corruption tests; no EPUB cache reset needed.
+
+Slot variants complete the five reference machine tables, minimum stakes and
+pair/triple returns. Up/Down selects a machine; Page Back browses each symbol's
+payout and Page Forward opens powerups/holds. Fruit Frenzy awards three free
+spins for a Cherry triple (including a wild-card upgrade); free spins cap at
+99. Lucky 7s treats its Wild symbol as a substitute, including all-wild ->
+best triple (50x); comparisons use symbol IDs consistently rather than the
+reference's mixed ID/index check. Diamond Deluxe can hold any reels after a
+completed spin, consumed on the next spin. Holds before any result are blocked.
+Double costs 50 play credits and lasts until a win; free spin costs 30;
+one-spin pair-to-triple wild costs 40 and is unavailable on Lucky 7s.
+Re-purchasing active double/wild is rejected; machine changes discard boosts
+and holds, as disclosed. No real purchase path. Eight extra scalar bytes,
+fixed flash tables and existing three reels; no added buffers/allocations.
+Maximum nominal return is 160,000 before the shared 1M credit cap.
+
+Deferred V1/device: five minimum stakes (including returning from another
+mode), all-wild/mixed-wild matches, every machine payout, free-spin cap and
+consumption with zero credits, Cherry awards, double surviving losses and
+consuming wins, wild single-use, repeat/unavailable purchases, holds before
+first result and after machine change, all input/translation/orientation paths.
+Core source is complete with simplified static visuals/manual saving; this
+is not gameplay validation or release approval.

@@ -12,6 +12,24 @@
 #include "components/UITheme.h"
 #include "fontIds.h"
 namespace {
+struct SlotMachine {
+  StrId name;
+  uint8_t symbols[6], payouts[6], count, pair, minimum;
+};
+static constexpr SlotMachine machines[] = {
+    {StrId::STR_CASINO_CLASSIC, {0, 1, 2, 3, 4, 5}, {50, 20, 10, 8, 5, 3}, 6, 2, 10},
+    {StrId::STR_CASINO_FRUIT, {2, 6, 7, 8, 9, 10}, {15, 12, 10, 8, 6, 4}, 6, 2, 10},
+    {StrId::STR_CASINO_LUCKY, {0, 11, 1, 3, 4, 0}, {50, 25, 20, 8, 5, 0}, 5, 2, 25},
+    {StrId::STR_CASINO_DELUXE, {5, 4, 3, 1, 2, 0}, {40, 15, 10, 8, 5, 3}, 6, 3, 50},
+    {StrId::STR_CASINO_ROLLER, {0, 1, 5, 4, 0, 0}, {80, 30, 20, 10, 0, 0}, 4, 3, 100}};
+const char* slotSymbol(unsigned symbol) {
+  static constexpr StrId symbols[] = {StrId::STR_CASINO_SEVEN, StrId::STR_CASINO_BAR,    StrId::STR_CASINO_CHERRY,
+                                      StrId::STR_CASINO_BELL,  StrId::STR_CASINO_STAR,   StrId::STR_CASINO_DIAMOND,
+                                      StrId::STR_CASINO_LEMON, StrId::STR_CASINO_ORANGE, StrId::STR_CASINO_GRAPE,
+                                      StrId::STR_CASINO_MELON, StrId::STR_CASINO_PLUM,   StrId::STR_CASINO_WILD};
+  return I18N.get(symbols[symbol]);
+}
+
 const char* lootName(unsigned item) {
   static constexpr StrId names[] = {
       StrId::STR_CASINO_ITEM_0,  StrId::STR_CASINO_ITEM_1,  StrId::STR_CASINO_ITEM_2,  StrId::STR_CASINO_ITEM_3,
@@ -100,25 +118,45 @@ void CasinoActivity::play() {
     return;
   }
   const uint32_t bet = bets[betIndex];
-  if (credits < bet) {
+  const bool freeSpin = mode == 4 && freeSpins > 0;
+  if (!freeSpin && credits < bet) {
     insufficient = true;
     requestUpdate();
     return;
   }
   insufficient = false;
   pushed = false;
-  credits -= bet;
+  if (freeSpin)
+    --freeSpins;
+  else
+    credits -= bet;
   dirty = true;
   if (mode == 4) {
-    // Classic reference machine: six equally weighted symbols, no powerups.
-    static constexpr uint8_t payouts[] = {50, 20, 10, 8, 5, 3};
-    for (auto& reel : reels) reel = randomValue() % 6;
-    unsigned multiplier = 0;
-    if (reels[0] == reels[1] && reels[1] == reels[2])
-      multiplier = payouts[reels[0]];
-    else if (reels[0] == reels[1] || reels[0] == reels[2] || reels[1] == reels[2])
-      multiplier = 2;
-    outcome = bet * multiplier;
+    const auto& m = machines[machine];
+    for (unsigned i = 0; i < 3; ++i)
+      if (!(held & (1u << i))) reels[i] = randomValue() % m.count;
+    held = 0;
+    reelsReady = true;
+    unsigned multiplier = 0, bestSymbol = 0, bestCount = 0;
+    for (unsigned candidate = 0; candidate < m.count; ++candidate) {
+      if (m.symbols[candidate] == 11) continue;
+      unsigned count = 0;
+      for (auto reel : reels)
+        if (m.symbols[reel] == m.symbols[candidate] || m.symbols[reel] == 11) ++count;
+      bestCount = std::max(bestCount, count);
+      if ((count == 3 || (count == 2 && wild)) && m.payouts[candidate] > multiplier) {
+        multiplier = m.payouts[candidate];
+        bestSymbol = candidate;
+      }
+    }
+    if (multiplier && machine == 1 && bestSymbol == 0) freeSpins = std::min<unsigned>(99, unsigned(freeSpins) + 3);
+    if (!multiplier && bestCount == 2) multiplier = m.pair;
+    if (multiplier && doubled) {
+      multiplier *= 2;
+      doubled = false;
+    }
+    wild = false;
+    outcome = bet * multiplier;  // At most 1,000 * 80 * 2 = 160,000.
     won = multiplier != 0;
     credits = uint32_t(std::min<uint64_t>(cap, uint64_t(credits) + outcome));
     state = State::Result;
@@ -220,7 +258,10 @@ void CasinoActivity::loop() {
     else if (state == State::HighLow)
       cashOut();
     else
-      state = (state == State::Result || state == State::Collection) ? State::Bet : State::Menu;
+      state = (state == State::Result || state == State::Collection || state == State::SlotOptions ||
+               state == State::SlotPayout)
+                  ? State::Bet
+                  : State::Menu;
     requestUpdate();
     return;
   }
@@ -236,6 +277,8 @@ void CasinoActivity::loop() {
       choice = 0;
     }
     if (confirm) {
+      if (mode == 4)
+        while (betIndex < 6 && bets[betIndex] < machines[machine].minimum) ++betIndex;
       state = State::Bet;
       insufficient = false;
     }
@@ -249,6 +292,38 @@ void CasinoActivity::loop() {
       dirty = true;
       pot = 0;
       state = State::Menu;
+    }
+  } else if (state == State::SlotPayout) {
+    const auto count = machines[machine].count;
+    if (left || up) payoutIndex = (payoutIndex + count - 1) % count;
+    if (right || down) payoutIndex = (payoutIndex + 1) % count;
+    if (confirm) state = State::Bet;
+  } else if (state == State::SlotOptions) {
+    const unsigned options = machine == 3 ? 6 : 3;
+    if (left || up) slotOption = (slotOption + options - 1) % options;
+    if (right || down) slotOption = (slotOption + 1) % options;
+    if (confirm) {
+      insufficient = false;
+      if (slotOption >= 3) {
+        if (reelsReady)
+          held ^= 1u << (slotOption - 3);
+        else
+          insufficient = true;
+      } else {
+        const unsigned cost = slotOption == 0 ? 50 : slotOption == 1 ? 30 : 40;
+        const bool available = slotOption == 0 ? !doubled : slotOption == 1 ? freeSpins < 99 : !wild && machine != 2;
+        if (available && credits >= cost) {
+          credits -= cost;
+          dirty = true;
+          if (slotOption == 0)
+            doubled = true;
+          else if (slotOption == 1)
+            ++freeSpins;
+          else
+            wild = true;
+        } else
+          insufficient = true;
+      }
     }
   } else if (state == State::Collection) {
     if (left || up) collectionIndex = (collectionIndex + 49) % 50;
@@ -276,8 +351,26 @@ void CasinoActivity::loop() {
     if (right || down) choice = (choice + 1) % 3;
     if (confirm) play();
   } else {
-    if (left && betIndex) --betIndex;
+    if (left && betIndex && (mode != 4 || bets[betIndex - 1] >= machines[machine].minimum)) --betIndex;
     if (right && betIndex < 6) ++betIndex;
+    if (mode == 4) {
+      if (up || down) {
+        machine = (machine + (down ? 1 : 4)) % 5;
+        while (betIndex < 6 && bets[betIndex] < machines[machine].minimum) ++betIndex;
+        freeSpins = held = 0;
+        doubled = wild = reelsReady = false;
+      }
+      if (mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
+        state = State::SlotOptions;
+        slotOption = 0;
+        insufficient = false;
+        changed = true;
+      } else if (mappedInput.wasPressed(MappedInputManager::Button::PageBack)) {
+        state = State::SlotPayout;
+        payoutIndex = 0;
+        changed = true;
+      }
+    }
     if ((up || down) && (mode == 0 || mode == 2)) {
       const unsigned choices = mode == 0 ? 2 : 10;
       choice = (choice + (down ? 1 : choices - 1)) % choices;
@@ -292,7 +385,7 @@ void CasinoActivity::loop() {
         changed = true;
       }
     }
-    if (confirm) play();
+    if (confirm && state == State::Bet) play();
   }
   if (state == State::Menu && mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
     saveProgress();
@@ -330,7 +423,36 @@ void CasinoActivity::render(RenderLock&&) {
     draw(tr(STR_CASINO_MENU));
   } else if (state == State::Reset)
     draw(tr(STR_CASINO_RESET));
-  else if (mode == 5) {
+  else if (state == State::SlotOptions || state == State::SlotPayout) {
+    const auto& m = machines[machine];
+    draw(I18N.get(m.name));
+    if (state == State::SlotPayout) {
+      draw(slotSymbol(m.symbols[payoutIndex]));
+      if (m.symbols[payoutIndex] == 11)
+        draw(tr(STR_CASINO_WILD_RULE));
+      else {
+        snprintf(text, sizeof(text), tr(STR_CASINO_TRIPLE), unsigned(m.payouts[payoutIndex]), unsigned(m.pair));
+        draw(text);
+      }
+      draw(tr(STR_CASINO_COLLECTION_CONTROLS));
+    } else {
+      if (slotOption < 3)
+        draw(slotOption == 0   ? tr(STR_CASINO_BOOST_DOUBLE)
+             : slotOption == 1 ? tr(STR_CASINO_BOOST_FREE)
+                               : tr(STR_CASINO_BOOST_WILD));
+      else {
+        snprintf(text, sizeof(text), tr(STR_CASINO_HOLD), unsigned(slotOption - 2),
+                 held & (1u << (slotOption - 3)) ? tr(STR_CASINO_ON) : tr(STR_CASINO_OFF));
+        draw(text);
+        if (reelsReady) draw(slotSymbol(m.symbols[reels[slotOption - 3]]));
+      }
+      snprintf(text, sizeof(text), tr(STR_CASINO_BOOST_STATE), unsigned(freeSpins), unsigned(doubled), unsigned(wild));
+      draw(text);
+      draw(tr(STR_CASINO_OPTION_CONTROLS));
+      draw(tr(STR_CASINO_BOOST_RESET));
+      if (insufficient) draw(tr(STR_CASINO_OPTION_UNAVAILABLE));
+    }
+  } else if (mode == 5) {
     unsigned total = 0;
     for (unsigned i = 0; i < 50; ++i)
       if (hasItem(i)) ++total;
@@ -376,10 +498,9 @@ void CasinoActivity::render(RenderLock&&) {
     draw(tr(STR_CASINO_BJ_CONTROLS));
   } else if (state == State::Result) {
     if (mode == 4) {
-      static constexpr StrId symbols[] = {StrId::STR_CASINO_SEVEN, StrId::STR_CASINO_BAR,  StrId::STR_CASINO_CHERRY,
-                                          StrId::STR_CASINO_BELL,  StrId::STR_CASINO_STAR, StrId::STR_CASINO_DIAMOND};
-      snprintf(text, sizeof(text), tr(STR_CASINO_REELS), I18N.get(symbols[reels[0]]), I18N.get(symbols[reels[1]]),
-               I18N.get(symbols[reels[2]]));
+      const auto& m = machines[machine];
+      snprintf(text, sizeof(text), tr(STR_CASINO_REELS), slotSymbol(m.symbols[reels[0]]),
+               slotSymbol(m.symbols[reels[1]]), slotSymbol(m.symbols[reels[2]]));
       draw(text);
     }
     if (mode == 3) {
@@ -396,10 +517,12 @@ void CasinoActivity::render(RenderLock&&) {
     if (mode == 0) draw(choice ? tr(STR_CASINO_TAILS) : tr(STR_CASINO_HEADS));
     if (mode == 1) draw(tr(STR_CASINO_HIGHLOW_RULE));
     if (mode == 4) {
-      draw(tr(STR_CASINO_SLOTS_RULE));
-      draw(tr(STR_CASINO_SLOTS_PAY1));
-      draw(tr(STR_CASINO_SLOTS_PAY2));
-      draw(tr(STR_CASINO_SLOTS_LIMIT));
+      draw(I18N.get(machines[machine].name));
+      snprintf(text, sizeof(text), tr(STR_CASINO_BOOST_STATE), unsigned(freeSpins), unsigned(doubled), unsigned(wild));
+      draw(text);
+      draw(tr(STR_CASINO_MACHINE_CONTROLS));
+      draw(tr(STR_CASINO_SLOT_PAGES));
+      draw(tr(STR_CASINO_BOOST_RESET));
     }
     if (mode == 3) {
       draw(tr(STR_CASINO_BJ_RULE));

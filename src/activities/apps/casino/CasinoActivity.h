@@ -10,7 +10,7 @@ class CasinoActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
-  enum class State { Menu, Bet, HighLow, Blackjack, Result, Reset, Collection };
+  enum class State { Menu, Bet, HighLow, Blackjack, Result, Reset, Collection, SlotOptions, SlotPayout };
   State state = State::Menu;
   unsigned mode = 0, betIndex = 1, choice = 0, number = 0, outcome = 0;
   uint32_t credits = 1000, pot = 0, rng = 1, streak = 0;
@@ -25,6 +25,8 @@ class CasinoActivity final : public Activity {
   bool pullNew[5] = {};
   bool hasItem(unsigned item) const;
   void pullLoot();
+  uint8_t machine = 0, slotOption = 0, payoutIndex = 0, freeSpins = 0, held = 0;
+  bool doubled = false, wild = false, reelsReady = false;
   uint8_t reels[3] = {};
   uint8_t deck[52] = {}, position = 52, card = 0;
   bool won = false, insufficient = false, pushed = false;
