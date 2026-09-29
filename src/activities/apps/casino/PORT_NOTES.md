@@ -8,8 +8,7 @@ Higher/Lower cashes out on Confirm or Back; ranks 1–13 use a shuffled fixed
 52-card rank deck, reshuffled when exhausted and before a round if nearly empty.
 
 Play credits only: no cash value, purchases, cash transactions or prizes.
-No `casino.dat` or other storage is read/written. Saved progress, additional slot machines/powerups,
-and Loot Box remain pending. Cosmetic xorshift and modulo selection
+No `casino.dat` or other storage is read/written. Saved progress and additional slot machines/powerups remain pending. Cosmetic xorshift and modulo selection
 are not cryptographic or claimed perfectly uniform. No real-money suitability.
 
 Fixed scalar state and 52-byte deck; no move/card vectors, growing strings,
@@ -39,3 +38,16 @@ the existing 1,000 maximum stake. Modulo selection has slight bias.
 Deferred device checks: Casino -> Classic Slots, stake selection, all three
 pair positions/triples, insufficient credits, cap, Back/Confirm navigation,
 portrait/landscape layout and sleep/wake. No cache reset required.
+
+Loot Box preserves 50 reference collectibles and rarity boundaries (20 common,
+15 rare, 10 epic, 5 legendary). Single costs 100; five draws cost 450. Base
+rarity weights are 60/25/12/3; the fifth draw upgrades common to rare if the
+first four had no rare-or-better item. Duplicates refund 25 immediately,
+including duplicates within the same five-draw set. Collection uses 7 bytes;
+results use five item IDs, five new/duplicate flags and two counters (12 bytes).
+Item-name translation IDs live in a fixed constant table. No animation, icon
+buffers or allocations. Collection resets on exit; bankroll reset alone
+retains the current session collection, matching reference reset semantics.
+Deferred V1/device: all rarity boundaries, five-draw guarantee, duplicate
+refunds, collection wrap at 0/49, no-cost browsing with insufficient bankroll,
+re-entry reset, long translated labels/orientations and all six mode transitions.

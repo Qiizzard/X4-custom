@@ -11,6 +11,68 @@
 #include "components/TouchHeaderBackButton.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+namespace {
+const char* lootName(unsigned item) {
+  static constexpr StrId names[] = {
+      StrId::STR_CASINO_ITEM_0,  StrId::STR_CASINO_ITEM_1,  StrId::STR_CASINO_ITEM_2,  StrId::STR_CASINO_ITEM_3,
+      StrId::STR_CASINO_ITEM_4,  StrId::STR_CASINO_ITEM_5,  StrId::STR_CASINO_ITEM_6,  StrId::STR_CASINO_ITEM_7,
+      StrId::STR_CASINO_ITEM_8,  StrId::STR_CASINO_ITEM_9,  StrId::STR_CASINO_ITEM_10, StrId::STR_CASINO_ITEM_11,
+      StrId::STR_CASINO_ITEM_12, StrId::STR_CASINO_ITEM_13, StrId::STR_CASINO_ITEM_14, StrId::STR_CASINO_ITEM_15,
+      StrId::STR_CASINO_ITEM_16, StrId::STR_CASINO_ITEM_17, StrId::STR_CASINO_ITEM_18, StrId::STR_CASINO_ITEM_19,
+      StrId::STR_CASINO_ITEM_20, StrId::STR_CASINO_ITEM_21, StrId::STR_CASINO_ITEM_22, StrId::STR_CASINO_ITEM_23,
+      StrId::STR_CASINO_ITEM_24, StrId::STR_CASINO_ITEM_25, StrId::STR_CASINO_ITEM_26, StrId::STR_CASINO_ITEM_27,
+      StrId::STR_CASINO_ITEM_28, StrId::STR_CASINO_ITEM_29, StrId::STR_CASINO_ITEM_30, StrId::STR_CASINO_ITEM_31,
+      StrId::STR_CASINO_ITEM_32, StrId::STR_CASINO_ITEM_33, StrId::STR_CASINO_ITEM_34, StrId::STR_CASINO_ITEM_35,
+      StrId::STR_CASINO_ITEM_36, StrId::STR_CASINO_ITEM_37, StrId::STR_CASINO_ITEM_38, StrId::STR_CASINO_ITEM_39,
+      StrId::STR_CASINO_ITEM_40, StrId::STR_CASINO_ITEM_41, StrId::STR_CASINO_ITEM_42, StrId::STR_CASINO_ITEM_43,
+      StrId::STR_CASINO_ITEM_44, StrId::STR_CASINO_ITEM_45, StrId::STR_CASINO_ITEM_46, StrId::STR_CASINO_ITEM_47,
+      StrId::STR_CASINO_ITEM_48, StrId::STR_CASINO_ITEM_49};
+  return I18N.get(names[item]);
+}
+const char* lootRarity(unsigned item) {
+  return item < 20   ? tr(STR_CASINO_COMMON)
+         : item < 35 ? tr(STR_CASINO_RARE)
+         : item < 45 ? tr(STR_CASINO_EPIC)
+                     : tr(STR_CASINO_LEGENDARY);
+}
+}  // namespace
+bool CasinoActivity::hasItem(unsigned item) const { return (collected[item / 8] & (1u << (item % 8))) != 0; }
+void CasinoActivity::pullLoot() {
+  if (choice == 2) {
+    state = State::Collection;
+    return;
+  }
+  const uint32_t cost = choice == 0 ? 100 : 450;
+  insufficient = credits < cost;
+  if (insufficient) return;
+  credits -= cost;
+  pullCount = choice == 0 ? 1 : 5;
+  bool rare = false;
+  for (unsigned i = 0; i < pullCount; ++i) {
+    const unsigned roll = randomValue() % 100;
+    unsigned start = 0, count = 20;
+    if (roll < 3) {
+      start = 45;
+      count = 5;
+    } else if (roll < 15) {
+      start = 35;
+      count = 10;
+    } else if (roll < 40 || (i == 4 && !rare)) {
+      start = 20;
+      count = 15;
+    }
+    const unsigned item = start + randomValue() % count;
+    pulls[i] = item;
+    pullNew[i] = !hasItem(item);
+    if (pullNew[i])
+      collected[item / 8] |= 1u << (item % 8);
+    else
+      credits = std::min<uint32_t>(cap, credits + 25);
+    if (item >= 20) rare = true;
+  }
+  state = State::Result;
+}
+
 uint32_t CasinoActivity::randomValue() {
   rng ^= rng << 13;
   rng ^= rng >> 17;
@@ -31,6 +93,10 @@ void CasinoActivity::onEnter() {
   requestUpdate();
 }
 void CasinoActivity::play() {
+  if (mode == 5) {
+    pullLoot();
+    return;
+  }
   const uint32_t bet = bets[betIndex];
   if (credits < bet) {
     insufficient = true;
@@ -151,7 +217,7 @@ void CasinoActivity::loop() {
     else if (state == State::HighLow)
       cashOut();
     else
-      state = state == State::Result ? State::Bet : State::Menu;
+      state = (state == State::Result || state == State::Collection) ? State::Bet : State::Menu;
     requestUpdate();
     return;
   }
@@ -163,7 +229,7 @@ void CasinoActivity::loop() {
   bool changed = left || right || up || down || confirm;
   if (state == State::Menu) {
     if (left || right) {
-      mode = (mode + (right ? 1 : 4)) % 5;
+      mode = (mode + (right ? 1 : 5)) % 6;
       choice = 0;
     }
     if (confirm) {
@@ -180,6 +246,10 @@ void CasinoActivity::loop() {
       pot = 0;
       state = State::Menu;
     }
+  } else if (state == State::Collection) {
+    if (left || up) collectionIndex = (collectionIndex + 49) % 50;
+    if (right || down) collectionIndex = (collectionIndex + 1) % 50;
+    if (confirm) state = State::Bet;
   } else if (state == State::Result) {
     if (confirm) state = State::Bet;
   } else if (state == State::Blackjack) {
@@ -197,6 +267,10 @@ void CasinoActivity::loop() {
       cashOut();
     else if (up || down)
       guess(up);
+  } else if (mode == 5) {
+    if (left || up) choice = (choice + 2) % 3;
+    if (right || down) choice = (choice + 1) % 3;
+    if (confirm) play();
   } else {
     if (left && betIndex) --betIndex;
     if (right && betIndex < 6) ++betIndex;
@@ -240,13 +314,42 @@ void CasinoActivity::render(RenderLock&&) {
        : mode == 1 ? tr(STR_CASINO_HIGHLOW)
        : mode == 2 ? tr(STR_CASINO_ROULETTE)
        : mode == 3 ? tr(STR_CASINO_BLACKJACK)
-                   : tr(STR_CASINO_SLOTS));
+       : mode == 4 ? tr(STR_CASINO_SLOTS)
+                   : tr(STR_CASINO_LOOT));
   if (state == State::Menu) {
     draw(tr(STR_CASINO_SESSION));
     draw(tr(STR_CASINO_MENU));
   } else if (state == State::Reset)
     draw(tr(STR_CASINO_RESET));
-  else if (state == State::HighLow) {
+  else if (mode == 5) {
+    unsigned total = 0;
+    for (unsigned i = 0; i < 50; ++i)
+      if (hasItem(i)) ++total;
+    snprintf(text, sizeof(text), tr(STR_CASINO_COLLECTION_COUNT), total);
+    draw(text);
+    if (state == State::Collection) {
+      snprintf(text, sizeof(text), tr(STR_CASINO_ITEM_NUMBER), unsigned(collectionIndex) + 1);
+      draw(text);
+      draw(lootName(collectionIndex));
+      draw(lootRarity(collectionIndex));
+      draw(hasItem(collectionIndex) ? tr(STR_CASINO_OWNED) : tr(STR_CASINO_MISSING));
+      draw(tr(STR_CASINO_COLLECTION_CONTROLS));
+    } else if (state == State::Result) {
+      for (unsigned i = 0; i < pullCount; ++i) {
+        snprintf(text, sizeof(text), tr(STR_CASINO_PULL_RESULT), lootName(pulls[i]), lootRarity(pulls[i]),
+                 pullNew[i] ? tr(STR_CASINO_NEW_ITEM) : tr(STR_CASINO_DUPLICATE));
+        draw(text);
+      }
+      draw(tr(STR_CASINO_CONTINUE));
+    } else {
+      draw(choice == 0 ? tr(STR_CASINO_SINGLE) : choice == 1 ? tr(STR_CASINO_FIVE) : tr(STR_CASINO_COLLECTION));
+      draw(tr(STR_CASINO_LOOT_ODDS));
+      draw(tr(STR_CASINO_LOOT_GUARANTEE));
+      draw(tr(STR_CASINO_LOOT_DUPLICATES));
+      draw(tr(STR_CASINO_LOOT_CONTROLS));
+      if (insufficient) draw(tr(STR_CASINO_INSUFFICIENT));
+    }
+  } else if (state == State::HighLow) {
     snprintf(text, sizeof(text), tr(STR_CASINO_POT), unsigned(card), static_cast<unsigned long>(pot),
              static_cast<unsigned long>(streak));
     draw(text);

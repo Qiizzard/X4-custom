@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Casino Loot Box (2026-09-29): 50 session collectibles, single/five draws,
+  rarity guarantee, duplicate refunds and collection browsing. Play credits
+  only; no purchases. Source wip; gameplay/device testing deferred.
+
 - Classic Slots (2026-09-29): three reels, translated symbols and visible
   pair/triple payouts using session-only play credits. No purchases; wip.
 
