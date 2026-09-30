@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Small-file encryption (2026-09-30): SecureStore-protected copies of files
+  up to 4 KiB, with explicit plaintext export and original-file retention.
+  No whole-SD encryption claim; crypto/SD/device validation deferred.
+
 - Delete local vault files (2026-09-30): explicit timed confirmation for
   nine password/TOTP/decoy files, with per-result counts. Books and recovery
   excluded; this is deletion, not guaranteed secure erasure. Source wip.

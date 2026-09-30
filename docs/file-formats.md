@@ -617,3 +617,14 @@ are preserved if neither slot is valid; restore known-good records or back up
 and remove these files outside the app before re-entry to start fresh. Legacy
 Biscuit saves are not imported. Only credits/collection persist, not active
 rounds, random state or slot powerups. No shipping partition/cache changes.
+
+## Small-file encryption copies
+
+`/crossink/encrypted/file-NN.bin` contains an existing SecureStore authenticated
+blob (60-byte versioned header plus 0–4096 plaintext bytes encrypted by its
+existing PBKDF2/AES-GCM implementation). No new wrapper or original-name field
+is added. The plaintext is arbitrary file bytes, distinct from the structured
+password/TOTP record payloads used by their apps. `/crossink/decrypted/` outputs
+contain those original bytes without a wrapper; extensions are not restored.
+Input files and any external copies remain unchanged. See `lib/SecureStore/`
+for the canonical header/parser; this does not change any EPUB cache format.

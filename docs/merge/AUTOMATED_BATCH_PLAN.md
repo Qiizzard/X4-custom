@@ -59,7 +59,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup and bounded vault-file deletion integrated (wip). Remaining approved defense, comms and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
+| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Remaining approved defense, comms and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
 | V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -873,3 +873,14 @@ this schedule does not declare them completed or permanently blocked.
   C3 compile PASS (136.74s), image 6,512,608 bytes; 40,992 bytes OTA space
   below reserve. Deletion/device/fault tests deferred; no user files deleted.
   Next: bounded per-file encryption. Log: firmware-builds/logs/2026-09-30-vault-delete-c3.log.
+
+- 2026-09-30 P7 small-file encryption: bounded 4 KiB SecureStore copies,
+  16-file/512-entry scan, exclusive outputs and explicitly plaintext exports;
+  originals preserved, no whole-SD claim. C3 compile PASS (133.60s), image
+  6,517,856 bytes; 35,744 bytes OTA headroom below reserve. Crypto/round-trip/
+  SD/device tests deferred. No user files processed. Usage observed 10% -> 50%
+  five-hour, 20% -> 26% weekly across three defense batches.
+  Phone Tether/Contact Exchange confirmed BLE-dependent; Security Sweep shares
+  Full Sweep scope/BLE gates. Next actionable P7: Mesh Chat, then AP-based
+  Dead Drop/Bulletin Board; Ghost/SOS remain product-gated.
+  Log: firmware-builds/logs/2026-09-30-file-crypto-c3.log.

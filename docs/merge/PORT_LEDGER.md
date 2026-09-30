@@ -139,12 +139,12 @@ coherent, working subset.
 | PIN Security (with duress vault) | `wip` | Defense real/decoy password-vault route invokes separate SecureStore authentication and routes edits to the selected vault. Real-key-authorized decoy setup; distinct 8+ character keys, existing fixed buffers. Vault-only, no device lock or deniability claim. Actual device invocation/crypto/recovery validation deferred. |
 | Screen Decoy | `wip` | Four translated cosmetic views, selection/preview/activation and Back/Confirm exit. No power, radio, storage or security state changes; normal sleep may replace the view. Device/input validation deferred. |
 | Quick Wipe | `wip` | Adapted as Delete local vault files: exact nine password/TOTP/decoy primary/staging/backup paths, Confirm then Page Forward within 15s, Back/timeout cancels. No recursion/overwrite/secure-erasure claim; recovery/books/settings/other exports excluded. Device/SD failure checks deferred. |
-| SD Encryption | `todo` | Scope it honestly: per-file via `SecureStore`, not "full-disk". |
-| Security Sweep | `todo` | |
+| SD Encryption | `wip` | Small-file encryption: up to 4 KiB via SecureStore, fixed bounded file list/buffers, repeated encryption passphrase, exclusive numbered copies and explicit plaintext export. Originals retained; no whole-SD/legacy-format claim. Crypto/SD/device validation deferred. |
+| Security Sweep | `todo` | Reference AppsMenu routes this to the same SweepActivity as Full Sweep; blocked on its passive-composite scope/BLE gates. |
 | Network Monitor | `wip` | Passive frame-monitor child plus capped shared-SSID/BSSID/channel/open-protected observations in WiFi Scanner. 40-byte group index; hidden identities separate; no rogue/attack claim. 24-key source/BSSID/subtype aggregation, 40-window processing-rate chart and event CSV integrated; runtime/RF/SD validation deferred. |
 | Ghost Mode | `todo` | Define precisely what it disables; must not disable the recovery path. |
 | Emergency SOS | `todo` | Decide what it can actually do with no cellular radio. |
-| Phone Tether | `todo` | |
+| Phone Tether | `blocked` | Reference PhoneTetherActivity requires BLEDevice/BLEScan; BLE is excluded by platformio.ini. No fake disconnect alert. |
 | Tracker Detector | `blocked` | BLE. |
 
 ## Comms
@@ -152,7 +152,7 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | Mesh Chat | `todo` | ESP-NOW; `RADIO.acquire(Mode::EspNow, ...)`. CrossInk's nearby-sync screens are the working reference. |
-| Contact Exchange | `todo` | |
+| Contact Exchange | `blocked` | Reference BleContactExchangeActivity requires the unavailable BLE stack; no substitute transport implied. |
 | Dead Drop | `todo` | |
 | Bulletin Board | `todo` | |
 | SSID Channel | `blocked` | **Out of scope as usually implemented.** Encoding data into a broadcast SSID means transmitting a crafted AP beacon, which is the Offense boundary. Ship only if a listen-only design exists. |

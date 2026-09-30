@@ -17,6 +17,7 @@
 #include "dns_lookup/DnsLookupActivity.h"
 #include "etch_a_sketch/EtchASketchActivity.h"
 #include "event_logger/EventLoggerActivity.h"
+#include "file_crypto/FileCryptoActivity.h"
 #include "flashcards/FlashcardActivity.h"
 #include "game_of_life/GameOfLifeActivity.h"
 #include "habit_tracker/HabitTrackerActivity.h"
@@ -166,6 +167,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Defense, StrId::STR_FILE_CRYPTO_APP, &makeApp<FileCryptoActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DELETE_APP, &makeApp<VaultDeleteActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DURESS_APP, &makeDuressVault},
     {AppCategory::Defense, StrId::STR_VAULT_DECOY_APP, &makeDecoyVault},
