@@ -144,3 +144,32 @@ resync. No cache reset needed. Crypto/recovery/hardware gates remain open.
 Compile evidence: C3 default PASS (209.579s), `/tmp/x4-p4d-build.log`,
 2026-09-13. Image 6,382,192 bytes; stock OTA free 171,408 bytes, reserve
 warning remains. No runtime, host, simulator, soak or device checks performed.
+
+## P7 real/decoy route (2026-09-30, wip/unverified)
+
+Defense has Real / decoy vault and Decoy vault setup. Create the ordinary
+Password Manager vault first. Initial decoy setup authenticates/decodes the
+real vault, wipes it, then requests/repeats a different passphrase (minimum 8
+characters). The proposed decoy key must fail real-vault authentication; I/O,
+format, allocation and other crypto errors stop creation. No unsalted PIN
+hashes, plaintext keys, destructive duress action or device/boot lock.
+
+Decoy files are `/crossink/vaults/decoy.bin`, `.next` and `.previous`, using
+the existing SecureStore/password record format and checked save flow.
+Defense unlock tries the real vault first, then the decoy only on AuthFailed.
+AuthFailed may also mean tampering; it is not proof of a wrong password.
+Each successful unlock must decode authenticated password records. Edits
+follow the selected vault; lock resets routing and wipes plaintext/key buffers.
+No new large buffers: the existing ~3.8 KiB activity working set is reused;
+routing adds one boolean. Crypto work may involve two sequential KDF passes.
+
+This does not conceal file existence or timing, and provides no plausible
+deniability/physical-flash/unlocked-device guarantee. Recovery artifacts fail
+closed; no automatic rollback. Existing Tools Password Manager and TOTP routes
+retain their respective files/domain checks. Legacy Biscuit PIN files ignored.
+
+Deferred V1/device: create real and decoy with distinct keys/contents; reject
+same key, wrong setup key and canceled setup; invoke Defense route with each
+key and confirm different records; edit/save/relock each without crossing;
+check wrong key, tampering, missing/corrupt files, `.next` artifacts, idle wipe,
+allocation/SD failures, KDF timing and unchanged TOTP routes. No cache reset.

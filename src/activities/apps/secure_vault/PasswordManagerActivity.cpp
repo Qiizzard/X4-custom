@@ -19,16 +19,22 @@ namespace {
 constexpr unsigned long kIdleMs = 60000, kRevealMs = 10000;
 }  // namespace
 const char* PasswordManagerActivity::path() const {
-  return mode == Mode::Passwords ? "/crossink/vaults/passwords.bin" : "/crossink/vaults/totp.bin";
+  if (decoy) return "/crossink/vaults/decoy.bin";
+  return passwords() ? "/crossink/vaults/passwords.bin" : "/crossink/vaults/totp.bin";
 }
 const char* PasswordManagerActivity::nextPath() const {
-  return mode == Mode::Passwords ? "/crossink/vaults/passwords.next" : "/crossink/vaults/totp.next";
+  if (decoy) return "/crossink/vaults/decoy.next";
+  return passwords() ? "/crossink/vaults/passwords.next" : "/crossink/vaults/totp.next";
 }
 const char* PasswordManagerActivity::previousPath() const {
-  return mode == Mode::Passwords ? "/crossink/vaults/passwords.previous" : "/crossink/vaults/totp.previous";
+  if (decoy) return "/crossink/vaults/decoy.previous";
+  return passwords() ? "/crossink/vaults/passwords.previous" : "/crossink/vaults/totp.previous";
+}
+bool PasswordManagerActivity::decoyFilesReady() const {
+  return Storage.exists("/crossink/vaults/decoy.bin") && !Storage.exists("/crossink/vaults/decoy.next");
 }
 bool PasswordManagerActivity::unlockTotp() {
-  if (mode == Mode::Passwords) return true;
+  if (passwords()) return true;
   for (size_t i = 0; i < records.size(); ++i) {
     const auto* record = records.at(i);
     if (record->username[0] || !Totp::validSeed(record->password)) {
@@ -39,7 +45,7 @@ bool PasswordManagerActivity::unlockTotp() {
   return totp.open();
 }
 void PasswordManagerActivity::refreshCode() {
-  if (mode == Mode::Passwords || screen != Screen::Detail || !reveal) return;
+  if (passwords() || screen != Screen::Detail || !reveal) return;
   uint64_t seconds = 0;
   if (!halClock.getSyncedUnixTime(seconds)) {
     const bool changed = codeValid;
@@ -78,6 +84,7 @@ void PasswordManagerActivity::wipe() {
   securestore::secureZero(passphrase, sizeof(passphrase));
   securestore::secureZero(entry, sizeof(entry));
   reveal = false;
+  decoy = mode == Mode::DecoySetup;
   selected = 0;
 }
 void PasswordManagerActivity::fail() {
@@ -90,6 +97,11 @@ void PasswordManagerActivity::onEnter() {
   Activity::onEnter();
   wipe();
   existing = Storage.exists(path());
+  if ((mode == Mode::Duress || mode == Mode::DecoySetup) &&
+      (!Storage.exists("/crossink/vaults/passwords.bin") || Storage.exists("/crossink/vaults/passwords.next"))) {
+    fail();
+    return;
+  }
   // Never interpret a missing primary with recovery artifacts as a new vault.
   if (Storage.exists(nextPath()) || (!existing && Storage.exists(previousPath()))) {
     fail();
@@ -109,6 +121,7 @@ void PasswordManagerActivity::ask(Input step) {
   reveal = false;
   StrId prompt = StrId::STR_VAULT_KEY;
   size_t capacity = sizeof(entry), minimum = 8;
+  if (step == Input::AuthorizeDecoy) prompt = StrId::STR_VAULT_AUTHORIZE_DECOY;
   if (step == Input::ConfirmKey) prompt = StrId::STR_VAULT_CONFIRM_KEY;
   if (step == Input::Title) {
     prompt = StrId::STR_VAULT_TITLE;
@@ -119,7 +132,7 @@ void PasswordManagerActivity::ask(Input step) {
     capacity = sizeof(draft.username);
     minimum = 0;
   } else if (step == Input::Password) {
-    prompt = mode == Mode::Passwords ? StrId::STR_PASSWORD : StrId::STR_TOTP_SEED;
+    prompt = passwords() ? StrId::STR_PASSWORD : StrId::STR_TOTP_SEED;
     capacity = sizeof(draft.password);
     minimum = 1;
   }
@@ -143,6 +156,21 @@ void PasswordManagerActivity::accept(bool cancelled) {
     return;
   }
   switch (inputStep) {
+    case Input::AuthorizeDecoy: {
+      size_t length = 0;
+      const auto loaded = vaultfile::load("/crossink/vaults/passwords.bin", entry, encoded, sizeof(encoded), &length,
+                                          scratch, sizeof(scratch));
+      securestore::secureZero(entry, sizeof(entry));
+      const bool ok = loaded.status == vaultfile::Status::Ok && records.decode(encoded, length);
+      securestore::secureZero(encoded, sizeof(encoded));
+      records.lock();
+      if (!ok) {
+        fail();
+        return;
+      }
+      ask(Input::Create);
+      return;
+    }
     case Input::Create:
       memcpy(passphrase, entry, sizeof(passphrase));
       securestore::secureZero(entry, sizeof(entry));
@@ -152,6 +180,15 @@ void PasswordManagerActivity::accept(bool cancelled) {
       unsigned difference = 0;
       for (size_t i = 0; i < sizeof(entry); ++i) difference |= entry[i] ^ passphrase[i];
       securestore::secureZero(entry, sizeof(entry));
+      if (!difference && mode == Mode::DecoySetup) {
+        size_t length = 0;
+        const auto checked = vaultfile::load("/crossink/vaults/passwords.bin", passphrase, encoded, sizeof(encoded),
+                                             &length, scratch, sizeof(scratch));
+        securestore::secureZero(encoded, sizeof(encoded));
+        // Only a genuine authentication mismatch permits a separate decoy key.
+        if (checked.status != vaultfile::Status::CryptoError || checked.crypto != securestore::Status::AuthFailed)
+          difference = 1;
+      }
       if (difference || !save(true)) {
         fail();
         return;
@@ -161,6 +198,7 @@ void PasswordManagerActivity::accept(bool cancelled) {
         fail();
         return;
       }
+      lastInput = millis();  // Do not count synchronous KDF work as user idle.
       screen = Screen::List;
       return;
     }
@@ -168,10 +206,16 @@ void PasswordManagerActivity::accept(bool cancelled) {
       memcpy(passphrase, entry, sizeof(passphrase));
       securestore::secureZero(entry, sizeof(entry));
       size_t length = 0;
-      const auto loaded =
-          vaultfile::load(path(), passphrase, encoded, sizeof(encoded), &length, scratch, sizeof(scratch));
+      decoy = mode == Mode::DecoySetup;
+      auto loaded = vaultfile::load(path(), passphrase, encoded, sizeof(encoded), &length, scratch, sizeof(scratch));
+      if (mode == Mode::Duress && loaded.status == vaultfile::Status::CryptoError &&
+          loaded.crypto == securestore::Status::AuthFailed && decoyFilesReady()) {
+        // AuthFailed can mean a wrong key or tampering. Format/I/O failures never select the decoy.
+        decoy = true;
+        loaded = vaultfile::load(path(), passphrase, encoded, sizeof(encoded), &length, scratch, sizeof(scratch));
+      }
       bool ok = loaded.status == vaultfile::Status::Ok;
-      if (ok && mode != Mode::Passwords) {
+      if (ok && !passwords()) {
         ok = length == sizeof(encoded) && memcmp(encoded, "TVR1", 4) == 0;
         if (ok) encoded[0] = 'P';  // only after AEAD verification and domain check
       }
@@ -181,13 +225,14 @@ void PasswordManagerActivity::accept(bool cancelled) {
         fail();
         return;
       }
+      lastInput = millis();  // Do not count synchronous KDF work as user idle.
       screen = Screen::List;
       return;
     }
     case Input::Title:
       memcpy(draft.title, entry, sizeof(draft.title));
       securestore::secureZero(entry, sizeof(entry));
-      ask(mode == Mode::Passwords ? Input::Username : Input::Password);
+      ask(passwords() ? Input::Username : Input::Password);
       return;
     case Input::Username:
       memcpy(draft.username, entry, sizeof(draft.username));
@@ -195,7 +240,7 @@ void PasswordManagerActivity::accept(bool cancelled) {
       ask(Input::Password);
       return;
     case Input::Password:
-      if (mode != Mode::Passwords && !Totp::validSeed(entry)) {
+      if (!passwords() && !Totp::validSeed(entry)) {
         fail();
         return;
       }
@@ -207,7 +252,7 @@ void PasswordManagerActivity::accept(bool cancelled) {
 }
 bool PasswordManagerActivity::save(bool creating) {
   if (!records.encode(encoded, sizeof(encoded))) return false;
-  if (mode != Mode::Passwords) encoded[0] = 'T';  // authenticated TOTP domain tag
+  if (!passwords()) encoded[0] = 'T';  // authenticated TOTP domain tag
   bool ok = Storage.exists("/crossink/vaults") || Storage.mkdir("/crossink/vaults");
   if (ok && !Storage.exists(nextPath())) {
     const auto written = vaultfile::create(creating ? path() : nextPath(), passphrase, encoded, sizeof(encoded),
@@ -234,7 +279,7 @@ void PasswordManagerActivity::loop() {
     requestUpdate();
     return;
   }
-  if (mode != Mode::Passwords && millis() - lastClockPoll >= 250) {
+  if (!passwords() && millis() - lastClockPoll >= 250) {
     lastClockPoll = millis();
     refreshCode();
   }
@@ -259,7 +304,7 @@ void PasswordManagerActivity::loop() {
       screen = Screen::Locked;
     }
   } else if (screen == Screen::Locked && confirm) {
-    ask(existing ? Input::Unlock : Input::Create);
+    ask(existing ? Input::Unlock : mode == Mode::DecoySetup ? Input::AuthorizeDecoy : Input::Create);
   } else if (screen == Screen::List) {
     const size_t total = records.size() + (records.size() < PasswordRecords::kMaxRecords ? 1 : 0);
     if (up) selected = (selected + total - 1) % total;
@@ -306,7 +351,7 @@ void PasswordManagerActivity::render(RenderLock&&) {
   int mt, mr, mb, ml;
   renderer.getOrientedViewableTRBL(&mt, &mr, &mb, &ml);
   GUI.drawHeader(renderer, Rect{ml, mt + m.topPadding, renderer.getScreenWidth() - ml - mr, m.headerHeight},
-                 mode == Mode::Passwords       ? tr(STR_VAULT_APP)
+                 passwords()                   ? tr(STR_VAULT_APP)
                  : mode == Mode::Authenticator ? tr(STR_TOTP_APP)
                                                : tr(STR_TOTP_QR_APP));
   int y = mt + m.topPadding + m.headerHeight + 20;
@@ -316,13 +361,18 @@ void PasswordManagerActivity::render(RenderLock&&) {
                               : existing              ? tr(STR_VAULT_UNLOCK)
                                                       : tr(STR_VAULT_CREATE));
     renderer.drawCenteredText(SMALL_FONT_ID, y + 45, tr(STR_VAULT_WIP));
+    if (mode == Mode::Duress || mode == Mode::DecoySetup) {
+      renderer.drawCenteredText(SMALL_FONT_ID, y + 85,
+                                mode == Mode::DecoySetup ? tr(STR_VAULT_DECOY_SETUP_NOTE) : tr(STR_VAULT_DURESS_NOTE));
+      renderer.drawCenteredText(SMALL_FONT_ID, y + 115, tr(STR_VAULT_DURESS_LIMIT));
+    }
   } else if (screen == Screen::Save || screen == Screen::Delete) {
     renderer.drawCenteredText(UI_10_FONT_ID, y, screen == Screen::Save ? tr(STR_VAULT_SAVE) : tr(STR_VAULT_DELETE));
   } else if (screen == Screen::Detail) {
     const auto* record = records.at(selected);
     if (record) {
       renderer.drawCenteredText(UI_10_FONT_ID, y, record->title);
-      if (mode == Mode::Passwords) {
+      if (passwords()) {
         renderer.drawCenteredText(UI_10_FONT_ID, y + 40, record->username);
         renderer.drawCenteredText(UI_10_FONT_ID, y + 80, reveal ? record->password : tr(STR_VAULT_MASKED));
         renderer.drawCenteredText(SMALL_FONT_ID, y + 130, tr(STR_VAULT_ACTIONS));

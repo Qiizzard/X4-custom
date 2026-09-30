@@ -72,6 +72,13 @@ std::unique_ptr<Activity> makeTotpQr(GfxRenderer& renderer, MappedInputManager& 
   return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::TotpQr);
 }
 
+std::unique_ptr<Activity> makeDuressVault(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::Duress);
+}
+std::unique_ptr<Activity> makeDecoyVault(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::DecoySetup);
+}
+
 // THE TABLE. constexpr + static => flash, not DRAM.
 //
 // Order within a category is the order the launcher shows. Keep new rows
@@ -158,6 +165,8 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Defense, StrId::STR_VAULT_DURESS_APP, &makeDuressVault},
+    {AppCategory::Defense, StrId::STR_VAULT_DECOY_APP, &makeDecoyVault},
     {AppCategory::Defense, StrId::STR_APP_NETWORK_MONITOR, &makeApp<NetworkMonitorActivity>},
     {AppCategory::Defense, StrId::STR_APP_SCREEN_DECOY, &makeApp<ScreenDecoyActivity>},
 };

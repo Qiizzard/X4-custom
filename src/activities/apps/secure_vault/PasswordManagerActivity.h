@@ -8,7 +8,7 @@
 
 class PasswordManagerActivity final : public Activity {
  public:
-  enum class Mode { Passwords, Authenticator, TotpQr };
+  enum class Mode { Passwords, Authenticator, TotpQr, Duress, DecoySetup };
   PasswordManagerActivity(GfxRenderer& renderer, MappedInputManager& input, Mode mode = Mode::Passwords)
       : Activity("SecureVault", renderer, input), mode(mode) {}
   ~PasswordManagerActivity() override;
@@ -20,8 +20,12 @@ class PasswordManagerActivity final : public Activity {
 
  private:
   enum class Screen { Locked, List, Detail, Delete, Save, Error };
-  enum class Input { Unlock, Create, ConfirmKey, Title, Username, Password };
+  enum class Input { Unlock, AuthorizeDecoy, Create, ConfirmKey, Title, Username, Password };
   const Mode mode;
+  bool decoy = false;
+  bool passwords() const { return mode != Mode::Authenticator && mode != Mode::TotpQr; }
+  bool decoyFilesReady() const;
+
   Totp totp;
   char code[7]{};
   uint8_t qrModules[56]{};  // QR version 1: ceil(21*21/8), no second framebuffer

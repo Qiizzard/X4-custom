@@ -1383,3 +1383,10 @@ STR_CASINO_BOOST_RESET: "Boosts/holds reset on machine change or exit; not saved
 STR_CASINO_OPTION_UNAVAILABLE: "Unavailable, already active, or insufficient credits"
 STR_CASINO_MACHINE_CONTROLS: "Up/Down: machine (resets boosts and holds)"
 STR_CASINO_SLOT_PAGES: "Page Back: payouts | Page Forward: boosts/holds"
+
+STR_VAULT_DURESS_APP: "Real / decoy vault"
+STR_VAULT_DECOY_APP: "Decoy vault setup"
+STR_VAULT_AUTHORIZE_DECOY: "Real vault passphrase (authorize setup)"
+STR_VAULT_DECOY_SETUP_NOTE: "Create the real Password Manager vault first; use a different key"
+STR_VAULT_DURESS_NOTE: "Your passphrase opens the real or decoy password vault"
+STR_VAULT_DURESS_LIMIT: "Vault only: no device lock, hidden files or deniability guarantee"

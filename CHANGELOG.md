@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Real/decoy password vault (2026-09-30): separate encrypted vault keys,
+  authenticated decoy setup and a Defense unlock route that selects the
+  matching vault. Vault-only access, not a device lock; hardware checks pending.
+
 - Casino slot variants (2026-09-29): Fruit Frenzy, Lucky 7s, Diamond Deluxe
   and High Roller, visible payouts, bounded free spins, wild/double powerups
   and optional reel holds. Play credits only; gameplay validation deferred.
