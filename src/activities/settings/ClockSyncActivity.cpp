@@ -2,6 +2,7 @@
 
 #include <GfxRenderer.h>
 #include <HalClock.h>
+#include <HalClockSync.h>
 #include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
@@ -78,7 +79,7 @@ void ClockSyncActivity::runSync() {
   }
 
   const bool hasRtc = halClock.isAvailable();
-  const bool ok = hasRtc ? halClock.syncFromNTP() : halClock.syncSystemTimeFromNTP();
+  const bool ok = hasRtc ? halClock.syncFromNTP() : HalClockSync::syncSystemTimeFromNTP();
   if (!ok) {
     state = FAILED;
     requestUpdate();

@@ -5,6 +5,12 @@ biscuit (MIT) through the gate in `docs/merge/`. microreader (GPL v2) is a
 reference only: none of its code is in this tree and none ever will be — the
 base is MIT.
 
+### Fixed
+
+- Native simulator crypto integration (2026-09-30): link real pinned host
+  mbedTLS for vault/TOTP code; verified NTP time remains explicitly unavailable
+  where the simulator HAL lacks it. Device crypto is unchanged.
+
 ### Added
 
 - WiFi QR Share (2026-09-30): read-only authenticated vault records, explicit

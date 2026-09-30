@@ -941,3 +941,10 @@ this schedule does not declare them completed or permanently blocked.
   scenarios PASS. Existing budget manifest lacks recent ports: not complete
   resource coverage. Native simulator missing crypto/verified-clock APIs under
   repair; smoke/soaks not yet passed. See verification/V1_2026-09-30.md.
+
+- 2026-09-30 V1 integration repairs: simulator now links real host mbedTLS;
+  verified NTP and captive DNS stay explicitly unavailable in native HAL.
+  Simulator PASS (127.45s), C3 PASS (46.81s), image 6,546,912 bytes,
+  6,688 bytes spare. Registry smoke + five 50-cycle/600000-ms entry
+  soaks started; no PASS yet. See V1 record/logs before rerunning. No device,
+  flash/partition actions or inferred runtime-memory gate passes.

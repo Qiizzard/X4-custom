@@ -1,0 +1,6 @@
+{
+  "name": "HalClockSync",
+  "version": "1.0.0",
+  "description": "Explicit verified-clock capability boundary for firmware and native simulator",
+  "frameworks": "*"
+}

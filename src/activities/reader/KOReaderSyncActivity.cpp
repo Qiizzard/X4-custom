@@ -1,6 +1,7 @@
 #include "KOReaderSyncActivity.h"
 
 #include <GfxRenderer.h>
+#include <HalClockSync.h>
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
@@ -78,7 +79,7 @@ const char* matchMethodName(const DocumentMatchMethod method) {
 
 void syncTimeWithNTP() {
 #ifndef SIMULATOR
-  if (!halClock.syncSystemTimeFromNTP()) {
+  if (!HalClockSync::syncSystemTimeFromNTP()) {
     LOG_DBG("KOSync", "NTP sync unavailable, using fallback");
   }
 #endif

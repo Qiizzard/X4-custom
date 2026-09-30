@@ -319,7 +319,13 @@ void CrossPointWebServerActivity::startAccessPoint() {
     return;
   }
   dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
-  if (!dnsServer->start(DNS_PORT, "*", apIP)) {
+#ifdef SIMULATOR
+  // Native DNSServer::start is a void no-op, not a working captive DNS service.
+  const bool dnsStarted = false;
+#else
+  const bool dnsStarted = dnsServer->start(DNS_PORT, "*", apIP);
+#endif
+  if (!dnsStarted) {
     LOG_ERR("WEBACT", "DNS startup failed");
     radioFailed();
     return;

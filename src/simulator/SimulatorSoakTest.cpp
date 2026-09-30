@@ -42,9 +42,17 @@ struct SoakAppLookup {
 };
 
 constexpr SoakAppLookup kSoakApps[] = {
-    {"qr_generator", StrId::STR_APP_QR_GENERATOR},   {"cipher", StrId::STR_APP_CIPHER},
-    {"otp_generator", StrId::STR_APP_OTP_GENERATOR}, {"clock", StrId::STR_APP_CLOCK},
+    {"qr_generator", StrId::STR_APP_QR_GENERATOR},
+    {"cipher", StrId::STR_APP_CIPHER},
+    {"otp_generator", StrId::STR_APP_OTP_GENERATOR},
+    {"clock", StrId::STR_APP_CLOCK},
     {"game_of_life", StrId::STR_APP_GAME_OF_LIFE},
+    {"casino", StrId::STR_APP_CASINO},
+    {"chess", StrId::STR_APP_CHESS},
+    {"file_crypto", StrId::STR_FILE_CRYPTO_APP},
+    {"transit_alert", StrId::STR_TRANSIT_APP},
+    {"wifi_qr", StrId::STR_WIFI_QR_APP},
+
 };
 
 enum class SoakStep : uint8_t {

@@ -69,3 +69,18 @@ here. The point of this file is that nobody pays for the same discovery twice.
   shared PlatformIO package cache. Temporary build directories may be removed.
 - The soak harness now supports native macOS allocator statistics. A
   100-second hold is insufficient regardless of whether its trend is flat.
+
+## V1 native crypto integration, 2026-09-30
+
+Native PlatformIO builds now require CMake (PATH or PlatformIO tool-cmake) and
+Git to fetch the same pinned mbedTLS 3.5.2 as host tests. scripts/simulator_crypto.py
+builds its real crypto library under ignored .pio/host-crypto; it does not modify
+firmware crypto. The cache is outside the per-environment build directory so
+PlatformIO configuration changes cannot delete it. Real headers take precedence
+over simulator SHA/base64 compatibility headers. Host crypto behavior is not
+proof of device entropy, KDF timing, stack/heap or storage behavior.
+
+The simulator does not provide verified NTP clock state or captive DNS startup;
+HalClockSync and the existing server startup report those unavailable. TOTP UI
+must not treat host wall time as synchronized device time. Its math is exercised
+by real-crypto host RFC vectors. Full cppcheck remains unavailable on this host.

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <HalClock.h>
+#include <HalClockSync.h>
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Memory.h>
@@ -86,7 +87,7 @@ void PasswordManagerActivity::refreshWifiQr() {
 void PasswordManagerActivity::refreshCode() {
   if (passwords() || screen != Screen::Detail || !reveal) return;
   uint64_t seconds = 0;
-  if (!halClock.getSyncedUnixTime(seconds)) {
+  if (!HalClockSync::getSyncedUnixTime(seconds)) {
     const bool changed = codeValid;
     codeValid = false;
     securestore::secureZero(code, sizeof(code));

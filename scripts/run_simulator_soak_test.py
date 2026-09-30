@@ -13,7 +13,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-APPS = ("qr_generator", "cipher", "otp_generator", "clock", "game_of_life")
+APPS = ("qr_generator", "cipher", "otp_generator", "clock", "game_of_life", "casino", "chess", "file_crypto", "transit_alert", "wifi_qr")
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -48,7 +48,7 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=1, help="Independent simulator processes (1-5)")
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
-    if not 1 <= args.jobs <= len(APPS):
+    if not 1 <= args.jobs <= 5:
         parser.error("--jobs must be between 1 and 5")
     if len(set(args.apps)) != len(args.apps):
         parser.error("--apps must not contain duplicates")
