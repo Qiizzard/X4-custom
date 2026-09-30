@@ -55,3 +55,5 @@ add_subdirectory(secure_store)
 add_subdirectory(morse_code)
 add_subdirectory(unit_conversion)
 add_subdirectory(cipher)
+
+add_subdirectory(vault_records)

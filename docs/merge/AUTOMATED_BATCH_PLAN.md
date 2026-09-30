@@ -935,3 +935,9 @@ this schedule does not declare them completed or permanently blocked.
   complete; V1 started. Initial simulator compile found missing mbedTLS headers
   in vault/TOTP integration; fixing real native crypto linkage next. No fake
   crypto or test pass claimed. Host suite configuring in fresh native directory.
+
+- 2026-09-30 V1 host checkpoint: 251 CTest cases PASS in a fresh Darwin build,
+  including five new vault/TOTP tests; 10 budget self-tests and flash-size
+  scenarios PASS. Existing budget manifest lacks recent ports: not complete
+  resource coverage. Native simulator missing crypto/verified-clock APIs under
+  repair; smoke/soaks not yet passed. See verification/V1_2026-09-30.md.
