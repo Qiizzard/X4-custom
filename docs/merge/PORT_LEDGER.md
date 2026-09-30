@@ -151,7 +151,7 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| Mesh Chat | `wip` | Direct channel-1 chat via owned RadioManager ESP-NOW broadcast transport, 1 KiB receive queue, eight fixed messages and 64-character sends. Explicit unencrypted/unverified-sender/no-delivery guarantee. Peer discovery/relay and hardware lifecycle/interoperability tests pending. |
+| Mesh Chat | `wip` | Direct channel-1 chat via owned RadioManager ESP-NOW broadcast transport, 1 KiB receive queue, eight fixed messages and 64-character sends. Explicit unencrypted/unverified-sender/no-delivery guarantee. 16 claimed peers, 10s presence/90s expiry and opt-in TTL-3/rate-limited relay integrated. Core source complete; hardware lifecycle/interoperability tests pending. |
 | Contact Exchange | `blocked` | Reference BleContactExchangeActivity requires the unavailable BLE stack; no substitute transport implied. |
 | Dead Drop | `todo` | |
 | Bulletin Board | `todo` | |

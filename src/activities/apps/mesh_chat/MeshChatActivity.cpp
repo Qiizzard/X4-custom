@@ -39,6 +39,33 @@ void MeshChatActivity::append(const uint8_t* bytes) {
   if (count < 8) ++count;
   dirty = true;
 }
+void MeshChatActivity::observePeer(const uint8_t* bytes) {
+  unsigned i = 0;
+  while (i < peerCount && memcmp(peers[i].mac, bytes + 1, 6)) ++i;
+  if (i == peerCount) {
+    if (peerCount == 16) return;
+    ++peerCount;
+    memcpy(peers[i].mac, bytes + 1, 6);
+  }
+  memset(peers[i].name, 0, sizeof(peers[i].name));
+  for (unsigned j = 0; j < 16 && bytes[7 + j]; ++j)
+    peers[i].name[j] = bytes[7 + j] >= 32 && bytes[7 + j] <= 126 ? bytes[7 + j] : '?';
+  peers[i].seen = millis();
+  dirty = true;
+}
+bool MeshChatActivity::remember(const uint8_t* bytes) {
+  uint32_t hash = 2166136261u;
+  // Full sender/name/text bytes, excluding hop count; not an authenticity check.
+  for (unsigned i = 0; i < 223; ++i) hash = (hash ^ bytes[i]) * 16777619u;
+  const uint32_t now = millis();
+  for (unsigned i = 0; i < hashCount; ++i)
+    if (hashes[i] == hash && uint32_t(now - hashTimes[i]) < 30000) return false;
+  hashes[hashNext] = hash;
+  hashTimes[hashNext] = now;
+  hashNext = (hashNext + 1) % 16;
+  if (hashCount < 16) ++hashCount;
+  return true;
+}
 void MeshChatActivity::compose() {
   auto child = makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MESH_COMPOSE), "", 64);
   if (!child) {
@@ -59,7 +86,10 @@ void MeshChatActivity::compose() {
     memcpy(packet + 23, text->text.data(), text->text.size());
     sent = RADIO.sendEspNowBroadcast(owner, packet, sizeof(packet));
     failed = !sent;
-    if (sent) append(packet);
+    if (sent) {
+      remember(packet);
+      append(packet);
+    }
     requestUpdate();
   });
 }
@@ -86,25 +116,88 @@ void MeshChatActivity::loop() {
     }
     return;
   }
+  const uint32_t now = millis();
+  for (unsigned i = 0; i < peerCount;) {
+    if (uint32_t(now - peers[i].seen) >= 90000) {
+      for (unsigned j = i + 1; j < peerCount; ++j) peers[j - 1] = peers[j];
+      --peerCount;
+      if (peerSelected >= peerCount) peerSelected = 0;
+      dirty = true;
+    } else
+      ++i;
+  }
   for (unsigned i = 0; i < 4; ++i) {
     const auto length = incoming.pop(packet, sizeof(packet));
     if (!length) break;
-    if (length == sizeof(packet) && packet[0] == 1 && memcmp(packet + 1, mac, 6)) append(packet);
+    const bool chat = length == sizeof(packet) && packet[0] == 1 && packet[223] <= 3;
+    const bool presence = length == 23 && packet[0] == 2;
+    if ((!chat && !presence) || !memcmp(packet + 1, mac, 6)) continue;
+    observePeer(packet);
+    if (chat && remember(packet)) {
+      append(packet);
+      if (relay && packet[223] < 3) {
+        ++packet[223];
+        relayQueue.push(packet, sizeof(packet));
+      }
+    }
   }
-  if (confirm) compose();
-  if (count && mappedInput.wasPressed(MappedInputManager::Button::Left)) {
-    selected = (selected + count - 1) % count;
-    page = 0;
+  if (uint32_t(now - lastPresence) >= 10000) {
+    memset(packet, 0, sizeof(packet));
+    packet[0] = 2;
+    memcpy(packet + 1, mac, 6);
+    memcpy(packet + 7, "CrossInk", 8);
+    if (!RADIO.sendEspNowBroadcast(owner, packet, 23)) {
+      failed = true;
+      dirty = true;
+    }
+    lastPresence = now;
+  }
+  if (relay && uint32_t(now - lastRelay) >= 1000 && relayQueue.pop(packet, sizeof(packet))) {
+    if (!RADIO.sendEspNowBroadcast(owner, packet, sizeof(packet))) failed = true;
+    lastRelay = now;
     dirty = true;
   }
-  if (count && mappedInput.wasPressed(MappedInputManager::Button::Right)) {
-    selected = (selected + 1) % count;
-    page = 0;
+  const bool changedView = mappedInput.wasPressed(MappedInputManager::Button::PageBack);
+  if (changedView) {
+    view = (view + 1) % 3;
     dirty = true;
   }
-  if (mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
-    page = (page + 1) % 4;
-    dirty = true;
+  if (confirm && !changedView) {
+    if (view == 0)
+      compose();
+    else if (view == 2) {
+      relay = !relay;
+      relayQueue.reset();
+      lastRelay = now;
+      dirty = true;
+    }
+  }
+  const bool left = mappedInput.wasPressed(MappedInputManager::Button::Left);
+  const bool right = mappedInput.wasPressed(MappedInputManager::Button::Right);
+  if (view == 0) {
+    if (count && left) {
+      selected = (selected + count - 1) % count;
+      page = 0;
+      dirty = true;
+    }
+    if (count && right) {
+      selected = (selected + 1) % count;
+      page = 0;
+      dirty = true;
+    }
+    if (mappedInput.wasPressed(MappedInputManager::Button::PageForward)) {
+      page = (page + 1) % 4;
+      dirty = true;
+    }
+  } else if (view == 1 && peerCount) {
+    if (left) {
+      peerSelected = (peerSelected + peerCount - 1) % peerCount;
+      dirty = true;
+    }
+    if (right) {
+      peerSelected = (peerSelected + 1) % peerCount;
+      dirty = true;
+    }
   }
   if (dirty && millis() - lastRender >= 1000) {
     lastRender = millis();
@@ -131,7 +224,7 @@ void MeshChatActivity::render(RenderLock&&) {
     char text[96];
     snprintf(text, sizeof(text), tr(STR_MESH_STATUS), count, static_cast<unsigned long>(incoming.droppedFrames()));
     draw(text);
-    if (count) {
+    if (view == 0 && count) {
       draw(messages[selected].name);
       char part[51]{};
       memcpy(part, messages[selected].text + page * 50, page == 3 ? 49 : 50);
@@ -139,7 +232,24 @@ void MeshChatActivity::render(RenderLock&&) {
       snprintf(text, sizeof(text), tr(STR_MESH_PAGE), page + 1);
       draw(text);
     }
-    draw(tr(STR_MESH_CONTROLS));
+    if (view == 1) {
+      snprintf(text, sizeof(text), tr(STR_MESH_PEERS), peerCount);
+      draw(text);
+      if (peerCount) {
+        draw(peers[peerSelected].name);
+        const auto* address = peers[peerSelected].mac;
+        snprintf(text, sizeof(text), "%02X:%02X:%02X:%02X:%02X:%02X", address[0], address[1], address[2], address[3],
+                 address[4], address[5]);
+        draw(text);
+      }
+    } else if (view == 2) {
+      draw(relay ? tr(STR_MESH_RELAY_ON) : tr(STR_MESH_RELAY_OFF));
+      snprintf(text, sizeof(text), tr(STR_MESH_RELAY_DROPS), static_cast<unsigned long>(relayQueue.droppedFrames()));
+      draw(text);
+      draw(tr(STR_MESH_RELAY_LIMIT));
+    }
+    draw(view == 0 ? tr(STR_MESH_CONTROLS) : tr(STR_MESH_VIEW_CONTROLS));
+    draw(tr(STR_MESH_VIEWS));
     if (sent) draw(tr(STR_MESH_QUEUED));
   }
   if (failed) draw(tr(STR_MESH_ERROR));
