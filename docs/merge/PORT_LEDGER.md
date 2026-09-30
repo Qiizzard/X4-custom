@@ -138,7 +138,7 @@ coherent, working subset.
 |---|---|---|
 | PIN Security (with duress vault) | `wip` | Defense real/decoy password-vault route invokes separate SecureStore authentication and routes edits to the selected vault. Real-key-authorized decoy setup; distinct 8+ character keys, existing fixed buffers. Vault-only, no device lock or deniability claim. Actual device invocation/crypto/recovery validation deferred. |
 | Screen Decoy | `wip` | Four translated cosmetic views, selection/preview/activation and Back/Confirm exit. No power, radio, storage or security state changes; normal sleep may replace the view. Device/input validation deferred. |
-| Quick Wipe | `todo` | Destructive. Needs a confirm flow and must never touch the OTA/SD recovery path (rule 23). |
+| Quick Wipe | `wip` | Adapted as Delete local vault files: exact nine password/TOTP/decoy primary/staging/backup paths, Confirm then Page Forward within 15s, Back/timeout cancels. No recursion/overwrite/secure-erasure claim; recovery/books/settings/other exports excluded. Device/SD failure checks deferred. |
 | SD Encryption | `todo` | Scope it honestly: per-file via `SecureStore`, not "full-disk". |
 | Security Sweep | `todo` | |
 | Network Monitor | `wip` | Passive frame-monitor child plus capped shared-SSID/BSSID/channel/open-protected observations in WiFi Scanner. 40-byte group index; hidden identities separate; no rogue/attack claim. 24-key source/BSSID/subtype aggregation, 40-window processing-rate chart and event CSV integrated; runtime/RF/SD validation deferred. |

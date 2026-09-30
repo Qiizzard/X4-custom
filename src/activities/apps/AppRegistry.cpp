@@ -42,6 +42,7 @@
 #include "task_manager/TaskManagerActivity.h"
 #include "tetris/TetrisActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
+#include "vault_delete/VaultDeleteActivity.h"
 #include "voronoi/VoronoiActivity.h"
 #include "wifi_scanner/WifiScannerActivity.h"
 
@@ -165,6 +166,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Defense, StrId::STR_VAULT_DELETE_APP, &makeApp<VaultDeleteActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DURESS_APP, &makeDuressVault},
     {AppCategory::Defense, StrId::STR_VAULT_DECOY_APP, &makeDecoyVault},
     {AppCategory::Defense, StrId::STR_APP_NETWORK_MONITOR, &makeApp<NetworkMonitorActivity>},

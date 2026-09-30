@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Delete local vault files (2026-09-30): explicit timed confirmation for
+  nine password/TOTP/decoy files, with per-result counts. Books and recovery
+  excluded; this is deletion, not guaranteed secure erasure. Source wip.
+
 - Real/decoy password vault (2026-09-30): separate encrypted vault keys,
   authenticated decoy setup and a Defense unlock route that selects the
   matching vault. Vault-only access, not a device lock; hardware checks pending.
