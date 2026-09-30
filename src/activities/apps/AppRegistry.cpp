@@ -7,6 +7,7 @@
 #include "activities/network/WifiSelectionActivity.h"
 #include "ap_journal/ApJournalActivity.h"
 #include "barcode/BarcodeActivity.h"
+#include "bulletin_board/BulletinBoardActivity.h"
 #include "calculator/CalculatorActivity.h"
 #include "casino/CasinoActivity.h"
 #include "chess/ChessActivity.h"
@@ -168,6 +169,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Comms, StrId::STR_BOARD_APP, &makeApp<BulletinBoardActivity>},
     {AppCategory::Comms, StrId::STR_MESH_APP, &makeApp<MeshChatActivity>},
     {AppCategory::Defense, StrId::STR_FILE_CRYPTO_APP, &makeApp<FileCryptoActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DELETE_APP, &makeApp<VaultDeleteActivity>},

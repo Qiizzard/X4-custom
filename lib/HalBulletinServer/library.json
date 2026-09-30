@@ -1,0 +1,7 @@
+{
+  "name": "HalBulletinServer",
+  "version": "1.0.0",
+  "description": "Bounded owned-AP HTTP bulletin board with an unavailable simulator transport",
+  "frameworks": ["arduino", "native"],
+  "dependencies": {}
+}

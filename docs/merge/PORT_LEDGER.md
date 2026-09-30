@@ -154,7 +154,7 @@ coherent, working subset.
 | Mesh Chat | `wip` | Direct channel-1 chat via owned RadioManager ESP-NOW broadcast transport, 1 KiB receive queue, eight fixed messages and 64-character sends. Explicit unencrypted/unverified-sender/no-delivery guarantee. 16 claimed peers, 10s presence/90s expiry and opt-in TTL-3/rate-limited relay integrated. Core source complete; hardware lifecycle/interoperability tests pending. |
 | Contact Exchange | `blocked` | Reference BleContactExchangeActivity requires the unavailable BLE stack; no substitute transport implied. |
 | Dead Drop | `todo` | |
-| Bulletin Board | `todo` | |
+| Bulletin Board | `wip` | Timed owned AP with user password, two WiFi clients, one nonblocking HTTP client, fixed 16x200-byte posts, strict header/body/Host/custom-header checks and textContent rendering. RAM-only sessions; HTTP/AP/heap/security/device validation deferred. |
 | SSID Channel | `blocked` | **Out of scope as usually implemented.** Encoding data into a broadcast SSID means transmitting a crafted AP beacon, which is the Offense boundary. Ship only if a listen-only design exists. |
 
 ## Settings

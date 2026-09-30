@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Bulletin Board (2026-09-30): password-protected timed local AP, latest
+  16 bounded posts and text-only browser rendering. Session-only data; HTTP/AP
+  device validation deferred.
+
 - Nearby chat peers/relay (2026-09-30): bounded expiring peer list and
   opt-in forwarding with hop/rate/queue limits and duplicate suppression.
   Public, unauthenticated transport; radio/device validation deferred.
