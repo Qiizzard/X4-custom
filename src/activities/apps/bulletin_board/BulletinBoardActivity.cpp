@@ -16,11 +16,13 @@
 #include "fontIds.h"
 namespace {
 constexpr char owner[] = "bulletin_board";
-}
+constexpr char dropOwner[] = "dead_drop";
+}  // namespace
+const char* BulletinBoardActivity::radioOwner() const { return drop ? dropOwner : owner; }
 void BulletinBoardActivity::stop() {
   finalCount = server.count();
   server.stop();
-  if (running) RADIO.shutdown(owner);
+  if (running) RADIO.shutdown(radioOwner());
   running = false;
   securestore::secureZero(password, sizeof(password));
 }
@@ -45,11 +47,11 @@ void BulletinBoardActivity::start() {
     }
     failed = false;
     ended = false;
-    if (!RADIO.acquireAccessPoint(owner, "X4-Board", password, 1, 2))
+    if (!RADIO.acquireAccessPoint(radioOwner(), drop ? "X4-Drop" : "X4-Board", password, 1, 2))
       failed = true;
     else {
       running = true;
-      if (!RADIO.accessPointAddress(owner, address) || !server.start(owner)) {
+      if (!RADIO.accessPointAddress(radioOwner(), address) || !server.start(radioOwner(), drop)) {
         failed = true;
         stop();
       } else
@@ -95,7 +97,7 @@ void BulletinBoardActivity::loop() {
 void BulletinBoardActivity::render(RenderLock&&) {
   renderer.clearScreen();
   const auto header = TouchHeaderBackButton::headerRect(renderer, mappedInput);
-  GUI.drawHeader(renderer, header, tr(STR_BOARD_APP));
+  GUI.drawHeader(renderer, header, drop ? tr(STR_DROP_APP) : tr(STR_BOARD_APP));
   const auto area = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
   const int line = renderer.getLineHeight(UI_10_FONT_ID) + 8;
   int y = area.y + line;
@@ -104,22 +106,22 @@ void BulletinBoardActivity::render(RenderLock&&) {
     y += line;
   };
   char text[128];
-  draw(tr(STR_BOARD_SCOPE));
-  draw(tr(STR_BOARD_SESSION));
+  draw(drop ? tr(STR_DROP_SCOPE) : tr(STR_BOARD_SCOPE));
+  draw(drop ? tr(STR_DROP_SESSION) : tr(STR_BOARD_SESSION));
   if (running) {
-    draw(tr(STR_BOARD_JOIN));
+    draw(drop ? tr(STR_DROP_JOIN) : tr(STR_BOARD_JOIN));
     snprintf(text, sizeof(text), tr(STR_BOARD_URL), address[0], address[1], address[2], address[3]);
     draw(text);
     const unsigned elapsed = uint32_t(millis() - started) / 1000;
     const unsigned remaining = elapsed >= minutes[duration] * 60 ? 0 : minutes[duration] * 60 - elapsed;
-    snprintf(text, sizeof(text), tr(STR_BOARD_STATUS), server.count(), remaining);
+    snprintf(text, sizeof(text), drop ? tr(STR_DROP_STATUS) : tr(STR_BOARD_STATUS), server.count(), remaining);
     draw(text);
   } else {
     snprintf(text, sizeof(text), tr(STR_BOARD_DURATION), minutes[duration]);
     draw(text);
     draw(tr(STR_BOARD_START));
     if (ended) {
-      snprintf(text, sizeof(text), tr(STR_BOARD_ENDED), finalCount);
+      snprintf(text, sizeof(text), drop ? tr(STR_DROP_ENDED) : tr(STR_BOARD_ENDED), finalCount);
       draw(text);
     }
   }

@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Small-file Dead Drop (2026-09-30): timed password-protected AP for
+  exclusive 4 KiB uploads and numbered downloads in a dedicated SD folder.
+  32 slots, no overwrite or automatic deletion; device tests deferred.
+
 - Bulletin Board (2026-09-30): password-protected timed local AP, latest
   16 bounded posts and text-only browser rendering. Session-only data; HTTP/AP
   device validation deferred.

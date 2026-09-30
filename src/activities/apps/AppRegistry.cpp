@@ -83,6 +83,10 @@ std::unique_ptr<Activity> makeDecoyVault(GfxRenderer& renderer, MappedInputManag
   return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::DecoySetup);
 }
 
+std::unique_ptr<Activity> makeDeadDrop(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<BulletinBoardActivity>(renderer, input, true);
+}
+
 // THE TABLE. constexpr + static => flash, not DRAM.
 //
 // Order within a category is the order the launcher shows. Keep new rows
@@ -169,6 +173,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Comms, StrId::STR_DROP_APP, &makeDeadDrop},
     {AppCategory::Comms, StrId::STR_BOARD_APP, &makeApp<BulletinBoardActivity>},
     {AppCategory::Comms, StrId::STR_MESH_APP, &makeApp<MeshChatActivity>},
     {AppCategory::Defense, StrId::STR_FILE_CRYPTO_APP, &makeApp<FileCryptoActivity>},

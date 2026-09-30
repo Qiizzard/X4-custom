@@ -1,6 +1,7 @@
 #include "HalBulletinServer.h"
 
 #include <Arduino.h>
+#include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
 #include <RadioManager.h>
@@ -49,7 +50,77 @@ bool HalBulletinServer::append(const char* text, bool escape) {
 void HalBulletinServer::respond(bool valid) {
   responseSize_ = 0;
   const char* type = "text/plain; charset=utf-8";
-  if (valid && route_ == 1) {
+  if (valid && route_ == 1 && drop_) {
+    type = "text/html; charset=utf-8";
+    valid =
+        append("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><h1>") &&
+        append(tr(STR_DROP_APP), true) && append("</h1><p id=n>") && append(tr(STR_DROP_SCOPE), true) &&
+        append("</p><form id=f><input type=file id=m required><button>") && append(tr(STR_DROP_UPLOAD), true) &&
+        append(
+            "</button></form><p id=e></p><div id=p></div><script>"
+            "const "
+            "f=document.getElementById('f'),m=document.getElementById('m'),p=document.getElementById('p'),e=document."
+            "getElementById('e');"
+            "async function load(){try{let r=await fetch('/files');let t=await r.text();p.replaceChildren();"
+            "if(!r.ok){e.textContent=t;return}for(let n of t.split('\\n').filter(Boolean)){let "
+            "a=document.createElement('a');"
+            "a.href='/"
+            "'+encodeURIComponent(n);a.download=n;a.textContent=n;p.append(a,document.createElement('br'))}}catch(x){e."
+            "textContent=x.message}}"
+            "f.onsubmit=async ev=>{ev.preventDefault();let file=m.files[0];if(!file)return;"
+            "if(file.size>4096){e.textContent=document.getElementById('n').textContent;return}"
+            "try{let r=await fetch('/upload',{method:'POST',headers:{'X-X4-Board':'1'},body:await file.arrayBuffer()});"
+            "e.textContent=await "
+            "r.text();if(r.ok){m.value='';load()}}catch(x){e.textContent=x.message}};load()</script>");
+  } else if (valid && route_ == 4) {
+    if (!Storage.ready()) valid = false;
+    for (unsigned i = 0; valid && i < 32; ++i) {
+      char path[40];
+      snprintf(path, sizeof(path), "/crossink/drop/file-%02u.bin", i);
+      if (Storage.exists(path)) valid = append(path + strlen("/crossink/drop/")) && append("\n");
+    }
+  } else if (valid && route_ == 5) {
+    valid = Storage.ready() && Storage.ensureDirectoryExists("/crossink/drop");
+    bool written = false;
+    for (unsigned i = 0; valid && i < 32; ++i) {
+      char path[40];
+      snprintf(path, sizeof(path), "/crossink/drop/file-%02u.bin", i);
+      if (Storage.exists(path)) continue;
+      auto file = Storage.open(path, O_WRITE | O_CREAT | O_EXCL);
+      if (!file) {
+        valid = false;
+        break;
+      }
+      valid = !wanted_ || file.write(request_ + bodyAt_, wanted_) == wanted_;
+      if (valid) valid = file.sync();
+      if (!file.close()) valid = false;
+      if (!valid) {
+        if (!Storage.remove(path)) LOG_ERR("Drop", "Partial upload remains: %s", path);
+        break;
+      }
+      written = true;
+      ++count_;
+      ++revision_;
+      valid = append(tr(STR_DROP_STORED)) && append(" ") && append(path);
+      break;
+    }
+    valid = valid && written;
+  } else if (valid && route_ == 6) {
+    char path[40];
+    snprintf(path, sizeof(path), "/crossink/drop/file-%02u.bin", fileIndex_);
+    auto file = Storage.open(path);
+    valid = bool(file);
+    if (valid) {
+      const size_t size = file.fileSize();
+      valid = !file.isDirectory() && size <= sizeof(response_);
+      if (valid && size) valid = file.read(response_, size) == size;
+      if (!file.close()) valid = false;
+      if (valid) {
+        responseSize_ = size;
+        type = "application/octet-stream";
+      }
+    }
+  } else if (valid && route_ == 1) {
     type = "text/html; charset=utf-8";
     valid = append("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><h1>") &&
             append(tr(STR_BOARD_APP), true) && append("</h1><p>") && append(tr(STR_BOARD_WEB_NOTE), true) &&
@@ -90,6 +161,7 @@ void HalBulletinServer::respond(bool valid) {
   } else
     valid = false;
   if (!valid) {
+    LOG_ERR("LocalShare", "Request or storage operation rejected");
     responseSize_ = 0;
     append(tr(STR_BOARD_HTTP_ERROR));
     type = "text/plain; charset=utf-8";
@@ -117,14 +189,28 @@ bool HalBulletinServer::parse() {
   *lineEnd = 0;
   if (!strcmp(request_, "GET / HTTP/1.1"))
     route_ = 1;
-  else if (!strcmp(request_, "GET /messages HTTP/1.1"))
+  else if (!drop_ && !strcmp(request_, "GET /messages HTTP/1.1"))
     route_ = 2;
-  else if (!strcmp(request_, "POST /post HTTP/1.1"))
+  else if (!drop_ && !strcmp(request_, "POST /post HTTP/1.1"))
     route_ = 3;
-  else {
+  else if (drop_ && !strcmp(request_, "GET /files HTTP/1.1"))
+    route_ = 4;
+  else if (drop_ && !strcmp(request_, "POST /upload HTTP/1.1"))
+    route_ = 5;
+  else if (drop_ && strlen(request_) == strlen("GET /file-00.bin HTTP/1.1") && !strncmp(request_, "GET /file-", 10) &&
+           request_[10] >= '0' && request_[10] <= '9' && request_[11] >= '0' && request_[11] <= '9' &&
+           !strcmp(request_ + 12, ".bin HTTP/1.1")) {
+    fileIndex_ = unsigned(request_[10] - '0') * 10 + unsigned(request_[11] - '0');
+    if (fileIndex_ >= 32) {
+      respond(false);
+      return false;
+    }
+    route_ = 6;
+  } else {
     respond(false);
     return false;
   }
+  const size_t limit = drop_ ? 4096 : 200;
   bool host = false, length = false, guard = false, valid = true;
   for (char* line = lineEnd + 2; line < end; line = lineEnd + 2) {
     lineEnd = strstr(line, "\r\n");
@@ -151,13 +237,13 @@ bool HalBulletinServer::parse() {
       length = true;
       wanted_ = 0;
       for (; *value; ++value) {
-        if (*value < '0' || *value > '9' || wanted_ > 200) {
+        if (*value < '0' || *value > '9' || wanted_ > limit) {
           valid = false;
           break;
         }
         wanted_ = wanted_ * 10 + unsigned(*value - '0');
       }
-      if (wanted_ > 200) valid = false;
+      if (wanted_ > limit) valid = false;
     } else if (!strcasecmp(line, "Transfer-Encoding") || !strcasecmp(line, "Expect"))
       valid = false;
     else if (!strcasecmp(line, "X-X4-Board")) {
@@ -165,7 +251,8 @@ bool HalBulletinServer::parse() {
       guard = true;
     }
   }
-  valid = valid && host && (route_ == 3 ? guard && length && wanted_ > 0 : wanted_ == 0);
+  valid =
+      valid && host && ((route_ == 3 || route_ == 5) ? guard && length && (route_ == 5 || wanted_ > 0) : wanted_ == 0);
   if (!valid) {
     respond(false);
     return false;
@@ -175,7 +262,7 @@ bool HalBulletinServer::parse() {
 }
 
 #ifdef SIMULATOR
-bool HalBulletinServer::start(const char*) {
+bool HalBulletinServer::start(const char*, bool) {
   LOG_ERR("Board", "HTTP board unavailable in simulator");
   return false;
 }
@@ -201,8 +288,9 @@ void HalBulletinServer::stop() {
   memset(posts_, 0, sizeof(posts_));
   count_ = next_ = 0;
 }
-bool HalBulletinServer::start(const char* owner) {
+bool HalBulletinServer::start(const char* owner, bool drop) {
   stop();
+  drop_ = drop;
   uint8_t address[4];
   if (!RADIO.accessPointAddress(owner, address)) {
     LOG_ERR("Board", "Owned AP required");
@@ -276,12 +364,13 @@ void HalBulletinServer::poll() {
     if (errno != EAGAIN && errno != EWOULDBLOCK) closeClient();
     return;
   }
-  if (memchr(request_ + used_, 0, n)) {
+  used_ += n;
+  request_[used_] = 0;
+  // Binary bytes are allowed only after complete headers; posts validate ASCII separately.
+  if (!parsed_ && memchr(request_, 0, used_) && !strstr(request_, "\r\n\r\n")) {
     respond(false);
     return;
   }
-  used_ += n;
-  request_[used_] = 0;
   if (!parsed_ && !parse()) {
     if (!replying_ && used_ >= 1024) respond(false);
     return;

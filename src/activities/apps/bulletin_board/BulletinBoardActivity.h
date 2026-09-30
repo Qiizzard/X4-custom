@@ -4,7 +4,8 @@
 #include "activities/Activity.h"
 class BulletinBoardActivity final : public Activity {
  public:
-  BulletinBoardActivity(GfxRenderer& r, MappedInputManager& i) : Activity("BulletinBoard", r, i) {}
+  BulletinBoardActivity(GfxRenderer& r, MappedInputManager& i, bool drop = false)
+      : Activity("LocalShare", r, i), drop(drop) {}
   void onEnter() override {
     Activity::onEnter();
     requestUpdate();
@@ -14,6 +15,8 @@ class BulletinBoardActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+  const bool drop;
+  const char* radioOwner() const;
   HalBulletinServer server;
   char password[64]{};
   uint8_t address[4]{};
