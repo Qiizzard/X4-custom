@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Nearby chat (2026-09-30): bounded direct ESP-NOW messages on channel 1,
+  with explicit public-broadcast warning and owned radio cleanup. Peer/relay
+  features and device validation remain pending.
+
 - Small-file encryption (2026-09-30): SecureStore-protected copies of files
   up to 4 KiB, with explicit plaintext export and original-file retention.
   No whole-SD encryption claim; crypto/SD/device validation deferred.

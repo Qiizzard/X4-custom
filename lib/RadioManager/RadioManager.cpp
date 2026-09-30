@@ -10,6 +10,7 @@
 #ifndef SIMULATOR
 #include <WiFi.h>
 #include <esp_mac.h>
+#include <esp_now.h>
 #include <esp_wifi.h>
 #include <lwip/inet.h>
 #include <lwip/ip6_addr.h>
@@ -120,6 +121,9 @@ bool RadioManager::accessPointAddress(const char*, uint8_t (&address)[4]) const 
   return false;
 }
 bool RadioManager::configureEspNow(const char*, uint8_t) { return false; }
+bool RadioManager::startEspNowBroadcast(const char*, uint8_t, DatagramSink, void*) { return false; }
+bool RadioManager::sendEspNowBroadcast(const char*, const uint8_t*, size_t) { return false; }
+bool RadioManager::stopEspNowBroadcast(const char*) { return false; }
 bool RadioManager::resolveHostname(const char*, const char*, char (&address)[48]) {
   address[0] = 0;
   return false;
@@ -242,6 +246,16 @@ const char* wifiStatusName(const wl_status_t status) {
 
 // Callback runs on the WiFi task. A short critical section protects the pair
 // and waits out the bounded sink copy before teardown can free its context.
+portMUX_TYPE g_datagramMux = portMUX_INITIALIZER_UNLOCKED;
+RadioManager::DatagramSink g_datagramSink = nullptr;
+void* g_datagramContext = nullptr;
+constexpr uint8_t broadcastMac[] = {255, 255, 255, 255, 255, 255};
+void datagramReceived(const esp_now_recv_info_t*, const uint8_t* data, int length) {
+  if (!data || length <= 0 || length > 250) return;
+  portENTER_CRITICAL(&g_datagramMux);
+  if (g_datagramSink) g_datagramSink(g_datagramContext, data, static_cast<uint16_t>(length));
+  portEXIT_CRITICAL(&g_datagramMux);
+}
 portMUX_TYPE g_sinkMux = portMUX_INITIALIZER_UNLOCKED;
 RadioManager::FrameSink g_sink = nullptr;
 void* g_sinkContext = nullptr;
@@ -367,6 +381,7 @@ void RadioManager::shutdown() {
   const Mode previousMode = mode_;
   const uint32_t held = heldForMs();
 
+  if (espNowBroadcast_) stopEspNowBroadcast(owner_);
   if (promiscuousActive_) stopPromiscuous();
   stopWifi();
 
@@ -411,6 +426,60 @@ bool RadioManager::configureEspNow(const char* owner, const uint8_t channel) {
   }
   channel_ = channel;
   return true;
+}
+
+bool RadioManager::startEspNowBroadcast(const char* owner, uint8_t channel, DatagramSink sink, void* context) {
+  if (!sink || espNowBroadcast_ || !configureEspNow(owner, channel)) {
+    LOG_ERR(TAG, "Invalid ESP-NOW broadcast start");
+    return false;
+  }
+  if (esp_now_init() != ESP_OK) {
+    LOG_ERR(TAG, "ESP-NOW init failed");
+    return false;
+  }
+  espNowBroadcast_ = true;
+  esp_now_peer_info_t peer = {};
+  memcpy(peer.peer_addr, broadcastMac, 6);
+  peer.channel = channel;
+  peer.ifidx = WIFI_IF_STA;
+  peer.encrypt = false;
+  if (esp_now_add_peer(&peer) != ESP_OK || esp_now_register_recv_cb(datagramReceived) != ESP_OK) {
+    LOG_ERR(TAG, "ESP-NOW peer/callback setup failed");
+    stopEspNowBroadcast(owner);
+    return false;
+  }
+  portENTER_CRITICAL(&g_datagramMux);
+  g_datagramSink = sink;
+  g_datagramContext = context;
+  portEXIT_CRITICAL(&g_datagramMux);
+  return true;
+}
+bool RadioManager::stopEspNowBroadcast(const char* owner) {
+  if (!owner || owner_ != owner || mode_ != Mode::EspNow) {
+    LOG_ERR(TAG, "ESP-NOW stop owner mismatch");
+    return false;
+  }
+  if (!espNowBroadcast_) return true;
+  portENTER_CRITICAL(&g_datagramMux);
+  g_datagramSink = nullptr;
+  g_datagramContext = nullptr;
+  portEXIT_CRITICAL(&g_datagramMux);
+  const bool callback = esp_now_unregister_recv_cb() == ESP_OK;
+  const bool stopped = esp_now_deinit() == ESP_OK;
+  espNowBroadcast_ = false;
+  if (!callback || !stopped) LOG_ERR(TAG, "ESP-NOW teardown failed");
+  return callback && stopped;
+}
+bool RadioManager::sendEspNowBroadcast(const char* owner, const uint8_t* data, size_t length) {
+  if (!owner || owner_ != owner || mode_ != Mode::EspNow || !espNowBroadcast_ || !data || !length || length > 250) {
+    LOG_ERR(TAG, "Invalid ESP-NOW send");
+    return false;
+  }
+  if (esp_now_send(broadcastMac, data, length) != ESP_OK) {
+    LOG_ERR(TAG, "ESP-NOW send failed");
+    return false;
+  }
+  return true;  // Accepted by driver, not a delivery acknowledgment.
 }
 
 void RadioManager::stopWifi() {

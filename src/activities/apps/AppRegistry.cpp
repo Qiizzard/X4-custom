@@ -27,6 +27,7 @@
 #include "matrix_rain/MatrixRainActivity.h"
 #include "maze/MazeActivity.h"
 #include "mdns_browser/MdnsBrowserActivity.h"
+#include "mesh_chat/MeshChatActivity.h"
 #include "minesweeper/MinesweeperActivity.h"
 #include "morse_code/MorseCodeActivity.h"
 #include "network_monitor/NetworkMonitorActivity.h"
@@ -167,6 +168,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Recon, StrId::STR_APP_DEAUTH_DETECTOR, &makeMonitor<PassiveMonitorActivity::Kind::Deauth>},
     {AppCategory::Recon, StrId::STR_APP_WIFI_SCANNER, &makeApp<WifiScannerActivity>},
 
+    {AppCategory::Comms, StrId::STR_MESH_APP, &makeApp<MeshChatActivity>},
     {AppCategory::Defense, StrId::STR_FILE_CRYPTO_APP, &makeApp<FileCryptoActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DELETE_APP, &makeApp<VaultDeleteActivity>},
     {AppCategory::Defense, StrId::STR_VAULT_DURESS_APP, &makeDuressVault},

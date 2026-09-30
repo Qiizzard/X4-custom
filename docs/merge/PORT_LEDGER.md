@@ -151,7 +151,7 @@ coherent, working subset.
 
 | App | Status | Notes |
 |---|---|---|
-| Mesh Chat | `todo` | ESP-NOW; `RADIO.acquire(Mode::EspNow, ...)`. CrossInk's nearby-sync screens are the working reference. |
+| Mesh Chat | `wip` | Direct channel-1 chat via owned RadioManager ESP-NOW broadcast transport, 1 KiB receive queue, eight fixed messages and 64-character sends. Explicit unencrypted/unverified-sender/no-delivery guarantee. Peer discovery/relay and hardware lifecycle/interoperability tests pending. |
 | Contact Exchange | `blocked` | Reference BleContactExchangeActivity requires the unavailable BLE stack; no substitute transport implied. |
 | Dead Drop | `todo` | |
 | Bulletin Board | `todo` | |

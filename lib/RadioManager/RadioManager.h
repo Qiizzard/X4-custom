@@ -92,6 +92,11 @@ class RadioManager {
   // Connected with a nonzero station IP; excludes association before DHCP.
   // Configure an owned ESP-NOW radio before the activity initializes its protocol.
   bool configureEspNow(const char* owner, uint8_t channel);
+  using DatagramSink = void (*)(void*, const uint8_t*, uint16_t);
+  // Sink runs under a short teardown lock: copy only, never call RadioManager.
+  bool startEspNowBroadcast(const char* owner, uint8_t channel, DatagramSink sink, void* context);
+  bool sendEspNowBroadcast(const char* owner, const uint8_t* data, size_t length);
+  bool stopEspNowBroadcast(const char* owner);
   // One synchronous SDK lookup; caller owns output, SDK controls timeout.
   bool resolveHostname(const char* owner, const char* hostname, char (&address)[48]);
   static constexpr size_t kMaxMdnsResults = 8;
@@ -192,6 +197,7 @@ class RadioManager {
   uint32_t acquiredAtMs_ = 0;
   uint8_t channel_ = kMinChannel;
   bool promiscuousActive_ = false;
+  bool espNowBroadcast_ = false;
 };
 
 // The one handle app code uses, so a grep for `RADIO.` finds every radio user.
