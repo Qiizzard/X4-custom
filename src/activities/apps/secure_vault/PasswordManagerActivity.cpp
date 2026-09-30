@@ -44,6 +44,45 @@ bool PasswordManagerActivity::unlockTotp() {
   }
   return totp.open();
 }
+void PasswordManagerActivity::refreshWifiQr() {
+  codeValid = false;
+  securestore::secureZero(encoded, sizeof(encoded));
+  securestore::secureZero(scratch, sizeof(scratch));
+  if (!reveal) return;
+  const auto* record = records.at(selected);
+  if (!record || !record->username[0] || strlen(record->username) > 32 || (wifiAuth != 2 && !record->password[0])) {
+    LOG_ERR("WiFiQR", "Record needs a 1-32 byte SSID and a password for protected modes");
+    return;
+  }
+  // Reuse existing vault scratch: <=208 escaped bytes + NUL. QR v9-L fits
+  // 230 byte-mode bytes; the matrix fits the otherwise-idle encoded buffer.
+  char* payload = reinterpret_cast<char*>(scratch);
+  size_t length = 0;
+  auto append = [&](const char* text, bool escape) {
+    while (*text) {
+      const char c = *text++;
+      if (escape && (c == '\\' || c == ';' || c == ',' || c == '"' || c == ':')) payload[length++] = '\\';
+      payload[length++] = c;
+    }
+    payload[length] = 0;
+  };
+  append("WIFI:T:", false);
+  append(wifiAuth == 0 ? "WPA" : wifiAuth == 1 ? "WEP" : "nopass", false);
+  append(";S:", false);
+  append(record->username, true);
+  append(";P:", false);
+  if (wifiAuth != 2) append(record->password, true);
+  append(";;", false);
+  if (length <= 230 && qrcode_getBufferSize(9) <= sizeof(encoded) &&
+      qrcode_initText(&qr, encoded, 9, ECC_LOW, payload) == 0)
+    codeValid = true;
+  else {
+    LOG_ERR("WiFiQR", "QR encoding failed");
+    securestore::secureZero(encoded, sizeof(encoded));
+  }
+  securestore::secureZero(scratch, sizeof(scratch));
+}
+
 void PasswordManagerActivity::refreshCode() {
   if (passwords() || screen != Screen::Detail || !reveal) return;
   uint64_t seconds = 0;
@@ -84,6 +123,7 @@ void PasswordManagerActivity::wipe() {
   securestore::secureZero(passphrase, sizeof(passphrase));
   securestore::secureZero(entry, sizeof(entry));
   reveal = false;
+  wifiAuth = 0;
   decoy = mode == Mode::DecoySetup;
   selected = 0;
 }
@@ -97,6 +137,10 @@ void PasswordManagerActivity::onEnter() {
   Activity::onEnter();
   wipe();
   existing = Storage.exists(path());
+  if (mode == Mode::WifiQr && !existing) {
+    fail();
+    return;
+  }
   if ((mode == Mode::Duress || mode == Mode::DecoySetup) &&
       (!Storage.exists("/crossink/vaults/passwords.bin") || Storage.exists("/crossink/vaults/passwords.next"))) {
     fail();
@@ -251,6 +295,10 @@ void PasswordManagerActivity::accept(bool cancelled) {
   }
 }
 bool PasswordManagerActivity::save(bool creating) {
+  if (mode == Mode::WifiQr) {
+    LOG_ERR("WiFiQR", "Read-only mode cannot save vault records");
+    return false;
+  }
   if (!records.encode(encoded, sizeof(encoded))) return false;
   if (!passwords()) encoded[0] = 'T';  // authenticated TOTP domain tag
   bool ok = Storage.exists("/crossink/vaults") || Storage.mkdir("/crossink/vaults");
@@ -288,13 +336,18 @@ void PasswordManagerActivity::loop() {
     codeValid = false;
     securestore::secureZero(code, sizeof(code));
     securestore::secureZero(qrModules, sizeof(qrModules));
+    if (mode == Mode::WifiQr) {
+      securestore::secureZero(encoded, sizeof(encoded));
+      securestore::secureZero(scratch, sizeof(scratch));
+    }
     requestUpdate();
   }
   using Button = MappedInputManager::Button;
   const bool back = mappedInput.wasReleased(Button::Back), confirm = mappedInput.wasReleased(Button::Confirm);
   const bool up = mappedInput.wasReleased(Button::Up), down = mappedInput.wasReleased(Button::Down);
   const bool edit = mappedInput.wasReleased(Button::PageForward), remove = mappedInput.wasReleased(Button::PageBack);
-  if (!(back || confirm || up || down || edit || remove)) return;
+  const bool left = mappedInput.wasReleased(Button::Left), right = mappedInput.wasReleased(Button::Right);
+  if (!(back || confirm || up || down || edit || remove || left || right)) return;
   lastInput = millis();
   if (back) {
     if (screen == Screen::Locked || screen == Screen::Error)
@@ -306,7 +359,9 @@ void PasswordManagerActivity::loop() {
   } else if (screen == Screen::Locked && confirm) {
     ask(existing ? Input::Unlock : mode == Mode::DecoySetup ? Input::AuthorizeDecoy : Input::Create);
   } else if (screen == Screen::List) {
-    const size_t total = records.size() + (records.size() < PasswordRecords::kMaxRecords ? 1 : 0);
+    const size_t total =
+        records.size() + (mode != Mode::WifiQr && records.size() < PasswordRecords::kMaxRecords ? 1 : 0);
+    if (!total) return;
     if (up) selected = (selected + total - 1) % total;
     if (down) selected = (selected + 1) % total;
     if (confirm) {
@@ -321,15 +376,24 @@ void PasswordManagerActivity::loop() {
     if (confirm) {
       reveal = !reveal;
       revealedAt = millis();
-      refreshCode();
+      if (mode == Mode::WifiQr)
+        refreshWifiQr();
+      else
+        refreshCode();
     }
-    if (edit) ask(Input::Title);  // replacement wizard, never prefill secret input
-    if (remove) {
+    if (mode == Mode::WifiQr && (left || right)) {
+      wifiAuth = (wifiAuth + (right ? 1 : 2)) % 3;
+      reveal = false;
+      refreshWifiQr();
+    }
+    if (edit && mode != Mode::WifiQr) ask(Input::Title);  // replacement wizard, never prefill secret input
+    if (remove && mode != Mode::WifiQr) {
       reveal = false;
       screen = Screen::Delete;
     }
     if (up || down) {
       reveal = false;
+      if (mode == Mode::WifiQr) refreshWifiQr();
       screen = Screen::List;
     }
   } else if ((screen == Screen::Save || screen == Screen::Delete) && confirm) {
@@ -351,11 +415,13 @@ void PasswordManagerActivity::render(RenderLock&&) {
   int mt, mr, mb, ml;
   renderer.getOrientedViewableTRBL(&mt, &mr, &mb, &ml);
   GUI.drawHeader(renderer, Rect{ml, mt + m.topPadding, renderer.getScreenWidth() - ml - mr, m.headerHeight},
-                 passwords()                   ? tr(STR_VAULT_APP)
+                 mode == Mode::WifiQr          ? tr(STR_WIFI_QR_APP)
+                 : passwords()                 ? tr(STR_VAULT_APP)
                  : mode == Mode::Authenticator ? tr(STR_TOTP_APP)
                                                : tr(STR_TOTP_QR_APP));
   int y = mt + m.topPadding + m.headerHeight + 20;
   if (screen == Screen::Locked || screen == Screen::Error) {
+    if (mode == Mode::WifiQr) renderer.drawCenteredText(SMALL_FONT_ID, y + 85, tr(STR_WIFI_QR_SOURCE));
     renderer.drawCenteredText(UI_10_FONT_ID, y,
                               screen == Screen::Error ? tr(STR_VAULT_ERROR)
                               : existing              ? tr(STR_VAULT_UNLOCK)
@@ -372,7 +438,28 @@ void PasswordManagerActivity::render(RenderLock&&) {
     const auto* record = records.at(selected);
     if (record) {
       renderer.drawCenteredText(UI_10_FONT_ID, y, record->title);
-      if (passwords()) {
+      if (mode == Mode::WifiQr) {
+        renderer.drawCenteredText(SMALL_FONT_ID, y + 30, tr(STR_WIFI_QR_CONTROLS));
+        renderer.drawCenteredText(SMALL_FONT_ID, y + 55,
+                                  wifiAuth == 0   ? tr(STR_WIFI_QR_WPA)
+                                  : wifiAuth == 1 ? tr(STR_WIFI_QR_WEP)
+                                                  : tr(STR_WIFI_QR_OPEN));
+        if (!reveal || !codeValid)
+          renderer.drawCenteredText(UI_10_FONT_ID, y + 100, !reveal ? tr(STR_VAULT_MASKED) : tr(STR_WIFI_QR_INVALID));
+        else {
+          const int top = y + 80;
+          const int width = renderer.getScreenWidth() - ml - mr;
+          const int height = renderer.getScreenHeight() - mb - m.buttonHintsHeight - top;
+          const int scale = std::min(width, height) / 61;  // v9: 53 modules + quiet zone
+          if (scale > 0) {
+            const int x = ml + (width - 53 * scale) / 2;
+            for (uint8_t row = 0; row < 53; ++row)
+              for (uint8_t col = 0; col < 53; ++col)
+                if (qrcode_getModule(&qr, col, row))
+                  renderer.fillRect(x + col * scale, top + (row + 4) * scale, scale, scale, true);
+          }
+        }
+      } else if (passwords()) {
         renderer.drawCenteredText(UI_10_FONT_ID, y + 40, record->username);
         renderer.drawCenteredText(UI_10_FONT_ID, y + 80, reveal ? record->password : tr(STR_VAULT_MASKED));
         renderer.drawCenteredText(SMALL_FONT_ID, y + 130, tr(STR_VAULT_ACTIONS));
@@ -402,7 +489,9 @@ void PasswordManagerActivity::render(RenderLock&&) {
   } else {
     const size_t rows = std::max(1, (renderer.getScreenHeight() - mb - m.buttonHintsHeight - y) / 40);
     const size_t first = selected / rows * rows;
-    const size_t total = records.size() + (records.size() < PasswordRecords::kMaxRecords ? 1 : 0);
+    if (mode == Mode::WifiQr && !records.size()) renderer.drawCenteredText(UI_10_FONT_ID, y, tr(STR_WIFI_QR_SOURCE));
+    const size_t total =
+        records.size() + (mode != Mode::WifiQr && records.size() < PasswordRecords::kMaxRecords ? 1 : 0);
     for (size_t i = first; i < std::min(first + rows, total); ++i) {
       renderer.drawText(UI_10_FONT_ID, ml + 10, y, i == selected ? ">" : "");
       renderer.drawText(UI_10_FONT_ID, ml + 35, y, i < records.size() ? records.at(i)->title : tr(STR_VAULT_ADD));

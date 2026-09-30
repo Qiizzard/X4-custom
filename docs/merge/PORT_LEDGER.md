@@ -92,7 +92,7 @@ coherent, working subset.
 | Etch-A-Sketch | `wip` | P2 source port: 4800-byte logical drawing, checked BMP export. Full tests deferred. |
 | Barcode Generator | `wip` | Code 128B/Code 39/EAN-13 source port with bounded input. Compile sanity only; full validation deferred. |
 | Key Copier | `wip` | Reference charts only, exposed as Key Bitting Charts. No key capture/import/save or calibrated dimensions. Validation deferred. |
-| WiFi QR Share | `todo` | Renders a stored password as a QR. Confirm the vault gate before it can. |
+| WiFi QR Share | `wip` | Read-only authenticated real password vault; username = SSID, explicit 10s QR reveal with WPA/WEP/open encoding, existing idle/recovery gates. No stored-network credential bypass. Phone/crypto/device validation deferred. |
 | File Browser | `base` | Existing FileBrowserActivity registered in Tools during P2; preserves base book-browser behavior. New launcher route awaits V1 interaction checks. |
 
 ## Games

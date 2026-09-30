@@ -8,7 +8,7 @@
 
 class PasswordManagerActivity final : public Activity {
  public:
-  enum class Mode { Passwords, Authenticator, TotpQr, Duress, DecoySetup };
+  enum class Mode { Passwords, Authenticator, TotpQr, WifiQr, Duress, DecoySetup };
   PasswordManagerActivity(GfxRenderer& renderer, MappedInputManager& input, Mode mode = Mode::Passwords)
       : Activity("SecureVault", renderer, input), mode(mode) {}
   ~PasswordManagerActivity() override;
@@ -38,6 +38,8 @@ class PasswordManagerActivity final : public Activity {
   const char* previousPath() const;
   bool unlockTotp();
   void refreshCode();
+  void refreshWifiQr();
+  unsigned wifiAuth = 0;
   Screen screen = Screen::Locked;
   Input inputStep = Input::Unlock;
   PasswordRecords records;

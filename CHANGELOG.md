@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- WiFi QR Share (2026-09-30): read-only authenticated vault records, explicit
+  ten-second reveal and WPA/WEP/open encoding. Username supplies SSID; no
+  saved-network credential access. Phone/device/security checks deferred.
+
 - Transit Alert (2026-09-30): saved bounded Wi-Fi fingerprints and timed
   passive monitoring with a visual similarity hint. No arrival guarantee,
   background alert or GPS; device/SD/radio validation deferred.

@@ -59,11 +59,11 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
-| P7 | in progress | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Mesh Chat direct transport, peer discovery and opt-in relay integrated (wip). Bulletin Board and small-file Dead Drop bounded AP/server integrated (wip). Remaining approved comms and settings features; skip unresolved BLE/hardware/product choices and record them briefly. |
-| V1 | deferred until ports finish | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
+| P7 | actionable implementation complete; validation pending | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Mesh Chat direct transport, peer discovery and opt-in relay integrated (wip). Bulletin Board and small-file Dead Drop bounded AP/server integrated (wip). Authenticated WiFi QR Share integrated (wip). Remaining entries have documented BLE/hardware/product gates. |
+| V1 | active | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Start with the real source in ../biscuit-reference. P7 approved remaining ports are next; skip the documented P6 dataset/composite/BLE gates.
+Approved actionable source ports are integrated. Continue V1 consolidated validation and fixes; skip documented product/dataset/composite/BLE gates.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -926,3 +926,12 @@ this schedule does not declare them completed or permanently blocked.
   firmware-builds/logs/2026-09-30-transit-c3.log. Initial usage 0% five-hour,
   58% weekly; no active overlapping repo task observed. Unrelated files
   preserved; no flashing/partition changes. Next: authenticated WiFi QR Share.
+
+- 2026-09-30 P7 WiFi QR Share: authenticated real-vault read-only mode,
+  explicit 10s reveal, auth picker and escaped bounded payload using existing
+  buffers. C3 compile PASS (151.70s), image 6,546,912 bytes; 6,688 bytes
+  OTA headroom below reserve. Phone/security/device checks deferred. Log:
+  firmware-builds/logs/2026-09-30-wifi-qr-c3.log. Actionable ports now source
+  complete; V1 started. Initial simulator compile found missing mbedTLS headers
+  in vault/TOTP integration; fixing real native crypto linkage next. No fake
+  crypto or test pass claimed. Host suite configuring in fresh native directory.

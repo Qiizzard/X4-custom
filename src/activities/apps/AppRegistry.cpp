@@ -73,6 +73,9 @@ std::unique_ptr<Activity> makeMonitor(GfxRenderer& renderer, MappedInputManager&
 std::unique_ptr<Activity> makeAuthenticator(GfxRenderer& renderer, MappedInputManager& input) {
   return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::Authenticator);
 }
+std::unique_ptr<Activity> makeWifiQr(GfxRenderer& renderer, MappedInputManager& input) {
+  return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::WifiQr);
+}
 std::unique_ptr<Activity> makeTotpQr(GfxRenderer& renderer, MappedInputManager& input) {
   return makeUniqueNoThrow<PasswordManagerActivity>(renderer, input, PasswordManagerActivity::Mode::TotpQr);
 }
@@ -136,6 +139,7 @@ constexpr AppEntry kApps[] = {
 
     {AppCategory::Tools, StrId::STR_TOTP_APP, &makeAuthenticator},
     {AppCategory::Tools, StrId::STR_TOTP_QR_APP, &makeTotpQr},
+    {AppCategory::Tools, StrId::STR_WIFI_QR_APP, &makeWifiQr},
 
     {AppCategory::Tools, StrId::STR_STEGO_APP, &makeApp<StegoNotesActivity>},
 
