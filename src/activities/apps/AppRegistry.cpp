@@ -44,6 +44,7 @@
 #include "sudoku/SudokuActivity.h"
 #include "task_manager/TaskManagerActivity.h"
 #include "tetris/TetrisActivity.h"
+#include "transit_alert/TransitAlertActivity.h"
 #include "unit_converter/UnitConverterActivity.h"
 #include "vault_delete/VaultDeleteActivity.h"
 #include "voronoi/VoronoiActivity.h"
@@ -129,6 +130,7 @@ constexpr AppEntry kApps[] = {
     {AppCategory::Tools, StrId::STR_APP_FLASHCARDS, &makeApp<FlashcardActivity>},
 
     {AppCategory::Tools, StrId::STR_APP_HABITS, &makeApp<HabitTrackerActivity>},
+    {AppCategory::Tools, StrId::STR_TRANSIT_APP, &makeApp<TransitAlertActivity>},
 
     {AppCategory::Tools, StrId::STR_VAULT_APP, &makeApp<PasswordManagerActivity>},
 

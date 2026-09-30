@@ -83,7 +83,7 @@ coherent, working subset.
 | Habit Tracker | `wip` | Explicit sessions, fixed habits and alternating checked saves; full validation deferred. |
 | Breadcrumb Trail | `todo` | No GPS on this hardware — decide what it actually records before porting. |
 | Vehicle Finder | `todo` | Same. |
-| Transit Alert | `todo` | Now actionable: reference uses saved BSSID fingerprints, not a transit API/GPS. Owned passive scan infrastructure is available; port bounded matching with explicit location/arrival uncertainty. |
+| Transit Alert | `wip` | 32 checked immutable stop records, owned passive top-five fingerprint matching, timed foreground visual hints. No arrival/GPS claim; SD/RF/lifecycle validation deferred. |
 
 ## Tools → Creative
 

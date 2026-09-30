@@ -7,6 +7,10 @@ base is MIT.
 
 ### Added
 
+- Transit Alert (2026-09-30): saved bounded Wi-Fi fingerprints and timed
+  passive monitoring with a visual similarity hint. No arrival guarantee,
+  background alert or GPS; device/SD/radio validation deferred.
+
 - Small-file Dead Drop (2026-09-30): timed password-protected AP for
   exclusive 4 KiB uploads and numbered downloads in a dedicated SD folder.
   32 slots, no overwrite or automatic deletion; device tests deferred.

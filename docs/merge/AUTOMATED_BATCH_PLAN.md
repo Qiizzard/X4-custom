@@ -55,7 +55,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 |---|---|---|
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
-| P3 | Transit Alert now actionable; other validation deferred | Event Logger, Flashcards and Habit Tracker integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices; Transit Alert is now actionable using the owned passive scanner. |
+| P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards, Habit Tracker and bounded Transit Alert integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices. |
 | P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
@@ -918,3 +918,11 @@ this schedule does not declare them completed or permanently blocked.
   Next: revisit P3 Transit Alert (reference BSSID matching is now unblocked by
   owned scanning), then WiFi QR vault gating and remaining scope decisions
   before V1. Do not pause: actionable source/validation work remains.
+
+- 2026-09-30 P3 Transit Alert: fixed 32 checked stop records and owned passive
+  top-five matching, 15s scans/30min foreground limit, visual uncertainty
+  disclosure. C3 compile PASS (144.45s), image 6,544,640 bytes; 8,960 bytes
+  OTA headroom below reserve. SD/RF/device tests deferred. Log:
+  firmware-builds/logs/2026-09-30-transit-c3.log. Initial usage 0% five-hour,
+  58% weekly; no active overlapping repo task observed. Unrelated files
+  preserved; no flashing/partition changes. Next: authenticated WiFi QR Share.
