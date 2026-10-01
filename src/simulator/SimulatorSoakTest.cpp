@@ -42,6 +42,12 @@ struct SoakAppLookup {
 };
 
 constexpr SoakAppLookup kSoakApps[] = {
+    {"snake", StrId::STR_APP_SNAKE},
+    {"minesweeper", StrId::STR_APP_MINESWEEPER},
+    {"tetris", StrId::STR_APP_TETRIS},
+    {"sudoku", StrId::STR_APP_SUDOKU},
+    {"maze", StrId::STR_APP_MAZE},
+
     {"qr_generator", StrId::STR_APP_QR_GENERATOR},
     {"cipher", StrId::STR_APP_CIPHER},
     {"otp_generator", StrId::STR_APP_OTP_GENERATOR},

@@ -948,3 +948,11 @@ this schedule does not declare them completed or permanently blocked.
   6,688 bytes spare. Registry smoke + five 50-cycle/600000-ms entry
   soaks started; no PASS yet. See V1 record/logs before rerunning. No device,
   flash/partition actions or inferred runtime-memory gate passes.
+
+- 2026-10-01 V1 continuation: prior registry/reader smoke and all five full
+  entry-screen soaks PASS (Casino, Chess, FileCrypto, Transit, WiFi QR); locked/
+  unavailable screens are not functional crypto/RF coverage. Expanded real-crypto
+  storage-fault and loopback HTTP tests: all 263 host cases PASS. P1 game soak
+  selectors compile PASS; five new soaks running, not yet passed. Logs/details
+  in verification/V1_2026-09-30.md. Usage initially 0% five-hour/74% weekly;
+  unrelated files preserved, no overlapping manual repo task observed.

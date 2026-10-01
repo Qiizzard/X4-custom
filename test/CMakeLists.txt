@@ -57,3 +57,7 @@ add_subdirectory(unit_conversion)
 add_subdirectory(cipher)
 
 add_subdirectory(vault_records)
+
+add_subdirectory(encrypted_files)
+
+add_subdirectory(local_share)
