@@ -12,11 +12,13 @@
 #   tier             : c3 (must fit the base X4, enforced) | psram (X4 Pro only).
 #
 # Numbers below are first-pass estimates -- replace with measured values before
-# each app ships. The gate is only as honest as this file.
+# each app ships. Object sizes tagged 2026-10-01 are compiled C3 DWARF values;
+# transient/static budgets remain estimates. Recent ports are still missing rows.
+# The gate is only as honest and complete as this file.
 #
 # WHAT A "PASS" HERE MEANS: that the *declared* budget fits the ceiling. It does
 # NOT mean the app exists. Most entries below were declared ahead of the port and
-# the app is not in the tree yet -- see docs/merge/PORT_LEDGER.md for what has
+# some apps are not in the tree yet -- see docs/merge/PORT_LEDGER.md for what has
 # actually landed. Keep declaring budgets up front (it is the cheapest moment to
 # notice an app will not fit), but do not read a green gate as a shipped app.
 #
@@ -34,89 +36,89 @@ apps:
   - name: Calculator          # ported by v1, moved into src/ and re-audited; measured sizeof
     tier: c3
     static_bytes: 0
-    object_bytes: 584
+    object_bytes: 584  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
 
   - name: UnitConverter       # ported; nested vectors -> constexpr tables in flash; measured sizeof
     tier: c3
     static_bytes: 0
-    object_bytes: 616
+    object_bytes: 616  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 512
 
   - name: Snake                 # wip; fixed-capacity body allocation
     tier: c3
     static_bytes: 128
-    object_bytes: 512           # conservative estimate, runtime validation deferred
+    object_bytes: 288  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 6144       # fixed 1536 * 4-byte body storage
 
   - name: Minesweeper           # wip; fixed grid and bounded local reveal queue
     tier: c3
     static_bytes: 128
-    object_bytes: 512           # grid[10][16] in-object
+    object_bytes: 428  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 512
 
   - name: Sudoku                # wip; iterative solver, bounded generation
     tier: c3
     static_bytes: 128
-    object_bytes: 768           # conservative estimate incl. solver arrays; runtime checks deferred
+    object_bytes: 580  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
 
   - name: AppLauncher           # the tile grid; one instance per level (root, category)
     tier: c3
     static_bytes: 0             # the app table is constexpr -> flash, 0 DRAM
-    object_bytes: 2628          # dominated by FreeInkApp<32,4>'s interaction buffer
+    object_bytes: 2628  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 1024       # ListItem vector, reserved to the row count
 
   # ---- Batch 2 (safe tier, no radio) ----
   - name: DiceRoller          # ported; vector -> fixed array, esp_random -> xorshift; measured sizeof
     tier: c3
     static_bytes: 0
-    object_bytes: 260
+    object_bytes: 260  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
   - name: Countdown           # ported; repaint gated on the seconds digit; measured sizeof
     tier: c3
     static_bytes: 0
-    object_bytes: 252
+    object_bytes: 252  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
   - name: MorseCode           # ported; std::string build -> caller buffers; measured sizeof
     tier: c3
     static_bytes: 0
-    object_bytes: 680
+    object_bytes: 680  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 512
   - name: Cipher                # ported; std::string -> Cipher.h pure functions on char[]; 16 host tests
     tier: c3
     static_bytes: 0              # no static/global members, same as every other ported app
-    object_bytes: 664  # measured C3 factory allocation, 2026-09-05
+    object_bytes: 664  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 1024       # unverified shared-keyboard peak; see batch 3 evidence
   - name: OtpGenerator          # ported; esp_random -> mbedtls_ctr_drbg (hardware only; simulator reports unavailable)
     tier: c3
     static_bytes: 0
-    object_bytes: 832  # measured C3 factory allocation, 2026-09-05
+    object_bytes: 832  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 256        # unverified hardware crypto-context peak; see batch 4 evidence
   - name: QrGenerator            # ported; reuses existing src/util/QrUtils.h, no new QR implementation
     tier: c3
     static_bytes: 0
-    object_bytes: 488  # measured C3 factory allocation, 2026-09-05
+    object_bytes: 488  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 4096       # unverified estimate incl. shared keyboard; see batch 2 evidence
   - name: Barcode              # wip; fixed payload, shared keyboard
     tier: c3
     static_bytes: 0
-    object_bytes: 512          # conservative estimate
+    object_bytes: 292  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 4096      # shared keyboard transient estimate; V1 measurement pending
   - name: Tetris
     tier: c3
     static_bytes: 128
-    object_bytes: 512           # board in-object
+    object_bytes: 484  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
   - name: Maze                # wip; one fallible lifecycle Storage allocation
     tier: c3
     static_bytes: 128
-    object_bytes: 512          # conservative estimate
+    object_bytes: 320  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 12302     # grid + visited + parents + shared work buffer
   - name: GameOfLife
     tier: c3
     static_bytes: 128
-    object_bytes: 252  # measured C3 factory allocation, 2026-09-05
+    object_bytes: 252  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 2048       # cell grid (double-buffered)
 
   - name: Clock                  # ported; offline-only against HalClock (no WiFi/NTP in the app itself,
@@ -125,32 +127,32 @@ apps:
                                   # the smoke test exercises the "no RTC" fallback path, not the happy path.
     tier: c3
     static_bytes: 0
-    object_bytes: 312  # measured C3 factory allocation, 2026-09-05
+    object_bytes: 312  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
 
   # ---- Phase 3 recon tier (forward-looking examples; radio, capped buffers) ----
   - name: WifiScanner           # ported (radio tier), capped at MAX_NETWORKS=40 via RADIO
     tier: c3
     static_bytes: 512
-    object_bytes: 2048
-    peak_heap_bytes: 16384      # 40 entries * (2 std::string + fields); shrink with char[]
+    object_bytes: 2108  # compiled C3 DWARF, 2026-10-01; excludes other allocations
+    peak_heap_bytes: 16384      # retained conservative SDK-scan estimate; app now uses fixed arrays
 
-  - name: BleScanner            # ported; devices capped 50, services capped 32 (MEM-008 fix)
+  - name: BleScanner            # BLOCKED: forward estimate only; no BLE port or stack is enabled
     tier: c3
     static_bytes: 512
     object_bytes: 2048
     peak_heap_bytes: 24576      # capped device/service/char lists
-  - name: PacketMonitor         # ported; ISR-safe (callback -> RingBuffer -> loop), snap 256
+  - name: PacketMonitor         # wip PassiveMonitorActivity; bounded callback queue / metadata
     tier: c3
     static_bytes: 512
-    object_bytes: 9216          # macTable[256]*8 (2KB) + pcapQueue 24*260 (6.2KB) in-object
+    object_bytes: 7016  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 2048       # PCAP streams to SD, not buffered in RAM
 
   # ---- Comms tier ----
-  - name: MeshChat              # ported; fixed message ring + peers.reserve(20) (no callback alloc)
+  - name: MeshChat              # wip; fixed messages, peers and callback/relay queues
     tier: c3
     static_bytes: 256
-    object_bytes: 6144          # messages[20]*(name+text) + peers[20] fixed/reserved
+    object_bytes: 4904  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 1024
 
   # ---- Defense tier ----
@@ -174,29 +176,29 @@ apps:
   - name: EtchASketch          # wip; lower-resolution logical drawing, no extra display framebuffer
     tier: c3
     static_bytes: 0
-    object_bytes: 512          # conservative estimate; runtime validation deferred
+    object_bytes: 260  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 5824      # 4800 drawing + 1024 estimated HAL file transient
 
   - name: KeyCopier            # wip; charts only, flash metadata
     tier: c3
     static_bytes: 0
-    object_bytes: 384          # conservative estimate
+    object_bytes: 232  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 0
 
   - name: EventLogger         # wip; bounded recent-entry ring
     tier: c3
     static_bytes: 0
-    object_bytes: 512         # conservative estimate
+    object_bytes: 248  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 14792    # 6600 ring + 8192 estimated keyboard/HAL transient
 
   - name: Flashcards          # wip; fixed 32 cards and 16 names
     tier: c3
     static_bytes: 0
-    object_bytes: 512         # conservative estimate
+    object_bytes: 256  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 10756    # 9732 deck buffers + 1024 estimated HAL transient
 
   - name: HabitTracker        # wip; fixed habits plus encoded record in object
     tier: c3
     static_bytes: 0
-    object_bytes: 1536        # conservative estimate
+    object_bytes: 1128  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 8192     # estimated shared keyboard/HAL transient, unverified

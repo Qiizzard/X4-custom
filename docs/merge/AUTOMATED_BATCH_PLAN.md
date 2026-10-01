@@ -956,3 +956,9 @@ this schedule does not declare them completed or permanently blocked.
   selectors compile PASS; five new soaks running, not yet passed. Logs/details
   in verification/V1_2026-09-30.md. Usage initially 0% five-hour/74% weekly;
   unrelated files preserved, no overlapping manual repo task observed.
+
+- 2026-10-01 V1 resource checkpoint: extracted 45 actual C3 activity object
+  sizes from per-activity DWARF (ELF hash retained), replaced existing manifest
+  object estimates, and clarified declared-model PASS wording. Static/transient
+  peaks and missing manifest entries remain unverified; no memory-gain claim.
+  Budget self-tests PASS. Sanitizer tests and P1 full entry soaks in progress.

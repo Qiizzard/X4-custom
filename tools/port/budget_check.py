@@ -154,7 +154,7 @@ def print_report(s: dict) -> None:
               f"{human(r['transient']):>10}{human(r['headroom']):>11}  {r['status']}")
     print(bar)
     if s["ok"]:
-        print("  RESULT: PASS -- every c3 app fits under the ceiling.\n")
+        print("  RESULT: PASS -- declared c3 entries fit the model; coverage and runtime peaks are not verified.\n")
     else:
         print("  RESULT: FAIL -- one or more c3 apps blow the budget.")
         print("          Shrink them, or move them to `tier: psram` (X4 Pro).\n")
