@@ -962,3 +962,10 @@ this schedule does not declare them completed or permanently blocked.
   object estimates, and clarified declared-model PASS wording. Static/transient
   peaks and missing manifest entries remain unverified; no memory-gain claim.
   Budget self-tests PASS. Sanitizer tests and P1 full entry soaks in progress.
+
+- 2026-10-01 08:47 UTC resumed checkpoint: WiFi QR output bounds helper and
+  three regression cases verified; 266 host cases PASS, 20 targeted sanitizer
+  cases PASS across two runs. C3 PASS (195.33s), simulator PASS (102.43s),
+  image 6,546,976 bytes / 6,624 OTA spare. Five P1 full lifecycle
+  soaks verified PASS; gameplay/device/resource gaps remain. Continue V1,
+  not P1 implementation. Usage 19% five-hour/92% weekly; no old deferral applied.

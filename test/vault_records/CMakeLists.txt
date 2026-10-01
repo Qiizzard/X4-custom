@@ -1,5 +1,6 @@
 add_executable(VaultRecordsTest
   VaultRecordsTest.cpp
+  ${REPO_ROOT}/src/activities/apps/secure_vault/WifiQrPayload.cpp
   ${REPO_ROOT}/src/activities/apps/secure_vault/PasswordRecords.cpp
   ${REPO_ROOT}/src/activities/apps/secure_vault/Totp.cpp
   ${REPO_ROOT}/lib/SecureStore/SecureStore.cpp)

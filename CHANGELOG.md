@@ -7,6 +7,9 @@ base is MIT.
 
 ### Fixed
 
+- WiFi QR payload bounds (2026-10-01): check available output space while
+  escaping credentials and clear partial output on failure; added boundary tests.
+
 - Native simulator crypto integration (2026-09-30): link real pinned host
   mbedTLS for vault/TOTP code; verified NTP time remains explicitly unavailable
   where the simulator HAL lacks it. Device crypto is unchanged.

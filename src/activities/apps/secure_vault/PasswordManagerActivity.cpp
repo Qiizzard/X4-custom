@@ -13,6 +13,7 @@
 
 #include "EncryptedVaultFile.h"
 #include "SecretEntryActivity.h"
+#include "WifiQrPayload.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -51,34 +52,13 @@ void PasswordManagerActivity::refreshWifiQr() {
   securestore::secureZero(scratch, sizeof(scratch));
   if (!reveal) return;
   const auto* record = records.at(selected);
-  if (!record || !record->username[0] || strlen(record->username) > 32 || (wifiAuth != 2 && !record->password[0])) {
-    LOG_ERR("WiFiQR", "Record needs a 1-32 byte SSID and a password for protected modes");
-    return;
-  }
-  // Reuse existing vault scratch: <=208 escaped bytes + NUL. QR v9-L fits
-  // 230 byte-mode bytes; the matrix fits the otherwise-idle encoded buffer.
+  // Reuse existing vault buffers; v9-L fits the maximum 208-byte payload.
   char* payload = reinterpret_cast<char*>(scratch);
-  size_t length = 0;
-  auto append = [&](const char* text, bool escape) {
-    while (*text) {
-      const char c = *text++;
-      if (escape && (c == '\\' || c == ';' || c == ',' || c == '"' || c == ':')) payload[length++] = '\\';
-      payload[length++] = c;
-    }
-    payload[length] = 0;
-  };
-  append("WIFI:T:", false);
-  append(wifiAuth == 0 ? "WPA" : wifiAuth == 1 ? "WEP" : "nopass", false);
-  append(";S:", false);
-  append(record->username, true);
-  append(";P:", false);
-  if (wifiAuth != 2) append(record->password, true);
-  append(";;", false);
-  if (length <= 230 && qrcode_getBufferSize(9) <= sizeof(encoded) &&
-      qrcode_initText(&qr, encoded, 9, ECC_LOW, payload) == 0)
+  if (record && buildWifiQrPayload(record->username, record->password, wifiAuth, payload, sizeof(scratch)) &&
+      qrcode_getBufferSize(9) <= sizeof(encoded) && qrcode_initText(&qr, encoded, 9, ECC_LOW, payload) == 0)
     codeValid = true;
   else {
-    LOG_ERR("WiFiQR", "QR encoding failed");
+    LOG_ERR("WiFiQR", "Invalid record or QR encoding failed");
     securestore::secureZero(encoded, sizeof(encoded));
   }
   securestore::secureZero(scratch, sizeof(scratch));

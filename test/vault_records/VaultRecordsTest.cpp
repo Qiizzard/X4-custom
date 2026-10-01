@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <string>
 
 #include "PasswordRecords.h"
 #include "Totp.h"
+#include "WifiQrPayload.h"
 
 TEST(VaultRecords, CapacityRoundTripAndAliasedEdit) {
   PasswordRecords records;
@@ -105,4 +107,34 @@ TEST(Totp, RejectsInvalidBase32AndHandlesCanonicalCase) {
   EXPECT_FALSE(Totp::validSeed("A"));
   EXPECT_FALSE(Totp::validSeed("AAAAAAAAAAAAAAAAAB"));  // nonzero unused tail bits
   EXPECT_TRUE(Totp::validSeed("AAAAAAAAAAAAAAAAAA"));
+}
+
+TEST(WifiQrPayload, DelimitersAreEscapedAndOpenOmitsPassword) {
+  char output[209];
+  ASSERT_TRUE(buildWifiQrPayload("a;b,c:d\"e\\f", "p;\\", 0, output, sizeof(output)));
+  EXPECT_STREQ(output, "WIFI:T:WPA;S:a\\;b\\,c\\:d\\\"e\\\\f;P:p\\;\\\\;;");
+  ASSERT_TRUE(buildWifiQrPayload("ssid", "top secret", 2, output, sizeof(output)));
+  EXPECT_STREQ(output, "WIFI:T:nopass;S:ssid;P:;;");
+  ASSERT_TRUE(buildWifiQrPayload("ssid", "abcde", 1, output, sizeof(output)));
+  EXPECT_STREQ(output, "WIFI:T:WEP;S:ssid;P:abcde;;");
+}
+TEST(WifiQrPayload, MaximumEscapedPayloadFitsAndShortOutputWipes) {
+  const std::string ssid(32, '\\'), password(63, '\\');
+  std::array<char, 209> output{};
+  ASSERT_TRUE(buildWifiQrPayload(ssid.c_str(), password.c_str(), 0, output.data(), output.size()));
+  EXPECT_EQ(strlen(output.data()), 208u);
+  std::array<char, 208> shortOutput{};
+  EXPECT_FALSE(buildWifiQrPayload(ssid.c_str(), password.c_str(), 0, shortOutput.data(), shortOutput.size()));
+  EXPECT_TRUE(std::all_of(shortOutput.begin(), shortOutput.end(), [](char c) { return c == 0; }));
+}
+TEST(WifiQrPayload, RejectsInvalidBoundsAndAuthWithoutPartialSecret) {
+  char output[209];
+  const std::string longSsid(33, 's'), longPassword(64, 'p');
+  EXPECT_FALSE(buildWifiQrPayload(longSsid.c_str(), "password", 0, output, sizeof(output)));
+  EXPECT_FALSE(buildWifiQrPayload("ssid", longPassword.c_str(), 0, output, sizeof(output)));
+  EXPECT_FALSE(buildWifiQrPayload("", "password", 0, output, sizeof(output)));
+  EXPECT_FALSE(buildWifiQrPayload("ssid", "", 0, output, sizeof(output)));
+  EXPECT_FALSE(buildWifiQrPayload("ssid", "password", 3, output, sizeof(output)));
+  EXPECT_TRUE(std::all_of(std::begin(output), std::end(output), [](char c) { return c == 0; }));
+  EXPECT_TRUE(buildWifiQrPayload("ssid", nullptr, 2, output, sizeof(output)));
 }
