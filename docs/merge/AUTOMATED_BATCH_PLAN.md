@@ -975,3 +975,9 @@ this schedule does not declare them completed or permanently blocked.
   boards. Build PASS (56.24s), runtime explicit PASS/exit 0. No gameplay code
   changed. Next V1: deeper remaining game/UI workflows and remaining lifecycle/
   resource coverage; do not repeat completed host suites without new changes.
+
+- 2026-10-01 V1 Chess logic: actual opening moves, pin/king safety, pawn
+  attacks, queen promotion, mate/stalemate checks PASS; combined Sudoku rerun
+  PASS. Simulator compile 4.96s. Only simulator test access/harness changed.
+  Continue remaining V1 workflows/resources; source implementation remains
+  complete for actionable ports, hardware/product gates remain open.

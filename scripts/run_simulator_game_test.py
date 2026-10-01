@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run production Sudoku generator/solver checks in a disposable simulator filesystem."""
+"""Run production Sudoku and Chess logic checks in a disposable simulator filesystem."""
 import argparse
 import os
 from pathlib import Path
@@ -33,8 +33,8 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and MARKER in text
-    print(f"{'PASS' if ok else 'FAIL'}: Sudoku production logic, exit {result.returncode}; {args.log}")
+    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text
+    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess production logic, exit {result.returncode}; {args.log}")
     return 0 if ok else 1
 
 

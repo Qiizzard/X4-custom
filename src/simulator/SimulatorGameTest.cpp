@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 extern GfxRenderer renderer;
 extern MappedInputManager mappedInputManager;
@@ -26,8 +27,61 @@ class SimulatorGameTest {
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
   }
 
+  static void chess() {
+    ChessActivity game(renderer, mappedInputManager);
+    game.initBoard();
+    unsigned moves = 0;
+    for (int r = 0; r < 8; ++r)
+      for (int c = 0; c < 8; ++c) {
+        if (!game.isOwnPiece(game.board[r][c])) continue;
+        game.computeValidMoves(r, c);
+        moves += game.validMoves.used;
+      }
+    require(moves == 20, "Chess initial legal move count differs");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[7][4] = ChessActivity::W_KING;
+    game.board[6][4] = ChessActivity::W_ROOK;
+    game.board[0][4] = ChessActivity::B_ROOK;
+    game.board[0][0] = ChessActivity::B_KING;
+    require(game.wouldBeInCheck(6, 4, 6, 5), "Pinned rook exposes king");
+    require(!game.wouldBeInCheck(6, 4, 5, 4), "Pinned rook may stay on pin line");
+    require(game.board[6][4] == ChessActivity::W_ROOK && game.board[6][5] == ChessActivity::EMPTY,
+            "Legality probe modified board");
+    require(game.wouldBeInCheck(6, 4, 0, 0), "King capture allowed");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[7][4] = ChessActivity::W_KING;
+    game.board[5][4] = ChessActivity::B_KING;
+    require(game.wouldBeInCheck(7, 4, 6, 4), "Kings may not become adjacent");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[6][4] = ChessActivity::W_KING;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[4][3] = ChessActivity::B_PAWN;
+    require(game.wouldBeInCheck(6, 4, 5, 4), "Pawn diagonal attack missed");
+    require(!game.wouldBeInCheck(6, 4, 5, 3), "Pawn forward move treated as capture");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[7][4] = ChessActivity::W_KING;
+    game.board[0][7] = ChessActivity::B_KING;
+    game.board[1][0] = ChessActivity::W_PAWN;
+    game.doMove(1, 0, 0, 0);
+    require(game.board[0][0] == ChessActivity::W_QUEEN, "Pawn promotion failed");
+    memset(game.board, 0, sizeof(game.board));
+    game.whiteTurn = false;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[2][2] = ChessActivity::W_KING;
+    game.board[1][1] = ChessActivity::W_QUEEN;
+    game.checkGameState();
+    require(game.gameOver && game.inCheck && !game.hasAnyLegalMove(), "Checkmate not detected");
+    game.gameOver = false;
+    game.board[1][1] = ChessActivity::EMPTY;
+    game.board[1][2] = ChessActivity::W_QUEEN;
+    game.checkGameState();
+    require(game.gameOver && !game.inCheck && !game.hasAnyLegalMove(), "Stalemate not detected");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
+  }
+
  public:
   static void run() {
+    chess();
     SudokuActivity game(renderer, mappedInputManager);
     // Fixed small host-only snapshots; no framebuffer or production allocation.
     uint8_t clues[9][9]{};

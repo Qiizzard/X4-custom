@@ -16,6 +16,9 @@ class ChessActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   struct MoveList {
     // A queen has at most 27 pseudo-legal destinations; no recursive search.
     std::pair<int, int> values[28];
