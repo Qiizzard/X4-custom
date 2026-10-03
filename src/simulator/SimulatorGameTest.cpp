@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 extern GfxRenderer renderer;
@@ -81,6 +82,12 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    const uint8_t natural[] = {1, 13}, soft[] = {1, 1, 9}, hard[] = {1, 1, 9, 10}, bust[] = {13, 12, 2};
+    require(CasinoActivity::handValue(natural, 2) == 21, "Blackjack natural value");
+    require(CasinoActivity::handValue(soft, 3) == 21, "Blackjack soft aces");
+    require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
+    require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
     chess();
     SudokuActivity game(renderer, mappedInputManager);
     // Fixed small host-only snapshots; no framebuffer or production allocation.

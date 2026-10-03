@@ -10,6 +10,9 @@ class CasinoActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum class State { Menu, Bet, HighLow, Blackjack, Result, Reset, Collection, SlotOptions, SlotPayout };
   State state = State::Menu;
   unsigned mode = 0, betIndex = 1, choice = 0, number = 0, outcome = 0;

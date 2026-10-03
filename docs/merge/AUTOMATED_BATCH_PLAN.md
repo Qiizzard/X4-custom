@@ -981,3 +981,18 @@ this schedule does not declare them completed or permanently blocked.
   PASS. Simulator compile 4.96s. Only simulator test access/harness changed.
   Continue remaining V1 workflows/resources; source implementation remains
   complete for actionable ports, hardware/product gates remain open.
+
+- 2026-10-01 13:48 UTC wakeup deferred: live account reports actual
+  rate_limit_reached, 100% weekly / 4% five-hour, no paid credits.
+  No reset redeemed. V1 remains active; pending simulator-only Blackjack
+  changes preserved. Prior simulator build PASS (4.80s); runtime not yet
+  verified, so batch not committed/pushed as complete. Resume runtime check
+  and scoped checkpoint when included capacity returns. Five-hour cadence retained.
+
+- 2026-10-03 00:52 UTC V1 resumed with capacity available (4% five-hour,
+  1% weekly). Pending Blackjack hand-value checks PASS: natural, multiple
+  aces, ace demotion and bust; combined Chess/Sudoku checks PASS, exit 0.
+  Prior simulator compile PASS (4.80s). Runtime log:
+  firmware-builds/logs/2026-10-03-v1-blackjack-runtime.log.
+  Simulator-only test access; no shipping gameplay changes. Payouts, controls,
+  device behavior and remaining V1 resource/workflow coverage stay unverified.
