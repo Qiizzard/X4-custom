@@ -996,3 +996,11 @@ this schedule does not declare them completed or permanently blocked.
   firmware-builds/logs/2026-10-03-v1-blackjack-runtime.log.
   Simulator-only test access; no shipping gameplay changes. Payouts, controls,
   device behavior and remaining V1 resource/workflow coverage stay unverified.
+
+- 2026-10-03 05:53 UTC V1 Tetris: production logic checks PASS for 28
+  four-cell rotations, spawn/boundary/occupied-cell collision, 1–4 adjacent
+  line compaction, four-line score/level transition, speed floor and blocked
+  spawn. Combined Sudoku/Chess/Blackjack regression run PASS, exit 0.
+  Simulator build PASS; logs: firmware-builds/logs/2026-10-03-v1-tetris-{build,runtime}.log.
+  Only simulator test access changed; physical controls/rendering and remaining
+  V1 workflow/resource checks remain open. Initial usage 5% five-hour/2% weekly.

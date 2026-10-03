@@ -9,6 +9,7 @@
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
+#include "activities/apps/tetris/TetrisActivity.h"
 extern GfxRenderer renderer;
 extern MappedInputManager mappedInputManager;
 
@@ -26,6 +27,62 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void tetris() {
+    // Native simulator stack only; no shipping allocation changes.
+    TetrisActivity game(renderer, mappedInputManager);
+    for (int piece = 0; piece < 7; ++piece) {
+      for (int rotation = 0; rotation < 4; ++rotation) {
+        unsigned cells = 0;
+        for (int row = 0; row < 4; ++row)
+          for (int col = 0; col < 4; ++col) cells += game.getPieceBit(game.PIECES[piece].shape[rotation], row, col);
+        require(cells == 4, "Tetris rotation must contain four cells");
+        require(game.canPlace(piece, rotation, 3, 0), "Tetris empty-board spawn rejected");
+        require(!game.canPlace(piece, rotation, -4, 0), "Tetris left boundary missed");
+        require(!game.canPlace(piece, rotation, 10, 0), "Tetris right boundary missed");
+        require(!game.canPlace(piece, rotation, 3, 20), "Tetris floor boundary missed");
+      }
+    }
+    game.board[1][3] = 1;
+    require(!game.canPlace(0, 0, 3, 0), "Tetris occupied-cell collision missed");
+    memset(game.board, 0, sizeof(game.board));
+    require(game.clearLines() == 0, "Tetris empty board cleared a line");
+    for (int count = 1; count <= 4; ++count) {
+      memset(game.board, 0, sizeof(game.board));
+      game.board[19 - count][2] = 1;
+      for (int row = 20 - count; row < 20; ++row) memset(game.board[row], 1, 10);
+      require(game.clearLines() == count, "Tetris adjacent line clear count");
+      for (int row = 0; row < 20; ++row)
+        for (int col = 0; col < 10; ++col)
+          require(game.board[row][col] == (row == 19 && col == 2), "Tetris line compaction lost cells");
+    }
+    memset(game.board, 0, sizeof(game.board));
+    for (int row = 16; row < 20; ++row) {
+      memset(game.board[row], 1, 10);
+      game.board[row][5] = 0;
+    }
+    game.currentPiece = 0;
+    game.currentRotation = 1;
+    game.pieceX = 3;
+    game.pieceY = 16;
+    game.linesCleared = 9;
+    game.level = 1;
+    game.score = 0;
+    game.nextPiece = 1;
+    game.step();
+    require(game.score == 800 && game.linesCleared == 13 && game.level == 2,
+            "Tetris four-line score or level transition");
+    require(game.currentPiece == 1 && game.state == TetrisActivity::PLAYING, "Tetris next piece did not spawn");
+    for (const auto& row : game.board)
+      for (auto cell : row) require(cell == 0, "Tetris four-line clear left cells");
+    require(game.getDropInterval() == 730, "Tetris level-two drop interval");
+    game.level = 100;
+    require(game.getDropInterval() == 100, "Tetris drop interval minimum");
+    memset(game.board, 1, sizeof(game.board));
+    game.spawnPiece();
+    require(game.state == TetrisActivity::GAME_OVER, "Tetris blocked spawn must end game");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS tetris shapes collisions lines scoring level spawn");
   }
 
   static void chess() {
@@ -88,6 +145,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    tetris();
     chess();
     SudokuActivity game(renderer, mappedInputManager);
     // Fixed small host-only snapshots; no framebuffer or production allocation.

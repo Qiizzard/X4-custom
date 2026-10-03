@@ -100,10 +100,10 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | Dice Roller | `done` | Fixed array instead of a per-frame `push_back` vector; `esp_random` replaced with an in-object PRNG so it builds for the simulator too. |
-| Snake | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
-| Minesweeper | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
+| Snake | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
+| Minesweeper | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
 | Sudoku | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
-| Tetris | `wip` | Source port integrated in P1; compile sanity only, full validation deferred. |
+| Tetris | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
 | Maze | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
 | Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |
 | Voronoi | `wip` | Fixed 6,000-byte nearest-cell cache plus 40 points; at most 240,000 distance comparisons per explicit regeneration, no animation. Runtime safe-area layout in both orientations. C3 timing/display/heap validation deferred. |

@@ -18,6 +18,9 @@ class TetrisActivity final : public Activity {
   bool preventAutoSleep() override { return true; }
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   // Game randomness only; never use this generator for secrets.
   uint32_t rngState = 1;
   uint32_t nextRandom() {
