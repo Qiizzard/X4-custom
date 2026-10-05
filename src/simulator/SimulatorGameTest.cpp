@@ -8,6 +8,7 @@
 
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
+#include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
 extern GfxRenderer renderer;
@@ -27,6 +28,61 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void minesweeper() {
+    // Native-only activity on the host stack; production storage is unchanged.
+    MinesweeperActivity game(renderer, mappedInputManager);
+    for (int difficulty = 0; difficulty < 3; ++difficulty) {
+      game.cols = difficulty == 0 ? 8 : 10;
+      game.rows = difficulty == 0 ? 12 : 16;
+      game.mineCount = difficulty == 0 ? 10 : difficulty == 1 ? 25 : 40;
+      for (unsigned seed = 1; seed <= 32; ++seed) {
+        game.rngState = seed;
+        game.initGame();
+        const int sx = seed % game.cols, sy = seed % game.rows;
+        game.placeMines(sx, sy);
+        unsigned mines = 0;
+        for (int x = 0; x < game.cols; ++x) {
+          for (int y = 0; y < game.rows; ++y) {
+            if (game.isMine(x, y)) {
+              ++mines;
+              require(abs(x - sx) > 1 || abs(y - sy) > 1, "Minesweeper first-reveal safety");
+            } else {
+              unsigned adjacent = 0;
+              for (int mx = 0; mx < game.cols; ++mx)
+                for (int my = 0; my < game.rows; ++my)
+                  if (game.isMine(mx, my) && abs(mx - x) <= 1 && abs(my - y) <= 1) ++adjacent;
+              require(game.getCellValue(x, y) == adjacent, "Minesweeper adjacent count");
+            }
+          }
+        }
+        require(mines == static_cast<unsigned>(game.mineCount), "Minesweeper mine count");
+        require(!game.checkWin(), "Minesweeper unopened board won");
+        game.reveal(sx, sy);
+        for (int x = 0; x < game.cols; ++x)
+          for (int y = 0; y < game.rows; ++y) {
+            require(!game.isMine(x, y) || !game.isRevealed(x, y), "Minesweeper flood revealed mine");
+            if (!game.isMine(x, y)) game.reveal(x, y);
+          }
+        require(game.checkWin(), "Minesweeper revealed safe cells not won");
+      }
+    }
+    game.initGame();
+    game.grid[0][0] = MinesweeperActivity::FLAGGED;
+    game.reveal(-1, 0);
+    game.reveal(game.cols, game.rows);
+    game.reveal(0, 0);
+    require(!game.isRevealed(0, 0), "Minesweeper direct reveal ignored flag");
+    game.reveal(5, 5);
+    for (int x = 0; x < game.cols; ++x)
+      for (int y = 0; y < game.rows; ++y)
+        require(game.isRevealed(x, y) == (x != 0 || y != 0), "Minesweeper full flood or flag protection");
+    require(!game.checkWin(), "Minesweeper flagged safe cell counted as revealed");
+    game.grid[0][0] &= ~MinesweeperActivity::FLAGGED;
+    game.reveal(0, 0);
+    require(game.checkWin(), "Minesweeper empty-board reveal incomplete");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS minesweeper boards=96 counts safety flood flags win");
   }
 
   static void tetris() {
@@ -145,6 +201,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    minesweeper();
     tetris();
     chess();
     SudokuActivity game(renderer, mappedInputManager);
