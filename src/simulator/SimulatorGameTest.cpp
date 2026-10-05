@@ -11,6 +11,7 @@
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
+#include "activities/apps/snake/SnakeActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
 extern GfxRenderer renderer;
@@ -30,6 +31,59 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void snake() {
+    SnakeActivity game(renderer, mappedInputManager);
+    game.snake = makeUniqueNoThrow<SnakeActivity::Point[]>(game.MAX_CELLS);
+    require(bool(game.snake), "Snake test allocation");
+    game.gridW = 32;
+    game.gridH = 48;
+    game.snakeLength = 3;
+    game.snake[0] = {3, 2};
+    game.snake[1] = {2, 2};
+    game.snake[2] = {1, 2};
+    game.food = {10, 10};
+    game.step();
+    require(game.snakeLength == 3 && game.snake[0].x == 4 && game.snake[2].x == 2 && game.score == 0,
+            "Snake ordinary movement");
+    game.food = {5, 2};
+    game.step();
+    require(game.snakeLength == 4 && game.snake[0].x == 5 && game.snake[3].x == 2 && game.score == 10,
+            "Snake growth score or retained tail");
+    require(!game.isSnakeAt(game.food.x, game.food.y), "Snake food overlaps body");
+    game.snake[0] = {1, 1};
+    game.snake[1] = {1, 2};
+    game.snake[2] = {0, 2};
+    game.snake[3] = {0, 1};
+    game.nextDirX = -1;
+    game.food = {10, 10};
+    game.step();
+    require(game.state == SnakeActivity::PLAYING && game.snake[0].x == 0, "Snake moving-tail collision");
+    game.step();
+    require(game.state == SnakeActivity::GAME_OVER, "Snake wall collision");
+    game.state = SnakeActivity::PLAYING;
+    game.snake[0] = {1, 1};
+    game.snake[1] = {1, 2};
+    game.snake[2] = {0, 2};
+    game.snake[3] = {0, 1};
+    game.nextDirX = 0;
+    game.nextDirY = 1;
+    game.step();
+    require(game.state == SnakeActivity::GAME_OVER && game.snake[0].y == 1, "Snake body collision");
+    game.state = SnakeActivity::PLAYING;
+    game.snakeLength = game.MAX_CELLS - 1;
+    for (int i = 0; i < game.snakeLength; ++i)
+      game.snake[i] = {static_cast<int16_t>(i % 32), static_cast<int16_t>(i / 32)};
+    for (unsigned seed = 1; seed <= 32; ++seed) {
+      game.rngState = seed;
+      game.spawnFood();
+      require(game.food.x == 31 && game.food.y == 47, "Snake final free food cell");
+    }
+    game.snake[game.snakeLength++] = {31, 47};
+    game.spawnFood();
+    require(game.state == SnakeActivity::GAME_OVER, "Snake full-board completion");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS snake movement growth tail collisions food full");
   }
 
   static void maze() {
@@ -258,6 +312,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    snake();
     maze();
     minesweeper();
     tetris();
