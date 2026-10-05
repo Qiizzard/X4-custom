@@ -1029,3 +1029,14 @@ this schedule does not declare them completed or permanently blocked.
   seven-game logic run PASS. Logs: firmware-builds/logs/2026-10-05-v1-snake-{build,runtime}.log.
   Simulator-only access; physical inputs/refresh, runtime peaks and remaining
   V1 app workflows remain open. Initial usage 8% five-hour/9% weekly.
+
+- 2026-10-05 21:05 UTC V1 static analysis: generated simulator compile database
+  and ran clang-analyzer checks over 56 app translation units, all exit 0 after
+  supplying macOS SDK/C++ include paths. NOT a clean pass: StegoNotes/HabitTracker
+  list indexing and Maze zero-width findings require reachability triage;
+  Flashcards has three dead stores. Repeated rand warning belongs to simulator
+  Arduino stub. See verification/V1_APP_STATIC_2026-10-05.json for findings and
+  command arguments; raw logs retained locally. Next: inspect state/index
+  invariants before deciding fixes; no false-positive or confirmed-bug claim yet.
+  Hardware-only analysis/resource/workflow gates remain open. Usage initially
+  8% five-hour/11% weekly. No shipping code changed.

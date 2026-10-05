@@ -1,0 +1,23 @@
+{
+  "scope": "Simulator compile configuration only; not C3 hardware paths",
+  "translation_units": 56,
+  "nonzero_exits": 0,
+  "checks": "-*,clang-analyzer-*",
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+  "extra_arguments": [
+    "-isysroot<SDK>",
+    "-isystem<SDK>/usr/include/c++/v1"
+  ],
+  "findings_requiring_triage": [
+    "src/activities/apps/flashcards/FlashcardActivity.cpp:252:13: warning: Value stored to 'pageWidth' during its initialization is never read [clang-analyzer-deadcode.DeadStores]",
+    "src/activities/apps/flashcards/FlashcardActivity.cpp:267:13: warning: Value stored to 'pageWidth' during its initialization is never read [clang-analyzer-deadcode.DeadStores]",
+    "src/activities/apps/flashcards/FlashcardActivity.cpp:279:13: warning: Value stored to 'pageWidth' during its initialization is never read [clang-analyzer-deadcode.DeadStores]",
+    "src/activities/apps/habit_tracker/HabitTrackerActivity.cpp:270:49: warning: Out of bound access to memory after the end of the field 'habits' [clang-analyzer-security.ArrayBound]",
+    "src/activities/apps/habit_tracker/HabitTrackerActivity.cpp:270:49: warning: Out of bound access to memory preceding the field 'habits' [clang-analyzer-security.ArrayBound]",
+    "src/activities/apps/maze/MazeActivity.cpp:75:21: warning: Division by zero [clang-analyzer-core.DivideZero]",
+    "src/activities/apps/stego_notes/StegoNotesActivity.cpp:262:52: warning: Out of bound access to memory preceding the field 'names' [clang-analyzer-security.ArrayBound]"
+  ],
+  "excluded_repeated_warning": "Simulator Arduino.h:48 uses std::rand; not hardware entropy evidence",
+  "logs": "firmware-builds/logs/v1-app-static-20261005-sdk",
+  "status": "Analysis ran; warnings require reachability triage, not a clean static-analysis pass"
+}
