@@ -17,6 +17,9 @@ class MazeActivity final : public Activity {
   bool preventAutoSleep() override { return state == SOLVING; }
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   // Game randomness only, never suitable for secrets.
   uint32_t rngState = 1;
   uint32_t nextRandom() {

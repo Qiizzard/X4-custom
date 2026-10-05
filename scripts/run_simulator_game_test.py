@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run production Sudoku, Chess, Tetris, Minesweeper and Blackjack logic checks in a disposable simulator filesystem."""
+"""Run production Sudoku, Chess, Tetris, Minesweeper, Maze and Blackjack logic checks in a disposable simulator filesystem."""
 import argparse
 import os
 from pathlib import Path
@@ -33,8 +33,8 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text
-    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Blackjack production logic, exit {result.returncode}; {args.log}")
+    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text
+    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Blackjack production logic, exit {result.returncode}; {args.log}")
     return 0 if ok else 1
 
 

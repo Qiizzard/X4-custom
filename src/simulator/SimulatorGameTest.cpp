@@ -2,12 +2,14 @@
 #include "SimulatorGameTest.h"
 
 #include <Logging.h>
+#include <Memory.h>
 
 #include <cstdlib>
 #include <cstring>
 
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
+#include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
@@ -28,6 +30,61 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void maze() {
+    MazeActivity game(renderer, mappedInputManager);
+    // Reuse the same fallible storage as production; never put 12 KB on the stack.
+    game.data = makeUniqueNoThrow<MazeActivity::MazeStorage>();
+    require(bool(game.data), "Maze test storage allocation");
+    for (int size = 0; size < 3; ++size) {
+      game.mazeW = game.SIZES_W[size];
+      game.mazeH = game.SIZES_H[size];
+      for (unsigned seed = 1; seed <= 16; ++seed) {
+        game.rngState = seed;
+        game.generateMaze();
+        int edges = 0;
+        for (int y = 0; y < game.mazeH; ++y) {
+          for (int x = 0; x < game.mazeW; ++x) {
+            const auto walls = game.data->maze[y][x];
+            require(game.isVisited(x, y), "Maze generation missed a cell");
+            if (x == 0) require(walls & 8, "Maze west boundary open");
+            if (y == 0) require(walls & 1, "Maze north boundary open");
+            if (x == game.mazeW - 1) require(walls & 2, "Maze east boundary open");
+            if (y == game.mazeH - 1) require(walls & 4, "Maze south boundary open");
+            if (x + 1 < game.mazeW) {
+              require(bool(walls & 2) == bool(game.data->maze[y][x + 1] & 8), "Maze east/west mismatch");
+              edges += !(walls & 2);
+            }
+            if (y + 1 < game.mazeH) {
+              require(bool(walls & 4) == bool(game.data->maze[y + 1][x] & 1), "Maze north/south mismatch");
+              edges += !(walls & 4);
+            }
+          }
+        }
+        require(edges == game.mazeW * game.mazeH - 1, "Maze spanning tree edge count");
+        game.startSolving();
+        unsigned steps = 0;
+        while (game.state == MazeActivity::SOLVING && steps++ < 4800) game.solveStep();
+        require(game.state == MazeActivity::SOLVE_DONE && game.solvePathFound, "Maze solver completion");
+        require(game.solvePathLen > 0 && game.solvePathLen <= game.MAX_PATH, "Maze path bound");
+        require(game.data->work[0] == 0 && game.data->work[game.solvePathLen - 1] == game.mazeW * game.mazeH - 1,
+                "Maze path endpoints");
+        for (int i = 1; i < game.solvePathLen; ++i) {
+          const int a = game.data->work[i - 1], b = game.data->work[i];
+          require(b >= 0 && b < game.mazeW * game.mazeH, "Maze path cell bound");
+          const int ax = a % game.mazeW, ay = a / game.mazeW, bx = b % game.mazeW, by = b / game.mazeW;
+          require(abs(ax - bx) + abs(ay - by) == 1, "Maze path nonadjacent step");
+          const int wall = bx > ax ? 2 : bx < ax ? 8 : by > ay ? 4 : 1;
+          require(!(game.data->maze[ay][ax] & wall), "Maze solution crosses wall");
+        }
+      }
+    }
+    memset(game.data->maze, 15, sizeof(game.data->maze));
+    game.startSolving();
+    game.solveStep();
+    require(game.state == MazeActivity::SOLVE_DONE && !game.solvePathFound, "Maze unreachable exit");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS maze boards=48 walls paths unreachable");
   }
 
   static void minesweeper() {
@@ -201,6 +258,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    maze();
     minesweeper();
     tetris();
     chess();
