@@ -13,7 +13,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-APPS = ("snake", "minesweeper", "tetris", "sudoku", "maze", "qr_generator", "cipher", "otp_generator", "clock", "game_of_life", "casino", "chess", "file_crypto", "transit_alert", "wifi_qr")
+APPS = ("barcode", "etch", "flashcards", "habits", "event_logger", "snake", "minesweeper", "tetris", "sudoku", "maze", "qr_generator", "cipher", "otp_generator", "clock", "game_of_life", "casino", "chess", "file_crypto", "transit_alert", "wifi_qr")
 ROOT = Path(__file__).resolve().parents[1]
 
 
