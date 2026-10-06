@@ -19,5 +19,12 @@
   ],
   "excluded_repeated_warning": "Simulator Arduino.h:48 uses std::rand; not hardware entropy evidence",
   "logs": "firmware-builds/logs/v1-app-static-20261005-sdk",
-  "status": "Analysis ran; warnings require reachability triage, not a clean static-analysis pass"
+  "status": "56-unit simulator analyzer run completed; reported paths manually triaged, no reachable production defect established. Hardware-only analysis remains open.",
+  "triage_2026_10_06": {
+    "StegoNotesActivity.cpp:262": "No reachable negative index found. Header initializes selected/count to zero; reset:42 and scan:62 reset selected; scan:75 caps count at 16. Mode toggle preserves 0..1; Files navigation:213-215 is guarded by nonzero count and modulo count. Rendering rows:257 is at least one. Analyzer trace assumes selected=-1/count=0 without a producing transition.",
+    "HabitTrackerActivity.cpp:270": "No reachable out-of-range index found. Header initializes count/selected=0. readSlot:42 rejects count>10 before load:74 calls decode; add:151 caps count at 10. Delete is entered only for an existing row and resets selection after decrement:185-187. Navigation uses nonzero total and modulo:208-214; mode changes reset selection:219. Extra Add row at i==count is handled before habits[i]:266. Analyzer starts rendering with unconstrained fields; no producing transition found.",
+    "MazeActivity.cpp:75": "No reachable zero width found. Header defaults width=20; SIZES_W={10,20,40}. onEnter:324 sets sizeIndex=1; loop:340/344 preserves 0..2 by modulo. Width assignment:348 reads this positive table before generateMaze. Existing 48 seeded-board runtime checks include all sizes. Analyzer loses table/index invariant; no runtime guard added solely to silence it.",
+    "FlashcardActivity.cpp:252,267,279": "Confirmed unused pageWidth locals; cosmetic dead stores, no observed behavior defect. Left unchanged to avoid unrelated cleanup.",
+    "limitations": "Manual source reachability review, not proof against arbitrary memory corruption, hardware races or future changes. Warnings retained without suppression; simulator-only analysis is not target-wide coverage."
+  }
 }
