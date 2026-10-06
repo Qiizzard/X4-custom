@@ -1,0 +1,56 @@
+{
+  "status": "PASS for entry-screen simulator lifecycle only",
+  "limitations": "Not device heap peaks, SD workflows, user interactions or leak-freedom proof",
+  "records": [
+    {
+      "app": "barcode",
+      "cycles": 50,
+      "hold_ms": 600000,
+      "exit": 0,
+      "cycle_heap_delta": 0,
+      "idle_heap_delta": 160,
+      "log": "firmware-builds/logs/v1-tools-soaks-20261006/barcode.log",
+      "sha256": "308497ac91a7076083a2fc72210c277c4ad2c0e62b0052df3afbcc9fd81befd1"
+    },
+    {
+      "app": "etch",
+      "cycles": 50,
+      "hold_ms": 600000,
+      "exit": 0,
+      "cycle_heap_delta": 0,
+      "idle_heap_delta": 160,
+      "log": "firmware-builds/logs/v1-tools-soaks-20261006/etch.log",
+      "sha256": "f7d93f9604a7fbce73d4f3a47b6255df2d0aca1012037d9a27928f5ebf7f9d62"
+    },
+    {
+      "app": "flashcards",
+      "cycles": 50,
+      "hold_ms": 600000,
+      "exit": 0,
+      "cycle_heap_delta": 0,
+      "idle_heap_delta": 160,
+      "log": "firmware-builds/logs/v1-tools-soaks-20261006/flashcards.log",
+      "sha256": "48863c134af64ccb9edd158db9467dbcfdd4954889a3cd875b6449fbda4850c2"
+    },
+    {
+      "app": "habits",
+      "cycles": 50,
+      "hold_ms": 600000,
+      "exit": 0,
+      "cycle_heap_delta": 0,
+      "idle_heap_delta": 352,
+      "log": "firmware-builds/logs/v1-tools-soaks-20261006/habits.log",
+      "sha256": "de7096492514eead32b4860c28114b5f0b8fc653592c55ab38f7d7e746bd431d"
+    },
+    {
+      "app": "event_logger",
+      "cycles": 50,
+      "hold_ms": 600000,
+      "exit": 0,
+      "cycle_heap_delta": 0,
+      "idle_heap_delta": 160,
+      "log": "firmware-builds/logs/v1-tools-soaks-20261006/event_logger.log",
+      "sha256": "ee680e30a6c6604056702393f15e03e72ab7b66d1451ae44276c0483697b561f"
+    }
+  ]
+}
