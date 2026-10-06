@@ -9,6 +9,7 @@
 
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
+#include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/snake/SnakeActivity.h"
@@ -31,6 +32,31 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void flashcards() {
+    FlashcardActivity game(renderer, mappedInputManager);
+    game.data = makeUniqueNoThrow<FlashcardActivity::DeckData>();
+    require(bool(game.data), "Flashcard test allocation");
+    auto load = [&](const char* name) {
+      snprintf(game.data->names[0], sizeof(game.data->names[0]), "%s", name);
+      return game.loadDeck();
+    };
+    require(load("valid.csv") && game.cardCount == 2, "Flashcard CRLF/blank/final-line parsing");
+    require(strcmp(game.data->cards[0].front, "front") == 0 && strcmp(game.data->cards[0].back, "back") == 0 &&
+                strcmp(game.data->cards[1].back, "answer,comma") == 0,
+            "Flashcard field content");
+    require(load("max.csv") && game.cardCount == 32, "Flashcard maximum deck");
+    for (int i = 0; i < game.cardCount; ++i)
+      require(strlen(game.data->cards[i].front) == 127 && strlen(game.data->cards[i].back) == 127 &&
+                  game.data->cards[i].correct == 0 && game.data->cards[i].wrong == 0,
+              "Flashcard field limit or score reset");
+    const char* invalid[] = {"empty.csv",      "no_comma.csv",  "no_front.csv", "no_back.csv",  "nul.csv",
+                             "long_front.csv", "long_back.csv", "too_many.csv", "oversize.csv", "missing.csv"};
+    for (const auto* name : invalid)
+      require(!load(name) && game.loadError && game.cardCount == 0, "Flashcard invalid deck retained usable cards");
+    require(load("valid.csv") && !game.loadError && game.cardCount == 2, "Flashcard retry after invalid deck");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS flashcards valid limits malformed retry");
   }
 
   static void snake() {
@@ -312,6 +338,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    flashcards();
     snake();
     maze();
     minesweeper();

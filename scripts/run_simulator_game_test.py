@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run production Sudoku, Chess, Tetris, Minesweeper, Maze, Snake and Blackjack logic checks in a disposable simulator filesystem."""
+"""Run production Sudoku, Chess, Tetris, Minesweeper, Maze, Snake and Blackjack logic plus Flashcards loading checks in a disposable simulator filesystem."""
 import argparse
 import os
 from pathlib import Path
@@ -24,7 +24,19 @@ def main():
             del env[key]
     env.update(SDL_VIDEODRIVER="dummy", CROSSINK_SIMULATOR_GAME_TEST="1")
     with tempfile.TemporaryDirectory(prefix="x4-game-tests-") as directory:
-        (Path(directory) / "fs_").mkdir()
+        decks = Path(directory) / "fs_" / "crossink" / "flashcards"
+        decks.mkdir(parents=True)
+        fixtures = {
+            "valid.csv": b"front,back\r\n\nquestion,answer,comma",
+            "max.csv": ((b"f" * 127) + b"," + (b"b" * 127) + b"\n") * 32,
+            "empty.csv": b"", "no_comma.csv": b"invalid", "no_front.csv": b",back",
+            "no_back.csv": b"front,", "nul.csv": b"front,ba\x00ck",
+            "long_front.csv": b"f" * 128 + b",back",
+            "long_back.csv": b"front," + b"b" * 128,
+            "too_many.csv": b"a,b\n" * 33, "oversize.csv": b"a" * 16385,
+        }
+        for name, payload in fixtures.items():
+            (decks / name).write_bytes(payload)
         with args.log.open("w") as stream:
             try:
                 result = subprocess.run([str(program)], cwd=directory, env=env, stdout=stream,
@@ -33,8 +45,8 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text
-    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack production logic, exit {result.returncode}; {args.log}")
+    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text
+    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards production logic, exit {result.returncode}; {args.log}")
     return 0 if ok else 1
 
 

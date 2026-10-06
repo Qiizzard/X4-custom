@@ -15,6 +15,9 @@ class FlashcardActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum State { DECK_SELECT, CARD_FRONT, CARD_BACK, STATS };
   State state = DECK_SELECT;
 
