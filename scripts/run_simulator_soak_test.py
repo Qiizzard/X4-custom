@@ -23,7 +23,7 @@ def run_one(app: str, program: Path, output: Path) -> bool:
         env = os.environ.copy()
         # Inherited debug settings must not shorten the gate or run two harnesses.
         for key in tuple(env):
-            if key.startswith(("CROSSINK_SIMULATOR_SMOKE_", "CROSSINK_SIMULATOR_SOAK_")):
+            if key.startswith(("CROSSINK_SIMULATOR_SMOKE_", "CROSSINK_SIMULATOR_SOAK_", "CROSSINK_SIMULATOR_GAME_")):
                 del env[key]
         env.update(SDL_VIDEODRIVER="dummy", CROSSINK_SIMULATOR_SOAK_TEST="1",
                    CROSSINK_SIMULATOR_SOAK_APP=app, CROSSINK_SIMULATOR_SOAK_CYCLES="50",

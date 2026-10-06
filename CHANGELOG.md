@@ -7,6 +7,9 @@ base is MIT.
 
 ### Fixed
 
+- Simulator test runners (2026-10-06): isolate inherited smoke, soak and game
+  harness settings so another test cannot terminate the requested run early.
+
 - WiFi QR payload bounds (2026-10-01): check available output space while
   escaping credentials and clear partial output on failure; added boundary tests.
 

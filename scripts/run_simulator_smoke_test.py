@@ -78,6 +78,10 @@ def run_smoke(args: argparse.Namespace) -> int:
         simulator_book_path = prepare_fs(temp_root, book)
 
         env = os.environ.copy()
+        # Each invocation owns its harness settings; inherited harnesses can exit early.
+        for key in tuple(env):
+            if key.startswith(("CROSSINK_SIMULATOR_SMOKE_", "CROSSINK_SIMULATOR_SOAK_", "CROSSINK_SIMULATOR_GAME_")):
+                del env[key]
         env["CROSSINK_SIMULATOR_SMOKE_TEST"] = "1"
         env["CROSSINK_SIMULATOR_SMOKE_BOOK"] = simulator_book_path
         env["CROSSINK_SIMULATOR_SMOKE_PAGE_TURNS"] = str(args.page_turns)
