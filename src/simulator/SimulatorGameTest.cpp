@@ -9,6 +9,7 @@
 
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
+#include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
@@ -32,6 +33,51 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void eventLogger() {
+    EventLoggerActivity game(renderer, mappedInputManager);
+    game.entries = makeUniqueNoThrow<EventLoggerActivity::Entry[]>(game.MAX_ENTRIES);
+    require(bool(game.entries), "Event logger test allocation");
+    // Native fixture writes stay inside the runner's disposable filesystem.
+    const char* path = "fs_/crossink/logs/events.csv";
+    auto fixture = [&](const char* bytes, size_t length) {
+      FILE* file = fopen(path, "wb");
+      require(file != nullptr, "Event logger fixture open");
+      require(fwrite(bytes, 1, length, file) == length, "Event logger fixture write");
+      require(fclose(file) == 0, "Event logger fixture close");
+      game.loadEntries();
+    };
+    FILE* file = fopen(path, "wb");
+    require(file != nullptr, "Event logger ring fixture open");
+    for (int i = 0; i < 55; ++i) require(fprintf(file, "%d,note%d\n", i, i) > 0, "Event logger ring fixture write");
+    require(fclose(file) == 0, "Event logger ring fixture close");
+    game.loadEntries();
+    require(!game.storageError && game.count == 50 && game.entry(0).uptime == 54 && game.entry(49).uptime == 5,
+            "Event logger newest-first ring retention");
+    game.saveEntry("new,note");
+    require(!game.storageError && game.count == 50 && strcmp(game.entry(0).text, "new,note") == 0 &&
+                game.entry(49).uptime == 6,
+            "Event logger append reload");
+    const char* invalid[] = {"1,torn", "4294967296,overflow\n", "-1,negative\n", "1,\n", ",text\n", "1,text\r\n"};
+    for (const char* text : invalid) {
+      const size_t length = strlen(text);
+      fixture(text, length);
+      require(game.storageError, "Event logger accepted corrupt record");
+      game.saveEntry("must not append");
+      file = fopen(path, "rb");
+      require(file != nullptr, "Event logger preserved file open");
+      char actual[64]{};
+      const size_t read = fread(actual, 1, sizeof(actual), file);
+      require(fclose(file) == 0, "Event logger preserved file close");
+      require(read == length && memcmp(actual, text, length) == 0, "Event logger changed corrupt file");
+    }
+    const char nul[] = "1,te\0xt\n";
+    fixture(nul, sizeof(nul) - 1);
+    require(game.storageError, "Event logger embedded NUL accepted");
+    fixture("4294967295,max\n", strlen("4294967295,max\n"));
+    require(!game.storageError && game.count == 1 && game.entry(0).uptime == UINT32_MAX, "Event logger max timestamp");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS event_logger ring append malformed preservation");
   }
 
   static void flashcards() {
@@ -338,6 +384,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(hard, 4) == 21, "Blackjack ace demotion");
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
+    eventLogger();
     flashcards();
     snake();
     maze();

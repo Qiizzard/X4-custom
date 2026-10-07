@@ -15,6 +15,9 @@ class EventLoggerActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   struct Entry {
     uint32_t uptime;
     char text[128];

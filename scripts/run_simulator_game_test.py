@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run production Sudoku, Chess, Tetris, Minesweeper, Maze, Snake and Blackjack logic plus Flashcards loading checks in a disposable simulator filesystem."""
+"""Run production Sudoku, Chess, Tetris, Minesweeper, Maze, Snake and Blackjack logic plus Flashcards/Event Logger file checks in a disposable simulator filesystem."""
 import argparse
 import os
 from pathlib import Path
@@ -26,6 +26,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="x4-game-tests-") as directory:
         decks = Path(directory) / "fs_" / "crossink" / "flashcards"
         decks.mkdir(parents=True)
+        (Path(directory) / "fs_" / "crossink" / "logs").mkdir()
         fixtures = {
             "valid.csv": b"front,back\r\n\nquestion,answer,comma",
             "max.csv": ((b"f" * 127) + b"," + (b"b" * 127) + b"\n") * 32,
@@ -45,8 +46,8 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text
-    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards production logic, exit {result.returncode}; {args.log}")
+    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text and "GAME TEST RESULT: PASS event_logger" in text
+    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards/EventLogger production logic, exit {result.returncode}; {args.log}")
     return 0 if ok else 1
 
 
