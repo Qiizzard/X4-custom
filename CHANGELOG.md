@@ -19,6 +19,10 @@ base is MIT.
 
 ### Added
 
+- Chess bot evaluation (2026-10-07): prefers material gains and promotion,
+  penalizes exposed destination pieces, and breaks equal scores randomly.
+  One-ply heuristic; fuller rules and deeper search remain in progress.
+
 - WiFi QR Share (2026-09-30): read-only authenticated vault records, explicit
   ten-second reveal and WPA/WEP/open encoding. Username supplies SSID; no
   saved-network credential access. Phone/device/security checks deferred.

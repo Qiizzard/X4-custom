@@ -74,6 +74,7 @@ class ChessActivity final : public Activity {
   unsigned long botThinkStart = 0;
   int setupIndex = 0;  // 0=vs Human, 1=vs Bot
 
+  int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol);
   void botMove();
   void initBoard();
   bool isWhite(uint8_t piece) const { return piece >= W_PAWN && piece <= W_KING; }

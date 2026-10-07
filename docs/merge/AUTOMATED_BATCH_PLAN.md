@@ -78,7 +78,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
 | P7 | actionable implementation complete; validation pending | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Mesh Chat direct transport, peer discovery and opt-in relay integrated (wip). Bulletin Board and small-file Dead Drop bounded AP/server integrated (wip). Authenticated WiFi QR Share integrated (wip). Remaining entries have documented BLE/hardware/product gates. |
-| C1 | active implementation priority | Fuller Chess rules and bounded stronger bot; source work not yet started. Medical Card skipped. |
+| C1 | active implementation priority | First one-ply bot heuristic implemented; fuller rules and deeper bounded search remain. Medical Card skipped. |
 | V1 | resume after C1 | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
@@ -1113,3 +1113,12 @@ this schedule does not declare them completed or permanently blocked.
   firmware-builds/logs/2026-10-07-v1-event-{build,runtime}.log.
   Native disposable fixtures only; physical SD faults/power loss and UI remain
   unverified. No shipping behavior change. Initial usage 12% five-hour/29% weekly.
+
+- 2026-10-07 C1 first bot increment: capture/promotion/exposure heuristic plus
+  small positional bonuses, equal-score random ties. No new heap/persistent
+  storage; no multi-ply search claim. Tactical scoring/restoration tests and
+  combined simulator regression PASS. C3 build PASS (171.43s), 6,547,312 bytes,
+  6,288 OTA bytes spare; unchanged partitions. Logs: 2026-10-07-c1-bot-*.log
+  under firmware-builds/logs. Device latency/stack and full rules remain open.
+  Next: castling/en passant state and legality, promotion choice/draw handling,
+  then deeper bounded search. Usage start 23%/4%, checkpoint 60%/9%.

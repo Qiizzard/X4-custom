@@ -248,9 +248,28 @@ void ChessActivity::checkGameState() {
   }
 }
 
+int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) {
+  // One-ply heuristic only. Fixed flash table and reversible board edits; no allocations.
+  static constexpr int values[] = {0, 100, 500, 320, 330, 900, 20000, 100, 500, 320, 330, 900, 20000};
+  const uint8_t source = board[fromRow][fromCol], target = board[toRow][toCol];
+  int score = values[target];
+  doMove(fromRow, fromCol, toRow, toCol);
+  const uint8_t moved = board[toRow][toCol];
+  score += values[moved] - values[source];  // Promotion gain.
+  if (isSquareAttacked(toRow, toCol, !whiteTurn)) score -= values[moved];
+  // Small positional tie-break: central squares and pawn advancement.
+  score += 3 - std::min(std::abs(3 - toCol), std::abs(4 - toCol));
+  if (source == W_PAWN) score += 6 - toRow;
+  if (source == B_PAWN) score += toRow - 1;
+  board[fromRow][fromCol] = source;
+  board[toRow][toCol] = target;
+  return score;
+}
+
 void ChessActivity::botMove() {
   int chosenR = 0, chosenC = 0, chosenToR = 0, chosenToC = 0;
   unsigned seen = 0;
+  int bestScore = -30000;
   for (int r = 0; r < 8; ++r)
     for (int c = 0; c < 8; ++c) {
       if (!isOwnPiece(board[r][c])) continue;
@@ -258,6 +277,12 @@ void ChessActivity::botMove() {
       addMovesForPiece(r, c, targets);
       for (const auto& [tr, tc] : targets) {
         if (wouldBeInCheck(r, c, tr, tc)) continue;
+        const int score = scoreBotMove(r, c, tr, tc);
+        if (score < bestScore) continue;
+        if (score > bestScore) {
+          bestScore = score;
+          seen = 0;
+        }
         if (randomValue() % ++seen == 0) {
           chosenR = r;
           chosenC = c;

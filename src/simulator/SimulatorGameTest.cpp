@@ -373,6 +373,31 @@ class SimulatorGameTest {
     game.board[1][2] = ChessActivity::W_QUEEN;
     game.checkGameState();
     require(game.gameOver && !game.inCheck && !game.hasAnyLegalMove(), "Stalemate not detected");
+    memset(game.board, 0, sizeof(game.board));
+    game.whiteTurn = false;
+    game.gameOver = false;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[7][7] = ChessActivity::W_KING;
+    game.board[3][3] = ChessActivity::B_ROOK;
+    game.board[3][5] = ChessActivity::W_QUEEN;
+    const int capture = game.scoreBotMove(3, 3, 3, 5);
+    require(capture > game.scoreBotMove(3, 3, 3, 4), "Chess bot ignores free queen");
+    require(game.board[3][3] == ChessActivity::B_ROOK && game.board[3][5] == ChessActivity::W_QUEEN && !game.whiteTurn,
+            "Chess bot scoring changed board or turn");
+    game.botMove();
+    require(game.board[3][5] == ChessActivity::B_ROOK && game.whiteTurn, "Chess bot failed free queen capture");
+    memset(game.board, 0, sizeof(game.board));
+    game.whiteTurn = false;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[7][7] = ChessActivity::W_KING;
+    game.board[3][3] = ChessActivity::B_QUEEN;
+    game.board[3][5] = ChessActivity::W_PAWN;
+    game.board[6][5] = ChessActivity::W_ROOK;
+    require(game.scoreBotMove(3, 3, 3, 5) < game.scoreBotMove(3, 3, 3, 2), "Chess bot ignores exposed queen");
+    game.board[6][1] = ChessActivity::B_PAWN;
+    require(game.scoreBotMove(6, 1, 7, 1) >= 800 && game.board[6][1] == ChessActivity::B_PAWN &&
+                game.board[7][1] == ChessActivity::EMPTY,
+            "Chess bot promotion scoring/restoration");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 
