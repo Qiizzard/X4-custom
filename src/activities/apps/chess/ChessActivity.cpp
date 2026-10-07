@@ -12,6 +12,7 @@
 #include "fontIds.h"
 
 void ChessActivity::initBoard() {
+  castleRights = 15;
   enPassantRow = enPassantCol = -1;
   memset(board, EMPTY, sizeof(board));
   // Black pieces (top)
@@ -195,6 +196,13 @@ bool ChessActivity::wouldBeInCheck(int fx, int fy, int tx, int ty) {
                          tx == enPassantRow && ty == enPassantCol;
   const uint8_t capturedPawn = board[fx][ty];
   if (enPassant) board[fx][ty] = EMPTY;
+  const bool castle = (savedSource == W_KING || savedSource == B_KING) && fx == tx && std::abs(ty - fy) == 2;
+  const int rookFrom = ty > fy ? 7 : 0, rookTo = ty > fy ? 5 : 3;
+  const uint8_t rook = board[fx][rookFrom], transit = board[fx][rookTo];
+  if (castle) {
+    board[fx][rookTo] = rook;
+    board[fx][rookFrom] = EMPTY;
+  }
   board[tx][ty] = savedSource;
   board[fx][fy] = EMPTY;
 
@@ -207,13 +215,39 @@ bool ChessActivity::wouldBeInCheck(int fx, int fy, int tx, int ty) {
   board[fx][fy] = savedSource;
   board[tx][ty] = savedTarget;
   if (enPassant) board[fx][ty] = capturedPawn;
+  if (castle) {
+    board[fx][rookFrom] = rook;
+    board[fx][rookTo] = transit;
+  }
   return check;
+}
+
+bool ChessActivity::canCastle(bool kingSide) {
+  const int row = whiteTurn ? 7 : 0;
+  const unsigned bit = (whiteTurn ? 0 : 2) + (kingSide ? 0 : 1);
+  const int rookCol = kingSide ? 7 : 0;
+  if (!(castleRights & (1u << bit)) || board[row][4] != (whiteTurn ? W_KING : B_KING) ||
+      board[row][rookCol] != (whiteTurn ? W_ROOK : B_ROOK))
+    return false;
+  for (int col = kingSide ? 5 : 1; col < (kingSide ? 7 : 4); ++col)
+    if (board[row][col] != EMPTY) return false;
+  if (isSquareAttacked(row, 4, !whiteTurn)) return false;
+  // Test transit with the king moved off its original square.
+  if (wouldBeInCheck(row, 4, row, kingSide ? 5 : 3)) return false;
+  return !wouldBeInCheck(row, 4, row, kingSide ? 6 : 2);
+}
+
+void ChessActivity::addCandidates(int row, int col, MoveList& moves) {
+  addMovesForPiece(row, col, moves);
+  if (row != (whiteTurn ? 7 : 0) || col != 4 || board[row][col] != (whiteTurn ? W_KING : B_KING)) return;
+  if (canCastle(true)) moves.push_back({row, 6});
+  if (canCastle(false)) moves.push_back({row, 2});
 }
 
 void ChessActivity::computeValidMoves(int fx, int fy) {
   validMoves.clear();
   MoveList pseudo;
-  addMovesForPiece(fx, fy, pseudo);
+  addCandidates(fx, fy, pseudo);
   for (auto& [tr, tc] : pseudo) {
     if (!wouldBeInCheck(fx, fy, tr, tc)) {
       validMoves.push_back({tr, tc});
@@ -226,7 +260,7 @@ bool ChessActivity::hasAnyLegalMove() {
     for (int c = 0; c < 8; c++) {
       if (!isOwnPiece(board[r][c])) continue;
       MoveList pseudo;
-      addMovesForPiece(r, c, pseudo);
+      addCandidates(r, c, pseudo);
       for (auto& [tr, tc] : pseudo) {
         if (!wouldBeInCheck(r, c, tr, tc)) return true;
       }
@@ -237,6 +271,19 @@ bool ChessActivity::hasAnyLegalMove() {
 
 void ChessActivity::doMove(int fx, int fy, int tx, int ty) {
   uint8_t p = board[fx][fy];
+  const bool king = p == W_KING || p == B_KING;
+  if (king) castleRights &= isWhite(p) ? ~3u : ~12u;
+  // Moving from or capturing on a rook home square permanently revokes its right.
+  for (int side = 0; side < 2; ++side) {
+    const int row = side == 0 ? 7 : 0;
+    if ((fx == row && fy == 7) || (tx == row && ty == 7)) castleRights &= ~(1u << (side * 2));
+    if ((fx == row && fy == 0) || (tx == row && ty == 0)) castleRights &= ~(2u << (side * 2));
+  }
+  if (king && fx == tx && std::abs(ty - fy) == 2) {
+    const int rookFrom = ty > fy ? 7 : 0, rookTo = ty > fy ? 5 : 3;
+    board[fx][rookTo] = board[fx][rookFrom];
+    board[fx][rookFrom] = EMPTY;
+  }
   const bool pawn = p == W_PAWN || p == B_PAWN;
   if (pawn && fy != ty && board[tx][ty] == EMPTY && tx == enPassantRow && ty == enPassantCol) board[fx][ty] = EMPTY;
   enPassantRow = enPassantCol = -1;
@@ -275,6 +322,10 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   // One-ply heuristic only. Fixed flash table and reversible board edits; no allocations.
   static constexpr int values[] = {0, 100, 500, 320, 330, 900, 20000, 100, 500, 320, 330, 900, 20000};
   const uint8_t source = board[fromRow][fromCol], target = board[toRow][toCol];
+  const uint8_t savedRights = castleRights;
+  const bool castle = (source == W_KING || source == B_KING) && fromRow == toRow && std::abs(toCol - fromCol) == 2;
+  const int rookFrom = toCol > fromCol ? 7 : 0, rookTo = toCol > fromCol ? 5 : 3;
+  const uint8_t rook = board[fromRow][rookFrom], transit = board[fromRow][rookTo];
   const int8_t savedEpRow = enPassantRow, savedEpCol = enPassantCol;
   const bool ep = (source == W_PAWN || source == B_PAWN) && fromCol != toCol && target == EMPTY &&
                   toRow == enPassantRow && toCol == enPassantCol;
@@ -291,6 +342,11 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   board[fromRow][fromCol] = source;
   board[toRow][toCol] = target;
   if (ep) board[fromRow][toCol] = side;
+  if (castle) {
+    board[fromRow][rookFrom] = rook;
+    board[fromRow][rookTo] = transit;
+  }
+  castleRights = savedRights;
   enPassantRow = savedEpRow;
   enPassantCol = savedEpCol;
   return score;
@@ -304,7 +360,7 @@ void ChessActivity::botMove() {
     for (int c = 0; c < 8; ++c) {
       if (!isOwnPiece(board[r][c])) continue;
       MoveList targets;
-      addMovesForPiece(r, c, targets);
+      addCandidates(r, c, targets);
       for (const auto& [tr, tc] : targets) {
         if (wouldBeInCheck(r, c, tr, tc)) continue;
         const int score = scoreBotMove(r, c, tr, tc);

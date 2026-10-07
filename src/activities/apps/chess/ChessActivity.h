@@ -59,6 +59,7 @@ class ChessActivity final : public Activity {
   };
 
   uint8_t board[8][8]{};
+  uint8_t castleRights = 0;  // White K/Q, Black K/Q; initialized with a new board.
   int8_t enPassantRow = -1, enPassantCol = -1;
   int cursorX = 4, cursorY = 7;
   int selectedX = -1, selectedY = -1;
@@ -84,6 +85,8 @@ class ChessActivity final : public Activity {
   bool isEnemyPiece(uint8_t piece) const { return whiteTurn ? isBlack(piece) : isWhite(piece); }
   const char* pieceChar(uint8_t piece) const;
 
+  bool canCastle(bool kingSide);
+  void addCandidates(int row, int col, MoveList& moves);
   void computeValidMoves(int fx, int fy);
   void addMovesForPiece(int fx, int fy, MoveList& moves) const;
   void addSlidingMoves(int fx, int fy, int dx, int dy, MoveList& moves) const;

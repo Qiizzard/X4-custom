@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess castling (2026-10-07): both sides and colors, permanent king/rook rights,
+  blocked-lane and attacked-square checks. Device verification pending.
+
 - Chess en passant (2026-10-07): one-turn pawn captures, including king-safety
   validation and reversible bot evaluation. Device verification pending.
 

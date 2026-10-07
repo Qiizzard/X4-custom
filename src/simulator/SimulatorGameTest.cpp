@@ -446,6 +446,56 @@ class SimulatorGameTest {
     require(game.isSquareAttacked(2, 2, true) && game.isSquareAttacked(2, 4, true),
             "White pawn empty diagonal attacks");
     require(!game.isSquareAttacked(2, 3, true) && !game.whiteTurn, "White pawn forward attack or turn mutation");
+    for (bool white : {true, false}) {
+      const int home = white ? 7 : 0, enemy = white ? 0 : 7;
+      const auto king = white ? ChessActivity::W_KING : ChessActivity::B_KING;
+      const auto rook = white ? ChessActivity::W_ROOK : ChessActivity::B_ROOK;
+      auto setupCastle = [&]() {
+        memset(game.board, 0, sizeof(game.board));
+        game.whiteTurn = white;
+        game.castleRights = 15;
+        game.board[home][4] = king;
+        game.board[home][0] = game.board[home][7] = rook;
+        game.board[enemy][4] = white ? ChessActivity::B_KING : ChessActivity::W_KING;
+      };
+      setupCastle();
+      require(game.canCastle(true) && game.canCastle(false), "Chess open castling lanes");
+      game.scoreBotMove(home, 4, home, 6);
+      require(game.castleRights == 15 && game.board[home][7] == rook && game.board[home][5] == ChessActivity::EMPTY,
+              "Chess castling score restoration");
+      game.board[home][1] = rook;
+      require(!game.canCastle(false) && game.canCastle(true), "Chess queenside b-file obstruction");
+      setupCastle();
+      game.board[enemy][5] = white ? ChessActivity::B_ROOK : ChessActivity::W_ROOK;
+      require(!game.canCastle(true), "Chess castle through check");
+      setupCastle();
+      game.board[enemy][6] = white ? ChessActivity::B_ROOK : ChessActivity::W_ROOK;
+      require(!game.canCastle(true), "Chess castle into check");
+      setupCastle();
+      game.board[enemy][4] = white ? ChessActivity::B_ROOK : ChessActivity::W_ROOK;
+      require(!game.canCastle(true) && !game.canCastle(false), "Chess castle out of check");
+      setupCastle();
+      game.doMove(home, 7, home - (white ? 1 : -1), 7);
+      game.doMove(home - (white ? 1 : -1), 7, home, 7);
+      require(!game.canCastle(true) && game.canCastle(false), "Chess rook return restored rights");
+      setupCastle();
+      game.doMove(home, 4, home, 5);
+      game.doMove(home, 5, home, 4);
+      require(!game.canCastle(true) && !game.canCastle(false), "Chess king return restored rights");
+      setupCastle();
+      game.board[enemy][7] = white ? ChessActivity::B_ROOK : ChessActivity::W_ROOK;
+      game.doMove(enemy, 7, home, 7);
+      game.board[home][7] = rook;  // A replacement rook must not restore the right.
+      require(!game.canCastle(true), "Chess rook capture retained castling rights");
+      for (bool kingSide : {true, false}) {
+        setupCastle();
+        game.doMove(home, 4, home, kingSide ? 6 : 2);
+        require(game.board[home][kingSide ? 6 : 2] == king && game.board[home][kingSide ? 5 : 3] == rook &&
+                    game.board[home][kingSide ? 7 : 0] == ChessActivity::EMPTY &&
+                    game.board[home][4] == ChessActivity::EMPTY,
+                "Chess castle execution");
+      }
+    }
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

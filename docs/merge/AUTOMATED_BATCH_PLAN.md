@@ -1138,3 +1138,12 @@ this schedule does not declare them completed or permanently blocked.
   6,547,824 bytes / 5,776 spare. Logs: firmware-builds/logs/2026-10-07-c1-pawn-*.log.
   Castling implementation still next; no castling PASS claimed. No new heap or
   persistent fields. Initial usage 0% five-hour/19% weekly; hardware unverified.
+
+- 2026-10-07 23:11 UTC C1 castling implemented for both colors/sides with
+  permanent move/capture rights, lane clearance and king transit/destination
+  safety. Simulation/bot evaluation restores rook and rights. Focused tests
+  include rook capture/replacement and moved-returned pieces; combined simulator
+  PASS. C3 PASS 26.09s, image 6,548,688 bytes / 4,912 spare. Logs:
+  firmware-builds/logs/2026-10-07-c1-castle-{sim,runtime,c3}.log.
+  No new heap; one-byte rights field. Device play/latency/stack unverified.
+  Next C1: promotion choice, draws and deeper bounded search. Initial usage 17%/24%.
