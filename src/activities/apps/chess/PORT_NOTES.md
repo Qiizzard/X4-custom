@@ -35,3 +35,8 @@ and worst-position latency. Castling/draw/promotion-choice work remains.
 En passant tracks one eligible target until the next move. King-safety probes
 remove and restore the captured pawn; bot probes also restore eligibility.
 On device, test both colors, a missed one-turn opportunity and a pinned pawn.
+
+Pawn attack detection treats empty diagonals as attacked and forward squares
+as movement only. Simulator tests cover both colors and restored side-to-move.
+Hardware: verify kings cannot enter pawn diagonals and can enter an otherwise
+safe square directly ahead of a pawn. Castling itself is still pending.

@@ -435,6 +435,17 @@ class SimulatorGameTest {
     game.doMove(0, 0, 0, 1);
     game.computeValidMoves(4, 4);
     for (auto [r, c] : game.validMoves) require(r != 5 || c != 3, "Chess expired en passant still legal");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[3][3] = ChessActivity::B_PAWN;
+    game.whiteTurn = true;
+    require(game.isSquareAttacked(4, 2, false) && game.isSquareAttacked(4, 4, false),
+            "Black pawn empty diagonal attacks");
+    require(!game.isSquareAttacked(4, 3, false) && game.whiteTurn, "Black pawn forward attack or turn mutation");
+    game.board[3][3] = ChessActivity::W_PAWN;
+    game.whiteTurn = false;
+    require(game.isSquareAttacked(2, 2, true) && game.isSquareAttacked(2, 4, true),
+            "White pawn empty diagonal attacks");
+    require(!game.isSquareAttacked(2, 3, true) && !game.whiteTurn, "White pawn forward attack or turn mutation");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

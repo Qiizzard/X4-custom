@@ -1131,3 +1131,10 @@ this schedule does not declare them completed or permanently blocked.
   Logs: firmware-builds/logs/2026-10-07-c1-ep-{sim,runtime,c3}.log.
   Next: castling, promotion choice, draw rules and deeper bounded search.
   Hardware play/stack/timing still pending. Initial usage 15% five-hour/12% weekly.
+
+- 2026-10-07 18:10 UTC C1 castling prerequisite: fixed pawn attack detection
+  on empty squares (diagonals yes, forward no). Both-color/turn-restoration
+  tests and combined simulator regression PASS. C3 PASS 26.10s, image
+  6,547,824 bytes / 5,776 spare. Logs: firmware-builds/logs/2026-10-07-c1-pawn-*.log.
+  Castling implementation still next; no castling PASS claimed. No new heap or
+  persistent fields. Initial usage 0% five-hour/19% weekly; hardware unverified.

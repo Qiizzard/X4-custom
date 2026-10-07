@@ -7,6 +7,9 @@ base is MIT.
 
 ### Fixed
 
+- Chess pawn attack detection (2026-10-07): empty diagonals count as attacked;
+  forward movement squares do not. Prepares correct castling transit checks.
+
 - Simulator test runners (2026-10-06): isolate inherited smoke, soak and game
   harness settings so another test cannot terminate the requested run early.
 

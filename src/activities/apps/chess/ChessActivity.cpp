@@ -150,6 +150,14 @@ bool ChessActivity::isSquareAttacked(int tx, int ty, bool byWhite) {
       uint8_t p = board[r][c];
       if (p == EMPTY) continue;
       if (byWhite ? !isWhite(p) : !isBlack(p)) continue;
+      // Pawn attacks are diagonal even on empty squares; forward moves are not attacks.
+      if (p == W_PAWN || p == B_PAWN) {
+        if (tx == r + (byWhite ? -1 : 1) && std::abs(ty - c) == 1) {
+          whiteTurn = savedTurn;
+          return true;
+        }
+        continue;
+      }
       moves.clear();
       addMovesForPiece(r, c, moves);
       for (auto& [mr, mc] : moves) {
