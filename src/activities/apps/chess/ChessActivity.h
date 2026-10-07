@@ -59,6 +59,7 @@ class ChessActivity final : public Activity {
   };
 
   uint8_t board[8][8]{};
+  int8_t enPassantRow = -1, enPassantCol = -1;
   int cursorX = 4, cursorY = 7;
   int selectedX = -1, selectedY = -1;
   State state = SELECT_PIECE;

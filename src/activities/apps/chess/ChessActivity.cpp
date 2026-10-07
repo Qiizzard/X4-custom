@@ -12,6 +12,7 @@
 #include "fontIds.h"
 
 void ChessActivity::initBoard() {
+  enPassantRow = enPassantCol = -1;
   memset(board, EMPTY, sizeof(board));
   // Black pieces (top)
   board[0][0] = B_ROOK;
@@ -93,7 +94,9 @@ void ChessActivity::addMovesForPiece(int fx, int fy, MoveList& moves) const {
       // Captures
       for (int dc : {-1, 1}) {
         int nr = fx + dir, nc = fy + dc;
-        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && isEnemyPiece(board[nr][nc])) {
+        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 &&
+            (isEnemyPiece(board[nr][nc]) || (nr == enPassantRow && nc == enPassantCol && board[nr][nc] == EMPTY &&
+                                             board[fx][nc] == (isWhite(p) ? B_PAWN : W_PAWN)))) {
           moves.push_back({nr, nc});
         }
       }
@@ -180,6 +183,10 @@ bool ChessActivity::wouldBeInCheck(int fx, int fy, int tx, int ty) {
   // Simulate move
   uint8_t savedTarget = board[tx][ty];
   uint8_t savedSource = board[fx][fy];
+  const bool enPassant = (savedSource == W_PAWN || savedSource == B_PAWN) && fy != ty && savedTarget == EMPTY &&
+                         tx == enPassantRow && ty == enPassantCol;
+  const uint8_t capturedPawn = board[fx][ty];
+  if (enPassant) board[fx][ty] = EMPTY;
   board[tx][ty] = savedSource;
   board[fx][fy] = EMPTY;
 
@@ -191,6 +198,7 @@ bool ChessActivity::wouldBeInCheck(int fx, int fy, int tx, int ty) {
   // Undo
   board[fx][fy] = savedSource;
   board[tx][ty] = savedTarget;
+  if (enPassant) board[fx][ty] = capturedPawn;
   return check;
 }
 
@@ -221,6 +229,13 @@ bool ChessActivity::hasAnyLegalMove() {
 
 void ChessActivity::doMove(int fx, int fy, int tx, int ty) {
   uint8_t p = board[fx][fy];
+  const bool pawn = p == W_PAWN || p == B_PAWN;
+  if (pawn && fy != ty && board[tx][ty] == EMPTY && tx == enPassantRow && ty == enPassantCol) board[fx][ty] = EMPTY;
+  enPassantRow = enPassantCol = -1;
+  if (pawn && std::abs(tx - fx) == 2) {
+    enPassantRow = (tx + fx) / 2;
+    enPassantCol = fy;
+  }
   board[tx][ty] = p;
   board[fx][fy] = EMPTY;
 
@@ -252,7 +267,11 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   // One-ply heuristic only. Fixed flash table and reversible board edits; no allocations.
   static constexpr int values[] = {0, 100, 500, 320, 330, 900, 20000, 100, 500, 320, 330, 900, 20000};
   const uint8_t source = board[fromRow][fromCol], target = board[toRow][toCol];
-  int score = values[target];
+  const int8_t savedEpRow = enPassantRow, savedEpCol = enPassantCol;
+  const bool ep = (source == W_PAWN || source == B_PAWN) && fromCol != toCol && target == EMPTY &&
+                  toRow == enPassantRow && toCol == enPassantCol;
+  const uint8_t side = board[fromRow][toCol];
+  int score = ep ? 100 : values[target];
   doMove(fromRow, fromCol, toRow, toCol);
   const uint8_t moved = board[toRow][toCol];
   score += values[moved] - values[source];  // Promotion gain.
@@ -263,6 +282,9 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   if (source == B_PAWN) score += toRow - 1;
   board[fromRow][fromCol] = source;
   board[toRow][toCol] = target;
+  if (ep) board[fromRow][toCol] = side;
+  enPassantRow = savedEpRow;
+  enPassantCol = savedEpCol;
   return score;
 }
 

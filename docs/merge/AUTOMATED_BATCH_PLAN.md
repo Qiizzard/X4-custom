@@ -1122,3 +1122,12 @@ this schedule does not declare them completed or permanently blocked.
   under firmware-builds/logs. Device latency/stack and full rules remain open.
   Next: castling/en passant state and legality, promotion choice/draw handling,
   then deeper bounded search. Usage start 23%/4%, checkpoint 60%/9%.
+
+- 2026-10-07 13:10 UTC C1 en passant implemented: target expires after one
+  move, captured pawn participates in king-safety simulation, bot scoring
+  restores target/pawn. Simulator tests PASS both-color availability, expiry,
+  capture, exposed king and scoring restoration; combined regression PASS.
+  C3 PASS 28.64s, image 6,547,728 bytes / 5,872 spare, partitions unchanged.
+  Logs: firmware-builds/logs/2026-10-07-c1-ep-{sim,runtime,c3}.log.
+  Next: castling, promotion choice, draw rules and deeper bounded search.
+  Hardware play/stack/timing still pending. Initial usage 15% five-hour/12% weekly.

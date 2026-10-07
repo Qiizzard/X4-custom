@@ -398,6 +398,43 @@ class SimulatorGameTest {
     require(game.scoreBotMove(6, 1, 7, 1) >= 800 && game.board[6][1] == ChessActivity::B_PAWN &&
                 game.board[7][1] == ChessActivity::EMPTY,
             "Chess bot promotion scoring/restoration");
+    memset(game.board, 0, sizeof(game.board));
+    game.whiteTurn = true;
+    game.board[7][4] = ChessActivity::W_KING;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[3][4] = ChessActivity::W_PAWN;
+    game.board[1][3] = ChessActivity::B_PAWN;
+    game.doMove(1, 3, 3, 3);
+    game.computeValidMoves(3, 4);
+    bool hasEp = false;
+    for (auto [r, c] : game.validMoves) hasEp |= r == 2 && c == 3;
+    require(hasEp && !game.wouldBeInCheck(3, 4, 2, 3), "Chess legal en passant missing");
+    game.scoreBotMove(3, 4, 2, 3);
+    require(game.board[3][3] == ChessActivity::B_PAWN && game.enPassantRow == 2 && game.enPassantCol == 3,
+            "Chess en passant scoring state restoration");
+    game.board[0][4] = ChessActivity::B_ROOK;
+    require(game.wouldBeInCheck(3, 4, 2, 3), "Chess en passant exposing king allowed");
+    game.board[0][4] = ChessActivity::EMPTY;
+    game.doMove(3, 4, 2, 3);
+    require(game.board[3][3] == ChessActivity::EMPTY && game.board[2][3] == ChessActivity::W_PAWN &&
+                game.enPassantRow == -1,
+            "Chess en passant execution or expiry");
+    game.doMove(2, 3, 1, 3);
+    require(game.enPassantRow == -1, "Chess ordinary move created en passant");
+    memset(game.board, 0, sizeof(game.board));
+    game.whiteTurn = false;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[7][7] = ChessActivity::W_KING;
+    game.board[4][4] = ChessActivity::B_PAWN;
+    game.board[6][3] = ChessActivity::W_PAWN;
+    game.doMove(6, 3, 4, 3);
+    game.computeValidMoves(4, 4);
+    hasEp = false;
+    for (auto [r, c] : game.validMoves) hasEp |= r == 5 && c == 3;
+    require(hasEp, "Chess black en passant missing");
+    game.doMove(0, 0, 0, 1);
+    game.computeValidMoves(4, 4);
+    for (auto [r, c] : game.validMoves) require(r != 5 || c != 3, "Chess expired en passant still legal");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

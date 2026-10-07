@@ -2,7 +2,7 @@
 
 Adapted from Biscuit's ChessActivity board setup, pseudo-legal move generation,
 king-safety filtering, checkmate/stalemate and random-move opponent. This is not
-full tournament chess: castling/en passant, underpromotion, repetition,
+full tournament chess: castling, underpromotion, repetition,
 move-count and insufficient-material draws are absent, as disclosed in setup.
 The bot now scores legal moves for captures, promotion, exposed destination
 pieces and small center/pawn-advance bonuses. This is a one-ply heuristic,
@@ -31,4 +31,7 @@ C1 first increment: no new heap allocations or activity fields. A 13-entry
 constexpr material table and reversible board edits evaluate each legal move.
 Device verification: play against the bot, offer a free queen, try a defended
 pawn, and check response time and Back behavior on X4; measure stack high-water
-and worst-position latency. Castling/en passant/draw/promotion-choice work remains.
+and worst-position latency. Castling/draw/promotion-choice work remains.
+En passant tracks one eligible target until the next move. King-safety probes
+remove and restore the captured pawn; bot probes also restore eligibility.
+On device, test both colors, a missed one-turn opportunity and a pinned pawn.

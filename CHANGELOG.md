@@ -19,6 +19,9 @@ base is MIT.
 
 ### Added
 
+- Chess en passant (2026-10-07): one-turn pawn captures, including king-safety
+  validation and reversible bot evaluation. Device verification pending.
+
 - Chess bot evaluation (2026-10-07): prefers material gains and promotion,
   penalizes exposed destination pieces, and breaks equal scores randomly.
   One-ply heuristic; fuller rules and deeper search remain in progress.
