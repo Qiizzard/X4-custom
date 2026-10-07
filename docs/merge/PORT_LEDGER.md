@@ -13,6 +13,7 @@ are how v1 ended up claiming 21 apps it did not have.
 | `wip` | Started, not through the gate. Never leave a session on `wip` without saying so in `CHANGELOG.md`. |
 | `blocked` | Needs a decision or a dependency named in the Notes column. |
 | `todo` | Not started. |
+| `skipped` | Explicitly excluded by the user. |
 | `base` | Already shipped by CrossInk. Not a port — verify and register, do not rewrite. |
 
 **Order.** Tile by tile, top to bottom, safe tier before radio tier, per
@@ -60,7 +61,7 @@ coherent, working subset.
 | Authenticator (offline TOTP) | `wip` | Eight encrypted accounts, SHA-1/6/30 codes after per-boot NTP sync; shares vault lifecycle. Runtime crypto/time validation deferred. |
 | TOTP QR | `wip` | Shared encrypted Authenticator accounts; reveals code-only QR, never seed. Phone/rollover/lifecycle validation deferred. |
 | Password Manager | `wip` | Eight-entry encrypted vault in Tools: create/unlock, add/replace/delete, timed reveal and idle lock. Compile sanity only; recovery, crypto and lifecycle gates open. See secure_vault/PORT_NOTES.md. |
-| Medical Card | `todo` | Deliberate design call needed: emergency data you cannot read without a PIN is not useful in an emergency. |
+| Medical Card | `skipped` | Explicitly excluded by user on 2026-10-06. Do not implement. |
 | Stego Notes | `wip` | Tools: bounded file selection, encrypted BMP note creation and timed reveal. Original preserved; concealment discoverable. Runtime/crypto/device validation deferred. |
 
 ## Tools → Network *(P5 source dependency integrated; device validation deferred)*
@@ -265,7 +266,16 @@ the expansion gates clear, not an unimplemented replacement for the image gate.
 Use a space-free copy for device builds on this Mac, per AGENTS.md. The
 previous successful spaced-path report does not override that instruction.
 
-## Explicitly out of scope — do not port, do not reimplement
+## Previously excluded features — reconsideration requested 2026-10-06
+
+The user requested reconsideration of Offense/Capture, not blanket implementation
+authorization. Assess each capability separately; existing exclusions below remain
+in effect until a concrete replacement scope is accepted. Passive capture/export
+and clearly labelled owned-device lab diagnostics are candidates. Do not infer
+authorization for credential harvesting, impersonation, flooding or keystroke
+injection from the category-level review request.
+
+### Existing exclusions pending individual scope decisions
 
 biscuit's **Offense** tile and the **Capture** tile that exists to hold its
 output: Beacon Flood, SSID Clone / evil twin, Captive Portal, Credential Viewer,
