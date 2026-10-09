@@ -95,5 +95,6 @@ class ChessActivity final : public Activity {
   bool findKing(bool white, int& kx, int& ky) const;
   bool hasAnyLegalMove();
   void doMove(int fx, int fy, int tx, int ty);
+  bool insufficientMaterial() const;
   void checkGameState();
 };

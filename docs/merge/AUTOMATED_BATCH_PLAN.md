@@ -1147,3 +1147,12 @@ this schedule does not declare them completed or permanently blocked.
   firmware-builds/logs/2026-10-07-c1-castle-{sim,runtime,c3}.log.
   No new heap; one-byte rights field. Device play/latency/stack unverified.
   Next C1: promotion choice, draws and deeper bounded search. Initial usage 17%/24%.
+
+- 2026-10-09 04:45 UTC resumed interrupted C1 material-draw batch. Previous
+  builds had no final result; removed /tmp build copy recreated. Simulator
+  PASS 117.53s and combined runtime PASS; fresh C3 PASS 338.13s. Image
+  6,548,864 bytes / 4,736 OTA spare. Logs: firmware-builds/logs/2026-10-09-c1-material-*.log.
+  Conservative draws now cover bare kings, lone minor, same-color bishops;
+  tests reject two-knight/opposite-bishop/pawn positions and verify game-over.
+  No new heap/history buffer. Promotion choice, repetition/move counts and
+  deeper search remain pending; device validation open. Usage initially 18%/38%.

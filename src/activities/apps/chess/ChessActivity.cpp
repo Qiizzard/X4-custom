@@ -300,6 +300,31 @@ void ChessActivity::doMove(int fx, int fy, int tx, int ty) {
   }
 }
 
+bool ChessActivity::insufficientMaterial() const {
+  unsigned knights = 0, bishops = 0, kings = 0;
+  int bishopColor = -1;
+  for (int row = 0; row < 8; ++row) {
+    for (int col = 0; col < 8; ++col) {
+      const auto piece = board[row][col];
+      if (piece == EMPTY) continue;
+      if (piece == W_KING || piece == B_KING) {
+        ++kings;
+        continue;
+      }
+      if (piece == W_KNIGHT || piece == B_KNIGHT) {
+        ++knights;
+        continue;
+      }
+      if (piece != W_BISHOP && piece != B_BISHOP) return false;
+      const int color = (row + col) & 1;
+      if (bishopColor >= 0 && bishopColor != color) return false;
+      bishopColor = color;
+      ++bishops;
+    }
+  }
+  return kings == 2 && ((knights == 0) || (knights == 1 && bishops == 0));
+}
+
 void ChessActivity::checkGameState() {
   int kx, ky;
   if (!findKing(whiteTurn, kx, ky)) {
@@ -315,6 +340,10 @@ void ChessActivity::checkGameState() {
     gameOver = true;
     state = GAME_OVER;
     gameOverMsg = inCheck ? tr(STR_CHESS_MATE) : tr(STR_CHESS_STALEMATE);
+  } else if (insufficientMaterial()) {
+    gameOver = true;
+    state = GAME_OVER;
+    gameOverMsg = tr(STR_CHESS_MATERIAL_DRAW);
   }
 }
 

@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess insufficient-material draws (2026-10-08): bare kings, one lone minor
+  piece, and bishop-only positions confined to one square color.
+
 - Chess castling (2026-10-07): both sides and colors, permanent king/rook rights,
   blocked-lane and attacked-square checks. Device verification pending.
 

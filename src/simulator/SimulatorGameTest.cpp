@@ -496,6 +496,27 @@ class SimulatorGameTest {
                 "Chess castle execution");
       }
     }
+    memset(game.board, 0, sizeof(game.board));
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[7][7] = ChessActivity::W_KING;
+    require(game.insufficientMaterial(), "Chess bare kings draw");
+    game.board[3][3] = ChessActivity::W_KNIGHT;
+    require(game.insufficientMaterial(), "Chess lone knight draw");
+    game.board[4][4] = ChessActivity::B_KNIGHT;
+    require(!game.insufficientMaterial(), "Chess two knights incorrectly declared dead");
+    game.board[3][3] = ChessActivity::W_BISHOP;
+    game.board[4][4] = ChessActivity::B_BISHOP;
+    require(game.insufficientMaterial(), "Chess same-color bishops draw");
+    game.board[4][4] = ChessActivity::EMPTY;
+    game.board[4][3] = ChessActivity::B_BISHOP;
+    require(!game.insufficientMaterial(), "Chess opposite-color bishops incorrectly declared dead");
+    game.board[4][3] = ChessActivity::B_PAWN;
+    require(!game.insufficientMaterial(), "Chess pawn position incorrectly declared dead");
+    game.board[4][3] = ChessActivity::EMPTY;
+    game.whiteTurn = true;
+    game.gameOver = false;
+    game.checkGameState();
+    require(game.gameOver && game.state == ChessActivity::GAME_OVER, "Chess material draw not applied");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

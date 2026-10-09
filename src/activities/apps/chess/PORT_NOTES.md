@@ -3,7 +3,7 @@
 Adapted from Biscuit's ChessActivity board setup, pseudo-legal move generation,
 king-safety filtering, checkmate/stalemate and random-move opponent. This is not
 full tournament chess: underpromotion, repetition,
-move-count and insufficient-material draws are absent, as disclosed in setup.
+move-count draws are absent, as disclosed in setup.
 The bot now scores legal moves for captures, promotion, exposed destination
 pieces and small center/pawn-advance bonuses. This is a one-ply heuristic,
 not multi-ply search or a rated engine; it can miss tactics elsewhere. Black pieces use a filled backing, white
@@ -31,7 +31,7 @@ C1 first increment: no new heap allocations or activity fields. A 13-entry
 constexpr material table and reversible board edits evaluate each legal move.
 Device verification: play against the bot, offer a free queen, try a defended
 pawn, and check response time and Back behavior on X4; measure stack high-water
-and worst-position latency. Draw/promotion-choice work remains.
+and worst-position latency. Repetition/move-count draws and promotion-choice work remain.
 En passant tracks one eligible target until the next move. King-safety probes
 remove and restore the captured pawn; bot probes also restore eligibility.
 On device, test both colors, a missed one-turn opportunity and a pinned pawn.
@@ -43,3 +43,8 @@ safe square directly ahead of a pawn. Castling now validates both lanes and king
 moves and rook captures, and moves/restores the rook in simulation and bot scoring.
 Device: test both castles for both colors, occupied lanes, attacked transit squares
 and a moved-and-returned rook. No new heap allocation; one byte tracks rights.
+
+Insufficient-material detection covers bare kings, one lone knight/bishop,
+and bishop-only positions on one square color. It is conservative, not a general
+dead-position solver. On X4, verify an eligible capture ends with the translated
+draw message and Confirm returns to setup; repetition/move-count remain pending.
