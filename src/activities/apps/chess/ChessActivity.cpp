@@ -438,6 +438,15 @@ void ChessActivity::onEnter() {
   requestUpdate();
 }
 
+bool ChessActivity::claimFiftyMoveDraw() {
+  if (gameOver || state != SELECT_PIECE || quietHalfmoves < 100 || botThinking) return false;
+  gameOver = true;
+  state = GAME_OVER;
+  gameOverMsg = tr(STR_CHESS_50_DRAW);
+  validMoves.clear();
+  return true;
+}
+
 void ChessActivity::finishHumanMove() {
   doMove(selectedY, selectedX, cursorY, cursorX, state == PROMOTION ? promotionChoice : 0);
   whiteTurn = !whiteTurn;
@@ -517,6 +526,12 @@ void ChessActivity::loop() {
     if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
       finish();
     }
+    return;
+  }
+
+  if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) && mappedInput.getHeldTime() >= 500 &&
+      claimFiftyMoveDraw()) {
+    requestUpdate();
     return;
   }
 
@@ -630,6 +645,8 @@ void ChessActivity::render(RenderLock&&) {
                               : whiteTurn ? tr(STR_CHESS_WHITE)
                                           : tr(STR_CHESS_BLACK));
     if (inCheck) UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y + line, tr(STR_CHESS_CHECK));
+    if (state == SELECT_PIECE && !gameOver && !botThinking && quietHalfmoves >= 100)
+      UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y + 2 * line, tr(STR_CHESS_CLAIM_DRAW));
     if (state == PROMOTION) {
       static constexpr const char* choices[] = {"Q", "R", "B", "N"};
       char prompt[96];

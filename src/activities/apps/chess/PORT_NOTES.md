@@ -57,4 +57,12 @@ correct piece, turn, draw handling and bot response. No added heap allocation.
 Automatic 75-move draw uses a saturating two-byte half-move counter, restored
 by bot probes and reset by pawn moves/captures/new game. Mate/stalemate checks
 run first. Device: confirm long quiet play ends with the translated draw result;
-no history allocation. Fifty-move claims and repetition are still unsupported.
+no history allocation. Repetition remains unsupported.
+
+Fifty-move claims are available on the current position after 100 quiet
+half-moves: hold Confirm for 500 ms while choosing a piece. Target selection,
+bot thinking and finished games reject claims. Uses the existing counter,
+no new allocations. Intended-move claims (before the qualifying move) and bot
+claims are not implemented. Device: play a qualifying quiet sequence, verify
+the prompt, short Confirm still selects, and held Confirm ends in a draw;
+verify pawn/capture resets remove eligibility. No cache reset required.

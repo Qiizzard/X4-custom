@@ -543,6 +543,23 @@ class SimulatorGameTest {
     }
     game.initBoard();
     require(game.quietHalfmoves == 0, "Chess new game move counter");
+    game.state = ChessActivity::SELECT_PIECE;
+    game.gameOver = false;
+    game.botThinking = false;
+    game.quietHalfmoves = 99;
+    require(!game.claimFiftyMoveDraw(), "Chess premature 50-move claim");
+    game.quietHalfmoves = 100;
+    game.state = ChessActivity::SELECT_TARGET;
+    require(!game.claimFiftyMoveDraw(), "Chess claim during target selection");
+    game.state = ChessActivity::SELECT_PIECE;
+    game.botThinking = true;
+    require(!game.claimFiftyMoveDraw(), "Chess claim during bot turn");
+    game.botThinking = false;
+    require(game.claimFiftyMoveDraw() && game.gameOver && game.state == ChessActivity::GAME_OVER,
+            "Chess valid 50-move claim");
+    require(!game.claimFiftyMoveDraw(), "Chess repeat claim after game over");
+    game.gameOver = false;
+    game.state = ChessActivity::SELECT_PIECE;
     game.quietHalfmoves = 149;
     game.scoreBotMove(7, 1, 5, 2);
     require(game.quietHalfmoves == 149, "Chess bot probe changes move counter");

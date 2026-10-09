@@ -1171,3 +1171,13 @@ this schedule does not declare them completed or permanently blocked.
   image 6,549,616 bytes / 3,984 spare. Logs: firmware-builds/logs/2026-10-09-c1-75-*.log.
   No new heap/history buffer. Repetition, 50-move claims and deeper search
   remain pending; device validation open. Initial usage 19% five-hour/56% weekly.
+
+- 2026-10-09 C1 current-position human 50-move claims: hold Confirm for
+  500 ms in piece selection after 100 quiet half-moves; eligible prompt shown.
+  Premature, target-selection, bot-turn and finished-game claims rejected.
+  Simulator build (68.66s) and combined production regression PASS. C3 build
+  PASS (163.79s), 6,550,048 bytes / 3,552 OTA bytes spare; partitions unchanged.
+  Logs: firmware-builds/logs/2026-10-09-c1-50-{sim,runtime,c3}.log.
+  No new allocation or persistent field. Hardware input remains unverified;
+  intended-move/bot claims, repetition and deeper search remain pending.
+  Usage start 25% five-hour/65% weekly; boundary 35%/66%, no actual limit.

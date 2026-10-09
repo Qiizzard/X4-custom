@@ -80,6 +80,7 @@ class ChessActivity final : public Activity {
 
   int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol);
   void finishHumanMove();
+  bool claimFiftyMoveDraw();
   void botMove();
   void initBoard();
   bool isWhite(uint8_t piece) const { return piece >= W_PAWN && piece <= W_KING; }

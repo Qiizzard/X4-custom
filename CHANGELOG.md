@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess 50-move claims (2026-10-09): hold Confirm while choosing a piece
+  after 100 quiet half-moves; the board displays a claim prompt when eligible.
+
 - Chess automatic 75-move draw (2026-10-09): counts quiet half-moves, resets
   on pawn moves/captures, and gives checkmate precedence.
 
