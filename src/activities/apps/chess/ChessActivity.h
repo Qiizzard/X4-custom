@@ -41,7 +41,7 @@ class ChessActivity final : public Activity {
     rng ^= rng << 5;
     return rng;
   }
-  enum State { SETUP, SELECT_PIECE, SELECT_TARGET, GAME_OVER };
+  enum State { SETUP, SELECT_PIECE, SELECT_TARGET, PROMOTION, GAME_OVER };
   enum Piece : uint8_t {
     EMPTY = 0,
     W_PAWN,
@@ -74,9 +74,11 @@ class ChessActivity final : public Activity {
   bool vsBot = false;
   bool botThinking = false;
   unsigned long botThinkStart = 0;
+  unsigned promotionChoice = 0;
   int setupIndex = 0;  // 0=vs Human, 1=vs Bot
 
   int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol);
+  void finishHumanMove();
   void botMove();
   void initBoard();
   bool isWhite(uint8_t piece) const { return piece >= W_PAWN && piece <= W_KING; }
@@ -94,7 +96,7 @@ class ChessActivity final : public Activity {
   bool wouldBeInCheck(int fx, int fy, int tx, int ty);
   bool findKing(bool white, int& kx, int& ky) const;
   bool hasAnyLegalMove();
-  void doMove(int fx, int fy, int tx, int ty);
+  void doMove(int fx, int fy, int tx, int ty, unsigned promotion = 0);
   bool insufficientMaterial() const;
   void checkGameState();
 };

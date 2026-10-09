@@ -517,6 +517,29 @@ class SimulatorGameTest {
     game.gameOver = false;
     game.checkGameState();
     require(game.gameOver && game.state == ChessActivity::GAME_OVER, "Chess material draw not applied");
+    for (bool white : {true, false}) {
+      for (unsigned choice = 0; choice < 4; ++choice) {
+        memset(game.board, 0, sizeof(game.board));
+        game.whiteTurn = white;
+        game.gameOver = false;
+        game.vsBot = false;
+        game.board[0][7] = ChessActivity::B_KING;
+        game.board[7][7] = ChessActivity::W_KING;
+        game.selectedY = white ? 1 : 6;
+        game.selectedX = 0;
+        game.cursorY = white ? 0 : 7;
+        game.cursorX = 0;
+        game.board[game.selectedY][0] = white ? ChessActivity::W_PAWN : ChessActivity::B_PAWN;
+        game.state = ChessActivity::PROMOTION;
+        game.promotionChoice = choice;
+        game.finishHumanMove();
+        const uint8_t expected[] = {ChessActivity::W_QUEEN, ChessActivity::W_ROOK, ChessActivity::W_BISHOP,
+                                    ChessActivity::W_KNIGHT};
+        require(game.board[game.cursorY][0] == expected[choice] + (white ? 0 : 6) && game.whiteTurn != white &&
+                    game.board[white ? 1 : 6][0] == ChessActivity::EMPTY,
+                "Chess chosen promotion/turn completion");
+      }
+    }
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

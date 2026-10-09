@@ -1156,3 +1156,11 @@ this schedule does not declare them completed or permanently blocked.
   tests reject two-knight/opposite-bishop/pawn positions and verify game-over.
   No new heap/history buffer. Promotion choice, repetition/move counts and
   deeper search remain pending; device validation open. Usage initially 18%/38%.
+
+- 2026-10-09 09:46 UTC C1 human promotion picker: Q/R/B/N before turn
+  completion, mapped directional selection, Back cancels to target selection.
+  Redraw only on change; bot retains queen promotion. Both-color four-piece
+  completion tests and combined simulator regression PASS. C3 PASS 236.38s,
+  image 6,549,520 bytes / 4,080 spare. Logs: firmware-builds/logs/2026-10-09-c1-promotion-*.log.
+  No new heap; device picker interaction unverified. Repetition/move-count
+  draws and deeper bounded search remain. Initial usage 18% five-hour/47% weekly.

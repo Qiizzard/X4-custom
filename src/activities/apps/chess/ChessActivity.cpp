@@ -269,7 +269,7 @@ bool ChessActivity::hasAnyLegalMove() {
   return false;
 }
 
-void ChessActivity::doMove(int fx, int fy, int tx, int ty) {
+void ChessActivity::doMove(int fx, int fy, int tx, int ty, unsigned promotion) {
   uint8_t p = board[fx][fy];
   const bool king = p == W_KING || p == B_KING;
   if (king) castleRights &= isWhite(p) ? ~3u : ~12u;
@@ -294,9 +294,11 @@ void ChessActivity::doMove(int fx, int fy, int tx, int ty) {
   board[tx][ty] = p;
   board[fx][fy] = EMPTY;
 
-  // Pawn promotion to queen
+  // Human choice; bots and temporary evaluation default to queen.
   if ((p == W_PAWN && tx == 0) || (p == B_PAWN && tx == 7)) {
-    board[tx][ty] = isWhite(p) ? W_QUEEN : B_QUEEN;
+    static constexpr uint8_t pieces[] = {W_QUEEN, W_ROOK, W_BISHOP, W_KNIGHT};
+    const auto promoted = pieces[promotion < 4 ? promotion : 0];
+    board[tx][ty] = promoted + (isWhite(p) ? 0 : B_PAWN - W_PAWN);
   }
 }
 
@@ -425,6 +427,18 @@ void ChessActivity::onEnter() {
   requestUpdate();
 }
 
+void ChessActivity::finishHumanMove() {
+  doMove(selectedY, selectedX, cursorY, cursorX, state == PROMOTION ? promotionChoice : 0);
+  whiteTurn = !whiteTurn;
+  state = SELECT_PIECE;
+  validMoves.clear();
+  checkGameState();
+  if (vsBot && !gameOver) {
+    botThinking = true;
+    botThinkStart = millis();
+  }
+}
+
 void ChessActivity::loop() {
   if (TouchHeaderBackButton::wasTapped(mappedInput, renderer) ||
       (botThinking && mappedInput.wasReleased(MappedInputManager::Button::Back))) {
@@ -432,6 +446,21 @@ void ChessActivity::loop() {
     return;
   }
   RenderLock lock(*this);
+  if (state == PROMOTION) {
+    const unsigned previousChoice = promotionChoice;
+    if (mappedInput.wasReleased(MappedInputManager::Button::Left) ||
+        mappedInput.wasReleased(MappedInputManager::Button::Up))
+      promotionChoice = (promotionChoice + 3) % 4;
+    if (mappedInput.wasReleased(MappedInputManager::Button::Right) ||
+        mappedInput.wasReleased(MappedInputManager::Button::Down))
+      promotionChoice = (promotionChoice + 1) % 4;
+    if (mappedInput.wasReleased(MappedInputManager::Button::Back))
+      state = SELECT_TARGET;
+    else if (mappedInput.wasReleased(MappedInputManager::Button::Confirm))
+      finishHumanMove();
+    if (state != PROMOTION || promotionChoice != previousChoice) requestUpdate();
+    return;
+  }
   if (state == SETUP) {
     if (mappedInput.wasReleased(MappedInputManager::Button::Up) ||
         mappedInput.wasReleased(MappedInputManager::Button::Down)) {
@@ -513,16 +542,12 @@ void ChessActivity::loop() {
       // Check if target is valid
       auto it = std::find(validMoves.begin(), validMoves.end(), std::pair<int, int>{cursorY, cursorX});
       if (it != validMoves.end()) {
-        doMove(selectedY, selectedX, cursorY, cursorX);
-        whiteTurn = !whiteTurn;
-        state = SELECT_PIECE;
-        validMoves.clear();
-        checkGameState();
-        // Trigger bot move
-        if (vsBot && !gameOver) {
-          botThinking = true;
-          botThinkStart = millis();
-          requestUpdate();
+        const auto piece = board[selectedY][selectedX];
+        if ((piece == W_PAWN && cursorY == 0) || (piece == B_PAWN && cursorY == 7)) {
+          promotionChoice = 0;
+          state = PROMOTION;
+        } else {
+          finishHumanMove();
         }
       } else if (isOwnPiece(board[cursorY][cursorX])) {
         // Re-select different piece
@@ -594,6 +619,12 @@ void ChessActivity::render(RenderLock&&) {
                               : whiteTurn ? tr(STR_CHESS_WHITE)
                                           : tr(STR_CHESS_BLACK));
     if (inCheck) UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y + line, tr(STR_CHESS_CHECK));
+    if (state == PROMOTION) {
+      static constexpr const char* choices[] = {"Q", "R", "B", "N"};
+      char prompt[96];
+      snprintf(prompt, sizeof(prompt), "%s: %s", tr(STR_CHESS_PROMOTION), choices[promotionChoice]);
+      GUI.drawPopup(renderer, prompt);
+    }
     if (gameOver) GUI.drawPopup(renderer, gameOverMsg);
   }
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), gameOver ? tr(STR_NEW_GAME) : tr(STR_CONFIRM),

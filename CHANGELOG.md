@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess promotion picker (2026-10-09): choose queen, rook, bishop or knight;
+  Back cancels before moving. Bot promotions still choose queen.
+
 - Chess insufficient-material draws (2026-10-08): bare kings, one lone minor
   piece, and bishop-only positions confined to one square color.
 
