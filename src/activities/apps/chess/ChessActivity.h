@@ -59,6 +59,7 @@ class ChessActivity final : public Activity {
   };
 
   uint8_t board[8][8]{};
+  uint16_t quietHalfmoves = 0;
   uint8_t castleRights = 0;  // White K/Q, Black K/Q; initialized with a new board.
   int8_t enPassantRow = -1, enPassantCol = -1;
   int cursorX = 4, cursorY = 7;

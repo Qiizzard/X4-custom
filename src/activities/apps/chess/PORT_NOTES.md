@@ -3,7 +3,7 @@
 Adapted from Biscuit's ChessActivity board setup, pseudo-legal move generation,
 king-safety filtering, checkmate/stalemate and random-move opponent. This is not
 full tournament chess: repetition,
-move-count draws are absent, as disclosed in setup.
+50-move claims are absent, as disclosed in setup.
 The bot now scores legal moves for captures, promotion, exposed destination
 pieces and small center/pawn-advance bonuses. This is a one-ply heuristic,
 not multi-ply search or a rated engine; it can miss tactics elsewhere. Black pieces use a filled backing, white
@@ -31,7 +31,7 @@ C1 first increment: no new heap allocations or activity fields. A 13-entry
 constexpr material table and reversible board edits evaluate each legal move.
 Device verification: play against the bot, offer a free queen, try a defended
 pawn, and check response time and Back behavior on X4; measure stack high-water
-and worst-position latency. Repetition/move-count draws and deeper search remain.
+and worst-position latency. Repetition/50-move claims and deeper search remain.
 En passant tracks one eligible target until the next move. King-safety probes
 remove and restore the captured pawn; bot probes also restore eligibility.
 On device, test both colors, a missed one-turn opportunity and a pinned pawn.
@@ -53,3 +53,8 @@ Promotion picker uses mapped directions and Confirm; Back returns to target
 selection without mutation. Both-color choice/turn-completion tests cover all
 four pieces. Device: reach last rank, cycle Q/R/B/N, cancel then confirm; check
 correct piece, turn, draw handling and bot response. No added heap allocation.
+
+Automatic 75-move draw uses a saturating two-byte half-move counter, restored
+by bot probes and reset by pawn moves/captures/new game. Mate/stalemate checks
+run first. Device: confirm long quiet play ends with the translated draw result;
+no history allocation. Fifty-move claims and repetition are still unsupported.

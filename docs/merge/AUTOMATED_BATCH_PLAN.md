@@ -1164,3 +1164,10 @@ this schedule does not declare them completed or permanently blocked.
   image 6,549,520 bytes / 4,080 spare. Logs: firmware-builds/logs/2026-10-09-c1-promotion-*.log.
   No new heap; device picker interaction unverified. Repetition/move-count
   draws and deeper bounded search remain. Initial usage 18% five-hour/47% weekly.
+
+- 2026-10-09 14:47 UTC C1 automatic 75-move draw implemented with saturating
+  150-halfmove counter, pawn/capture reset and mate precedence. Bot probes
+  restore counter. Focused/combined simulator checks PASS, C3 PASS 171.42s,
+  image 6,549,616 bytes / 3,984 spare. Logs: firmware-builds/logs/2026-10-09-c1-75-*.log.
+  No new heap/history buffer. Repetition, 50-move claims and deeper search
+  remain pending; device validation open. Initial usage 19% five-hour/56% weekly.

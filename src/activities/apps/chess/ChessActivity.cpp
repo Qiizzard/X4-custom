@@ -12,6 +12,7 @@
 #include "fontIds.h"
 
 void ChessActivity::initBoard() {
+  quietHalfmoves = 0;
   castleRights = 15;
   enPassantRow = enPassantCol = -1;
   memset(board, EMPTY, sizeof(board));
@@ -271,6 +272,10 @@ bool ChessActivity::hasAnyLegalMove() {
 
 void ChessActivity::doMove(int fx, int fy, int tx, int ty, unsigned promotion) {
   uint8_t p = board[fx][fy];
+  if (p == W_PAWN || p == B_PAWN || board[tx][ty] != EMPTY)
+    quietHalfmoves = 0;
+  else if (quietHalfmoves < 150)
+    ++quietHalfmoves;
   const bool king = p == W_KING || p == B_KING;
   if (king) castleRights &= isWhite(p) ? ~3u : ~12u;
   // Moving from or capturing on a rook home square permanently revokes its right.
@@ -346,6 +351,10 @@ void ChessActivity::checkGameState() {
     gameOver = true;
     state = GAME_OVER;
     gameOverMsg = tr(STR_CHESS_MATERIAL_DRAW);
+  } else if (quietHalfmoves >= 150) {
+    gameOver = true;
+    state = GAME_OVER;
+    gameOverMsg = tr(STR_CHESS_75_DRAW);
   }
 }
 
@@ -353,6 +362,7 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   // One-ply heuristic only. Fixed flash table and reversible board edits; no allocations.
   static constexpr int values[] = {0, 100, 500, 320, 330, 900, 20000, 100, 500, 320, 330, 900, 20000};
   const uint8_t source = board[fromRow][fromCol], target = board[toRow][toCol];
+  const uint16_t savedQuiet = quietHalfmoves;
   const uint8_t savedRights = castleRights;
   const bool castle = (source == W_KING || source == B_KING) && fromRow == toRow && std::abs(toCol - fromCol) == 2;
   const int rookFrom = toCol > fromCol ? 7 : 0, rookTo = toCol > fromCol ? 5 : 3;
@@ -377,6 +387,7 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
     board[fromRow][rookFrom] = rook;
     board[fromRow][rookTo] = transit;
   }
+  quietHalfmoves = savedQuiet;
   castleRights = savedRights;
   enPassantRow = savedEpRow;
   enPassantCol = savedEpCol;

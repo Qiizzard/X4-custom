@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess automatic 75-move draw (2026-10-09): counts quiet half-moves, resets
+  on pawn moves/captures, and gives checkmate precedence.
+
 - Chess promotion picker (2026-10-09): choose queen, rook, bishop or knight;
   Back cancels before moving. Bot promotions still choose queen.
 

@@ -1,6 +1,7 @@
 #ifdef SIMULATOR
 #include "SimulatorGameTest.h"
 
+#include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
 
@@ -540,6 +541,34 @@ class SimulatorGameTest {
                 "Chess chosen promotion/turn completion");
       }
     }
+    game.initBoard();
+    require(game.quietHalfmoves == 0, "Chess new game move counter");
+    game.quietHalfmoves = 149;
+    game.scoreBotMove(7, 1, 5, 2);
+    require(game.quietHalfmoves == 149, "Chess bot probe changes move counter");
+    game.doMove(7, 1, 5, 2);
+    require(game.quietHalfmoves == 150, "Chess quiet move counter");
+    game.whiteTurn = false;
+    game.gameOver = false;
+    game.checkGameState();
+    require(game.gameOver, "Chess automatic 75-move draw missing");
+    game.doMove(1, 0, 2, 0);
+    require(game.quietHalfmoves == 0, "Chess pawn move counter reset");
+    game.quietHalfmoves = 149;
+    game.board[4][4] = ChessActivity::B_BISHOP;
+    game.board[3][3] = ChessActivity::W_ROOK;
+    game.doMove(4, 4, 3, 3);
+    require(game.quietHalfmoves == 0, "Chess capture counter reset");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[2][2] = ChessActivity::W_KING;
+    game.board[1][1] = ChessActivity::W_QUEEN;
+    game.quietHalfmoves = 150;
+    game.whiteTurn = false;
+    game.gameOver = false;
+    game.checkGameState();
+    require(game.gameOver && game.inCheck && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
+            "Chess mate must precede 75-move draw");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 
