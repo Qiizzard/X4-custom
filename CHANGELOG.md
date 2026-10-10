@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess repetition draws (2026-10-10): claim threefold with held Confirm;
+  fivefold draws automatically. Identity includes legal en passant and castling rights.
+
 - Chess 50-move claims (2026-10-09): hold Confirm while choosing a piece
   after 100 quiet half-moves; the board displays a claim prompt when eligible.
 

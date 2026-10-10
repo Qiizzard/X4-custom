@@ -1181,3 +1181,14 @@ this schedule does not declare them completed or permanently blocked.
   No new allocation or persistent field. Hardware input remains unverified;
   intended-move/bot claims, repetition and deeper search remain pending.
   Usage start 25% five-hour/65% weekly; boundary 35%/66%, no actual limit.
+
+- 2026-10-10 C1 repetition draws: exact 34-byte positions include side,
+  castling rights and legal-only en passant. Threefold human claims and
+  automatic fivefold implemented; irreversible moves reset bounded history.
+  Focused knight-cycle/identity/pinned-en-passant tests and combined simulator
+  regression PASS; simulator build 58.60s. C3 PASS 148.95s, 6,551,216 bytes,
+  2,384 OTA bytes spare; no partition changes. Compiled ChessActivity object
+  measured from C3 DWARF: 5,712 bytes (history array 5,134); no move-loop heap.
+  Logs: firmware-builds/logs/2026-10-10-c1-repeat-{sim,runtime,c3}.log.
+  Hardware play/heap/stack unverified; intended-move and bot claims and deeper
+  search remain. Usage 5%/68% at start, 19%/70% at boundary; no actual limit.

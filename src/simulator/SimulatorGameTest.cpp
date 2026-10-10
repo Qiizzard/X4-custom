@@ -542,22 +542,76 @@ class SimulatorGameTest {
       }
     }
     game.initBoard();
+    game.gameOver = false;
+    game.botThinking = false;
+    game.state = ChessActivity::SELECT_PIECE;
+    require(game.positionCount == 1 && game.repetitions == 1, "Chess initial history");
+    uint8_t initialPosition[34], changedPosition[34];
+    game.encodePosition(initialPosition);
+    game.whiteTurn = false;
+    game.encodePosition(changedPosition);
+    require(memcmp(initialPosition, changedPosition, 34) != 0, "Chess repetition turn identity");
+    game.whiteTurn = true;
+    game.castleRights = 0;
+    game.encodePosition(changedPosition);
+    require(memcmp(initialPosition, changedPosition, 34) != 0, "Chess repetition castling identity");
+    game.initBoard();
+    for (unsigned cycle = 0; cycle < 4; ++cycle) {
+      const int moves[4][4] = {{7, 6, 5, 5}, {0, 6, 2, 5}, {5, 5, 7, 6}, {2, 5, 0, 6}};
+      for (const auto& move : moves) {
+        game.doMove(move[0], move[1], move[2], move[3]);
+        game.whiteTurn = !game.whiteTurn;
+        game.recordPosition();
+        game.checkGameState();
+      }
+      require(game.repetitions == cycle + 2, "Chess repeated knight cycle count");
+      require(game.gameOver == (cycle == 3), "Chess fivefold automatic boundary");
+      if (cycle == 1) {
+        require(game.claimDraw(), "Chess threefold claim");
+        game.gameOver = false;
+        game.state = ChessActivity::SELECT_PIECE;
+      }
+    }
+    game.doMove(6, 0, 5, 0);
+    game.whiteTurn = false;
+    game.recordPosition();
+    require(game.positionCount == 1 && game.repetitions == 1, "Chess irreversible history reset");
+    // Exact position identity ignores pinned/unavailable en passant captures.
+    memset(game.board, 0, sizeof(game.board));
+    game.board[7][4] = ChessActivity::W_KING;
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[3][4] = ChessActivity::W_PAWN;
+    game.board[3][3] = ChessActivity::B_PAWN;
+    game.board[0][4] = ChessActivity::B_ROOK;
+    game.whiteTurn = true;
+    game.enPassantRow = game.enPassantCol = -1;
+    game.encodePosition(initialPosition);
+    game.enPassantRow = 2;
+    game.enPassantCol = 3;
+    game.encodePosition(changedPosition);
+    require(memcmp(initialPosition, changedPosition, 34) == 0, "Chess pinned en passant identity");
+    game.board[0][4] = ChessActivity::EMPTY;
+    game.encodePosition(changedPosition);
+    require(changedPosition[33] == 4, "Chess legal en passant identity");
+    game.enPassantCol = 0;
+    game.encodePosition(changedPosition);
+    require(changedPosition[33] == 0, "Chess unavailable en passant identity");
+    game.initBoard();
     require(game.quietHalfmoves == 0, "Chess new game move counter");
     game.state = ChessActivity::SELECT_PIECE;
     game.gameOver = false;
     game.botThinking = false;
     game.quietHalfmoves = 99;
-    require(!game.claimFiftyMoveDraw(), "Chess premature 50-move claim");
+    require(!game.claimDraw(), "Chess premature 50-move claim");
     game.quietHalfmoves = 100;
     game.state = ChessActivity::SELECT_TARGET;
-    require(!game.claimFiftyMoveDraw(), "Chess claim during target selection");
+    require(!game.claimDraw(), "Chess claim during target selection");
     game.state = ChessActivity::SELECT_PIECE;
     game.botThinking = true;
-    require(!game.claimFiftyMoveDraw(), "Chess claim during bot turn");
+    require(!game.claimDraw(), "Chess claim during bot turn");
     game.botThinking = false;
-    require(game.claimFiftyMoveDraw() && game.gameOver && game.state == ChessActivity::GAME_OVER,
-            "Chess valid 50-move claim");
-    require(!game.claimFiftyMoveDraw(), "Chess repeat claim after game over");
+    require(game.claimDraw() && game.gameOver && game.state == ChessActivity::GAME_OVER, "Chess valid 50-move claim");
+    require(!game.claimDraw(), "Chess repeat claim after game over");
     game.gameOver = false;
     game.state = ChessActivity::SELECT_PIECE;
     game.quietHalfmoves = 149;

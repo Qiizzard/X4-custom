@@ -59,6 +59,10 @@ class ChessActivity final : public Activity {
   };
 
   uint8_t board[8][8]{};
+  // Exact compact positions since the last pawn move/capture. The automatic
+  // 75-move draw bounds this at the initial position plus 150 half-moves.
+  uint8_t positions[151][34]{};
+  uint8_t positionCount = 0, repetitions = 1;
   uint16_t quietHalfmoves = 0;
   uint8_t castleRights = 0;  // White K/Q, Black K/Q; initialized with a new board.
   int8_t enPassantRow = -1, enPassantCol = -1;
@@ -80,7 +84,9 @@ class ChessActivity final : public Activity {
 
   int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol);
   void finishHumanMove();
-  bool claimFiftyMoveDraw();
+  bool claimDraw();
+  void encodePosition(uint8_t (&position)[34]);
+  void recordPosition();
   void botMove();
   void initBoard();
   bool isWhite(uint8_t piece) const { return piece >= W_PAWN && piece <= W_KING; }

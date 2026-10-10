@@ -13,6 +13,8 @@
 
 void ChessActivity::initBoard() {
   quietHalfmoves = 0;
+  whiteTurn = true;
+  positionCount = 0;
   castleRights = 15;
   enPassantRow = enPassantCol = -1;
   memset(board, EMPTY, sizeof(board));
@@ -36,6 +38,41 @@ void ChessActivity::initBoard() {
   board[7][5] = W_BISHOP;
   board[7][6] = W_KNIGHT;
   board[7][7] = W_ROOK;
+  recordPosition();
+}
+
+void ChessActivity::encodePosition(uint8_t (&position)[34]) {
+  for (int row = 0; row < 8; ++row)
+    for (int col = 0; col < 8; col += 2) position[row * 4 + col / 2] = board[row][col] | (board[row][col + 1] << 4);
+  position[32] = castleRights | (whiteTurn ? 16 : 0);
+  position[33] = 0;
+  // An unusable en passant target must not distinguish otherwise equal positions.
+  const int expectedRow = whiteTurn ? 2 : 5;
+  if (enPassantRow != expectedRow || enPassantCol < 0 || enPassantCol > 7 || board[expectedRow][enPassantCol] != EMPTY)
+    return;
+  const int row = expectedRow + (whiteTurn ? 1 : -1);
+  if (board[row][enPassantCol] != (whiteTurn ? B_PAWN : W_PAWN)) return;
+  for (int col : {enPassantCol - 1, enPassantCol + 1}) {
+    if (col >= 0 && col < 8 && board[row][col] == (whiteTurn ? W_PAWN : B_PAWN) &&
+        !wouldBeInCheck(row, col, expectedRow, enPassantCol)) {
+      position[33] = enPassantCol + 1;
+      break;
+    }
+  }
+}
+
+void ChessActivity::recordPosition() {
+  if (quietHalfmoves == 0) positionCount = 0;
+  if (positionCount >= 151) {
+    LOG_ERR("CHESS", "Position history exceeded move limit");
+    return;
+  }
+  auto& current = positions[positionCount];
+  encodePosition(current);
+  repetitions = 1;
+  for (unsigned i = 0; i < positionCount; ++i)
+    if (memcmp(positions[i], current, sizeof(current)) == 0) ++repetitions;
+  ++positionCount;
 }
 
 const char* ChessActivity::pieceChar(uint8_t piece) const {
@@ -351,6 +388,10 @@ void ChessActivity::checkGameState() {
     gameOver = true;
     state = GAME_OVER;
     gameOverMsg = tr(STR_CHESS_MATERIAL_DRAW);
+  } else if (repetitions >= 5) {
+    gameOver = true;
+    state = GAME_OVER;
+    gameOverMsg = tr(STR_CHESS_REPETITION_DRAW);
   } else if (quietHalfmoves >= 150) {
     gameOver = true;
     state = GAME_OVER;
@@ -425,6 +466,7 @@ void ChessActivity::botMove() {
   }
   doMove(chosenR, chosenC, chosenToR, chosenToC);
   whiteTurn = !whiteTurn;
+  recordPosition();
   checkGameState();
 }
 
@@ -438,11 +480,11 @@ void ChessActivity::onEnter() {
   requestUpdate();
 }
 
-bool ChessActivity::claimFiftyMoveDraw() {
-  if (gameOver || state != SELECT_PIECE || quietHalfmoves < 100 || botThinking) return false;
+bool ChessActivity::claimDraw() {
+  if (gameOver || state != SELECT_PIECE || (quietHalfmoves < 100 && repetitions < 3) || botThinking) return false;
   gameOver = true;
   state = GAME_OVER;
-  gameOverMsg = tr(STR_CHESS_50_DRAW);
+  gameOverMsg = repetitions >= 3 ? tr(STR_CHESS_REPETITION_DRAW) : tr(STR_CHESS_50_DRAW);
   validMoves.clear();
   return true;
 }
@@ -450,6 +492,7 @@ bool ChessActivity::claimFiftyMoveDraw() {
 void ChessActivity::finishHumanMove() {
   doMove(selectedY, selectedX, cursorY, cursorX, state == PROMOTION ? promotionChoice : 0);
   whiteTurn = !whiteTurn;
+  recordPosition();
   state = SELECT_PIECE;
   validMoves.clear();
   checkGameState();
@@ -529,8 +572,7 @@ void ChessActivity::loop() {
     return;
   }
 
-  if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) && mappedInput.getHeldTime() >= 500 &&
-      claimFiftyMoveDraw()) {
+  if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) && mappedInput.getHeldTime() >= 500 && claimDraw()) {
     requestUpdate();
     return;
   }
@@ -645,7 +687,7 @@ void ChessActivity::render(RenderLock&&) {
                               : whiteTurn ? tr(STR_CHESS_WHITE)
                                           : tr(STR_CHESS_BLACK));
     if (inCheck) UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y + line, tr(STR_CHESS_CHECK));
-    if (state == SELECT_PIECE && !gameOver && !botThinking && quietHalfmoves >= 100)
+    if (state == SELECT_PIECE && !gameOver && !botThinking && (quietHalfmoves >= 100 || repetitions >= 3))
       UITheme::drawCenteredText(renderer, area, UI_10_FONT_ID, y + 2 * line, tr(STR_CHESS_CLAIM_DRAW));
     if (state == PROMOTION) {
       static constexpr const char* choices[] = {"Q", "R", "B", "N"};
