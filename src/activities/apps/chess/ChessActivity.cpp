@@ -399,8 +399,8 @@ void ChessActivity::checkGameState() {
   }
 }
 
-int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) {
-  // One-ply heuristic only. Fixed flash table and reversible board edits; no allocations.
+int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol, bool replies) {
+  // At most one opponent reply layer. Fixed flash table and reversible board edits; no allocations.
   static constexpr int values[] = {0, 100, 500, 320, 330, 900, 20000, 100, 500, 320, 330, 900, 20000};
   const uint8_t source = board[fromRow][fromCol], target = board[toRow][toCol];
   const uint16_t savedQuiet = quietHalfmoves;
@@ -421,6 +421,12 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   score += 3 - std::min(std::abs(3 - toCol), std::abs(4 - toCol));
   if (source == W_PAWN) score += 6 - toRow;
   if (source == B_PAWN) score += toRow - 1;
+  if (replies) {
+    whiteTurn = !whiteTurn;
+    const int reply = bestReplyScore();
+    whiteTurn = !whiteTurn;
+    score = reply == -30000 ? 30000 : reply == 30000 ? 0 : score - reply;
+  }
   board[fromRow][fromCol] = source;
   board[toRow][toCol] = target;
   if (ep) board[fromRow][toCol] = side;
@@ -435,39 +441,71 @@ int ChessActivity::scoreBotMove(int fromRow, int fromCol, int toRow, int toCol) 
   return score;
 }
 
-void ChessActivity::botMove() {
-  int chosenR = 0, chosenC = 0, chosenToR = 0, chosenToC = 0;
-  unsigned seen = 0;
-  int bestScore = -30000;
-  for (int r = 0; r < 8; ++r)
-    for (int c = 0; c < 8; ++c) {
-      if (!isOwnPiece(board[r][c])) continue;
+int ChessActivity::bestReplyScore() {
+  unsigned examined = 0, legal = 0;
+  int best = 0;
+  for (int row = 0; row < 8; ++row)
+    for (int col = 0; col < 8; ++col) {
+      if (!isOwnPiece(board[row][col])) continue;
       MoveList targets;
-      addCandidates(r, c, targets);
-      for (const auto& [tr, tc] : targets) {
-        if (wouldBeInCheck(r, c, tr, tc)) continue;
-        const int score = scoreBotMove(r, c, tr, tc);
-        if (score < bestScore) continue;
-        if (score > bestScore) {
-          bestScore = score;
-          seen = 0;
-        }
-        if (randomValue() % ++seen == 0) {
-          chosenR = r;
-          chosenC = c;
-          chosenToR = tr;
-          chosenToC = tc;
-        }
+      addCandidates(row, col, targets);
+      for (const auto& [toRow, toCol] : targets) {
+        // Bound unusual promoted-piece positions as well as ordinary play.
+        if (++examined > 128 || legal >= 64) return best;
+        if (wouldBeInCheck(row, col, toRow, toCol)) continue;
+        ++legal;
+        best = std::max(best, scoreBotMove(row, col, toRow, toCol));
       }
     }
-  if (!seen) {
-    checkGameState();
-    return;
+  if (legal) return best;
+  int row, col;
+  return findKing(whiteTurn, row, col) && isSquareAttacked(row, col, !whiteTurn) ? -30000 : 30000;
+}
+
+bool ChessActivity::botMove() {
+  if (!botSearching) {
+    botSearching = true;
+    botSquare = botTarget = 0;
+    botEvaluated = botSeen = 0;
+    botBest = -32000;
+    botSearchStart = millis();
   }
-  doMove(chosenR, chosenC, chosenToR, chosenToC);
-  whiteTurn = !whiteTurn;
-  recordPosition();
+  // One root candidate per loop, then restore the board and yield for input.
+  // A time cap is checked between candidates; a reply batch is node-bounded.
+  while (botSquare < 64 && botEvaluated < 128 && (botEvaluated == 0 || millis() - botSearchStart < 2000)) {
+    const int row = botSquare / 8, col = botSquare % 8;
+    MoveList targets;
+    if (isOwnPiece(board[row][col])) addCandidates(row, col, targets);
+    while (botTarget < targets.used) {
+      const auto [toRow, toCol] = targets.values[botTarget++];
+      if (wouldBeInCheck(row, col, toRow, toCol)) continue;
+      const int score = scoreBotMove(row, col, toRow, toCol, true);
+      ++botEvaluated;
+      if (score >= botBest) {
+        if (score > botBest) {
+          botBest = score;
+          botSeen = 0;
+        }
+        if (randomValue() % ++botSeen == 0) {
+          botChoice[0] = row;
+          botChoice[1] = col;
+          botChoice[2] = toRow;
+          botChoice[3] = toCol;
+        }
+      }
+      return false;
+    }
+    ++botSquare;
+    botTarget = 0;
+  }
+  botSearching = false;
+  if (botSeen) {
+    doMove(botChoice[0], botChoice[1], botChoice[2], botChoice[3]);
+    whiteTurn = !whiteTurn;
+    recordPosition();
+  }
   checkGameState();
+  return true;
 }
 
 void ChessActivity::onEnter() {
@@ -498,6 +536,7 @@ void ChessActivity::finishHumanMove() {
   checkGameState();
   if (vsBot && !gameOver) {
     botThinking = true;
+    botSearching = false;
     botThinkStart = millis();
   }
 }
@@ -550,9 +589,8 @@ void ChessActivity::loop() {
 
   // Bot thinking timer
   if (botThinking) {
-    if (millis() - botThinkStart > 600) {
+    if (millis() - botThinkStart > 600 && botMove()) {
       botThinking = false;
-      botMove();
       requestUpdate();
     }
     return;

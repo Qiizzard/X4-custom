@@ -4,13 +4,13 @@ Adapted from Biscuit's ChessActivity board setup, pseudo-legal move generation,
 king-safety filtering, checkmate/stalemate and random-move opponent. This is not
 full tournament chess: intended-move claims and bot draw claims remain absent.
 The bot now scores legal moves for captures, promotion, exposed destination
-pieces and small center/pawn-advance bonuses. This is a one-ply heuristic,
-not multi-ply search or a rated engine; it can miss tactics elsewhere. Black pieces use a filled backing, white
+pieces and small center/pawn-advance bonuses, then subtracts the best evaluated
+opponent reply. This is a capped two-ply heuristic, not a rated engine. Black pieces use a filled backing, white
 pieces an unfilled backing; conventional P/R/N/B/Q/K labels identify pieces.
 
 Each move list has 28 fixed pairs (228 bytes including count); a queen has at
 most 27 pseudo-legal destinations. Nested legality checks use distinct bounded
-local lists, no recursion or heap churn. The activity holds a 64-byte board and
+local lists and no heap churn; reply evaluation nests one extra scoring frame. The activity holds a 64-byte board and
 one fixed valid-move list. Bot selection uses reservoir sampling among equally best-scoring legal moves
 instead of the source's 218-entry/3,488-byte stack array. Cosmetic xorshift is
 not cryptographic and modulo selection is not claimed perfectly uniform.
@@ -30,7 +30,7 @@ C1 first increment: no new heap allocations or activity fields. A 13-entry
 constexpr material table and reversible board edits evaluate each legal move.
 Device verification: play against the bot, offer a free queen, try a defended
 pawn, and check response time and Back behavior on X4; measure stack high-water
-and worst-position latency. Deeper search remains.
+and worst-position latency.
 En passant tracks one eligible target until the next move. King-safety probes
 remove and restore the captured pawn; bot probes also restore eligibility.
 On device, test both colors, a missed one-turn opportunity and a pinned pawn.
@@ -79,6 +79,20 @@ claim prompt must appear. Continue to four cycles for automatic fivefold draw.
 Verify Back/new game and repeated entry/exit heap stability. Hardware RAM/stack
 and input timing remain unverified.
 
-C3 compiled activity object measured 5,712 bytes on 2026-10-10; excludes
-transient call stacks and renderer-owned memory. Firmware image 6,551,216 bytes
-leaves 2,384 bytes in the unchanged OTA slot.
+C3 compiled activity object measured 5,736 bytes on 2026-10-10; excludes
+transient call stacks and renderer-owned memory. Firmware image 6,551,840 bytes
+leaves 1,760 bytes in the unchanged OTA slot.
+
+Bounded reply search (2026-10-10): one root candidate per loop, maximum 128
+root candidates; each reply scan checks at most 128 pseudo-moves and scores
+at most 64 legal moves. The two-second deadline is checked between roots,
+not a hard wall-clock guarantee. Back is handled before the next root. Board,
+turn, en passant, castling and counter state are restored before yielding;
+only the chosen move enters repetition history. Mate/stalemate at the reply
+root are scored explicitly. Search order/caps can miss moves; draw history
+is not evaluated in hypothetical positions. No per-node allocation.
+Hardware: play against the bot, press Back during thinking, measure maximum
+input latency and task stack high-water in crowded/promoted-piece positions.
+Native tests cover a hanging piece elsewhere, mate/stalemate, bounded search
+completion and unchanged board/turn at intermediate yields. Device checks
+remain open; this does not establish a strength rating.

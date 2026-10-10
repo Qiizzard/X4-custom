@@ -385,7 +385,15 @@ class SimulatorGameTest {
     require(capture > game.scoreBotMove(3, 3, 3, 4), "Chess bot ignores free queen");
     require(game.board[3][3] == ChessActivity::B_ROOK && game.board[3][5] == ChessActivity::W_QUEEN && !game.whiteTurn,
             "Chess bot scoring changed board or turn");
-    game.botMove();
+    bool botDone = false;
+    for (unsigned step = 0; step < 130 && !botDone; ++step) {
+      botDone = game.botMove();
+      if (!botDone)
+        require(
+            game.board[3][3] == ChessActivity::B_ROOK && game.board[3][5] == ChessActivity::W_QUEEN && !game.whiteTurn,
+            "Chess search yield changes position");
+    }
+    require(botDone && game.botEvaluated <= 128 && !game.botSearching, "Chess bot search bound");
     require(game.board[3][5] == ChessActivity::B_ROOK && game.whiteTurn, "Chess bot failed free queen capture");
     memset(game.board, 0, sizeof(game.board));
     game.whiteTurn = false;
@@ -399,6 +407,27 @@ class SimulatorGameTest {
     require(game.scoreBotMove(6, 1, 7, 1) >= 800 && game.board[6][1] == ChessActivity::B_PAWN &&
                 game.board[7][1] == ChessActivity::EMPTY,
             "Chess bot promotion scoring/restoration");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[7][7] = ChessActivity::W_KING;
+    game.board[3][3] = ChessActivity::B_QUEEN;
+    game.board[3][5] = ChessActivity::W_ROOK;
+    game.board[6][0] = ChessActivity::B_ROOK;
+    game.board[6][2] = ChessActivity::W_PAWN;
+    require(game.scoreBotMove(6, 0, 6, 2) > game.scoreBotMove(3, 3, 2, 3), "Chess tactic fixture one-ply bias");
+    require(game.scoreBotMove(6, 0, 6, 2, true) < game.scoreBotMove(3, 3, 2, 3, true),
+            "Chess reply search misses hanging queen elsewhere");
+    require(game.board[3][3] == ChessActivity::B_QUEEN && game.board[6][0] == ChessActivity::B_ROOK &&
+                game.board[6][2] == ChessActivity::W_PAWN && !game.whiteTurn,
+            "Chess reply search fails board/turn restoration");
+    memset(game.board, 0, sizeof(game.board));
+    game.board[0][0] = ChessActivity::B_KING;
+    game.board[2][2] = ChessActivity::W_KING;
+    game.board[2][1] = ChessActivity::W_QUEEN;
+    game.whiteTurn = true;
+    require(game.scoreBotMove(2, 1, 1, 1, true) == 30000, "Chess search misses mate in one");
+    require(game.scoreBotMove(2, 1, 1, 2, true) == 0, "Chess search misses stalemate");
+
     memset(game.board, 0, sizeof(game.board));
     game.whiteTurn = true;
     game.board[7][4] = ChessActivity::W_KING;

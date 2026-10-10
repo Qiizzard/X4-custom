@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess bounded reply search (2026-10-10): considers an opponent reply and
+  yields between candidate moves for input; recognizes mate and stalemate.
+
 - Chess repetition draws (2026-10-10): claim threefold with held Confirm;
   fivefold draws automatically. Identity includes legal en passant and castling rights.
 

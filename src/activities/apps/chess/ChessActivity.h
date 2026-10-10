@@ -20,7 +20,7 @@ class ChessActivity final : public Activity {
   friend class SimulatorGameTest;
 #endif
   struct MoveList {
-    // A queen has at most 27 pseudo-legal destinations; no recursive search.
+    // A queen has at most 27 pseudo-legal destinations; bounded search lists.
     std::pair<int, int> values[28];
     unsigned used = 0;
     void clear() { used = 0; }
@@ -79,15 +79,21 @@ class ChessActivity final : public Activity {
   bool vsBot = false;
   bool botThinking = false;
   unsigned long botThinkStart = 0;
+  bool botSearching = false;
+  uint8_t botSquare = 0, botTarget = 0, botChoice[4]{};
+  unsigned botEvaluated = 0, botSeen = 0;
+  int botBest = -32000;
+  unsigned long botSearchStart = 0;
   unsigned promotionChoice = 0;
   int setupIndex = 0;  // 0=vs Human, 1=vs Bot
 
-  int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol);
+  int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol, bool replies = false);
+  int bestReplyScore();
   void finishHumanMove();
   bool claimDraw();
   void encodePosition(uint8_t (&position)[34]);
   void recordPosition();
-  void botMove();
+  bool botMove();
   void initBoard();
   bool isWhite(uint8_t piece) const { return piece >= W_PAWN && piece <= W_KING; }
   bool isBlack(uint8_t piece) const { return piece >= B_PAWN && piece <= B_KING; }
