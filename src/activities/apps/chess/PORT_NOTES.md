@@ -2,7 +2,7 @@
 
 Adapted from Biscuit's ChessActivity board setup, pseudo-legal move generation,
 king-safety filtering, checkmate/stalemate and random-move opponent. This is not
-full tournament chess: intended-move claims and bot draw claims remain absent.
+a rated tournament engine; search and material-draw detection remain deliberately limited.
 The bot now scores legal moves for captures, promotion, exposed destination
 pieces and small center/pawn-advance bonuses, then subtracts the best evaluated
 opponent reply. This is a capped two-ply heuristic, not a rated engine. Black pieces use a filled backing, white
@@ -59,10 +59,9 @@ run first. Device: confirm long quiet play ends with the translated draw result;
 the move counter itself needs no history allocation.
 
 Fifty-move claims are available on the current position after 100 quiet
-half-moves: hold Confirm for 500 ms while choosing a piece. Target selection,
-bot thinking and finished games reject claims. Uses the existing counter,
-no new allocations. Intended-move claims (before the qualifying move) and bot
-claims are not implemented. Device: play a qualifying quiet sequence, verify
+half-moves: hold Confirm for 500 ms while choosing a piece. Bot thinking and finished games reject human claims. Uses the existing counter,
+no new allocations. Intended-move claims are available by holding Confirm on a legal highlighted
+quiet target. The bot accepts an eligible current-position draw before search. Device: play a qualifying quiet sequence, verify
 the prompt, short Confirm still selects, and held Confirm ends in a draw;
 verify pawn/capture resets remove eligibility. No cache reset required.
 
@@ -80,8 +79,8 @@ Verify Back/new game and repeated entry/exit heap stability. Hardware RAM/stack
 and input timing remain unverified.
 
 C3 compiled activity object measured 5,736 bytes on 2026-10-10; excludes
-transient call stacks and renderer-owned memory. Firmware image 6,551,840 bytes
-leaves 1,760 bytes in the unchanged OTA slot.
+transient call stacks and renderer-owned memory. Firmware image 6,552,304 bytes
+leaves 1,296 bytes in the unchanged OTA slot.
 
 Bounded reply search (2026-10-10): one root candidate per loop, maximum 128
 root candidates; each reply scan checks at most 128 pseudo-moves and scores
@@ -96,3 +95,14 @@ input latency and task stack high-water in crowded/promoted-piece positions.
 Native tests cover a hanging piece elsewhere, mate/stalemate, bounded search
 completion and unchanged board/turn at intermediate yields. Device checks
 remain open; this does not establish a strength rating.
+
+Intended claims (2026-10-10) use a 64-byte board snapshot plus a 34-byte
+position key on the stack, restoring turn, rights, en passant and half-move
+count without touching history. No new activity fields or allocation. Rejected
+held-Confirm claims leave the move unplayed; short Confirm still plays it.
+Hardware: after seven plies of the repeated-knight cycle, select Black's
+f6-g8 return and hold Confirm; draw must end with the knight still on f6.
+At 99 quiet half-moves, hold Confirm on a legal non-pawn, non-capture target;
+verify unchanged board and draw result. Pawn/capture targets must not claim.
+Bot policy accepts current-position claims immediately, including winning
+positions; it does not assess whether playing on would be preferable.

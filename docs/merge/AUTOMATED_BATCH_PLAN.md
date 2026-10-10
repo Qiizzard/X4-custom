@@ -78,11 +78,11 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
 | P7 | actionable implementation complete; validation pending | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Mesh Chat direct transport, peer discovery and opt-in relay integrated (wip). Bulletin Board and small-file Dead Drop bounded AP/server integrated (wip). Authenticated WiFi QR Share integrated (wip). Remaining entries have documented BLE/hardware/product gates. |
-| C1 | active implementation priority | Rules, current-position claims and capped two-ply bot implemented; intended-move/bot draw claims and device latency/stack validation remain. Medical Card skipped. |
-| V1 | resume after C1 | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
+| C1 | source implementation complete; device unverified | Castling, en passant, promotions, current/intended human draw claims, bot current-position claims and capped two-ply search implemented. Device latency/stack validation joins V1. Medical Card skipped. |
+| V1 | active consolidated validation | One consolidated host/simulator/soak/static-analysis/flash-budget and integration pass; fix failures together. |
 | V2 | deferred until V1 | Produce test firmware and a concise hardware checklist; complete available device checks and record outstanding product/recovery gates. |
 
-Original approved source ports are integrated. Continue newly authorized C1 Chess depth first, then resume V1; skip Medical Card and unresolved product/dataset/composite/BLE gates.
+Original approved source ports are integrated. C1 planned source increments are integrated; resume V1 including Chess regression/soak and resource checks; skip Medical Card and unresolved product/dataset/composite/BLE gates.
 Porting is separate from the deferred V1 verification phase.
 
 ## Historical execution rules (superseded where conflicting above)
@@ -1205,3 +1205,16 @@ this schedule does not declare them completed or permanently blocked.
   5,736 bytes (+24). Logs: firmware-builds/logs/2026-10-10-c1-search-*.log.
   Device stack/latency/strength unverified. Intended-move and bot draw claims
   remain. Usage start 0%/71%, boundary 19%/74%; no actual rate limit.
+
+- 2026-10-10 C1 intended-move and bot claims: held Confirm on a legal quiet
+  target probes then restores board/turn/rights/en-passant/counter/history;
+  successful claim leaves the move unplayed. Rejected long claims do not move.
+  Bot accepts eligible current-position claims before search (fixed policy).
+  Focused intended 50-move/threefold, pawn/invalid rejection, restoration and
+  bot-claim tests plus combined regression PASS. Simulator build 6.04s; C3
+  PASS 24.24s, 6,552,304 bytes / 1,296 OTA spare; partitions unchanged.
+  Logs: firmware-builds/logs/2026-10-10-c1-claims-{sim,runtime,c3}.log.
+  No new activity fields/heap; probe arrays total 98 stack bytes. Device input,
+  heap/stack/latency remain unverified. C1 planned source increments complete;
+  V1 resumes with Chess/resource validation. Flash reserve gate remains open.
+  Usage start 30%/76%; natural five-hour reset observed, checkpoint 9%/77%.

@@ -90,7 +90,8 @@ class ChessActivity final : public Activity {
   int scoreBotMove(int fromRow, int fromCol, int toRow, int toCol, bool replies = false);
   int bestReplyScore();
   void finishHumanMove();
-  bool claimDraw();
+  unsigned intendedDrawReason();
+  bool claimDraw(bool forBot = false);
   void encodePosition(uint8_t (&position)[34]);
   void recordPosition();
   bool botMove();

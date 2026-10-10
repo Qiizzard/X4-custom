@@ -22,6 +22,9 @@ base is MIT.
 
 ### Added
 
+- Chess declared-move draw claims (2026-10-10): hold Confirm on a legal target
+  to claim before moving; bot accepts eligible current-position draw claims.
+
 - Chess bounded reply search (2026-10-10): considers an opponent reply and
   yields between candidate moves for input; recognizes mate and stalemate.
 

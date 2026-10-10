@@ -634,13 +634,65 @@ class SimulatorGameTest {
     require(!game.claimDraw(), "Chess premature 50-move claim");
     game.quietHalfmoves = 100;
     game.state = ChessActivity::SELECT_TARGET;
-    require(!game.claimDraw(), "Chess claim during target selection");
+    game.validMoves.clear();
+    require(!game.claimDraw(), "Chess claim on invalid intended target");
     game.state = ChessActivity::SELECT_PIECE;
     game.botThinking = true;
     require(!game.claimDraw(), "Chess claim during bot turn");
     game.botThinking = false;
     require(game.claimDraw() && game.gameOver && game.state == ChessActivity::GAME_OVER, "Chess valid 50-move claim");
     require(!game.claimDraw(), "Chess repeat claim after game over");
+    game.gameOver = false;
+    game.state = ChessActivity::SELECT_PIECE;
+    game.quietHalfmoves = 99;
+    game.selectedY = 7;
+    game.selectedX = 1;
+    game.cursorY = 5;
+    game.cursorX = 2;
+    game.computeValidMoves(7, 1);
+    game.state = ChessActivity::SELECT_TARGET;
+    require(game.intendedDrawReason() == 1 && game.quietHalfmoves == 99 && game.whiteTurn &&
+                game.board[7][1] == ChessActivity::W_KNIGHT && game.board[5][2] == ChessActivity::EMPTY &&
+                game.positionCount == 1 && game.castleRights == 15,
+            "Chess intended fifty-move claim/restoration");
+    require(game.claimDraw() && game.gameOver, "Chess intended claim completion");
+    game.initBoard();
+    game.gameOver = false;
+    game.state = ChessActivity::SELECT_TARGET;
+    game.quietHalfmoves = 99;
+    game.selectedY = 6;
+    game.selectedX = 0;
+    game.cursorY = 5;
+    game.cursorX = 0;
+    game.computeValidMoves(6, 0);
+    require(!game.claimDraw() && game.board[6][0] == ChessActivity::W_PAWN, "Chess pawn intended claim rejection");
+    game.state = ChessActivity::SELECT_PIECE;
+    game.quietHalfmoves = 100;
+    game.botThinking = true;
+    require(game.botMove() && game.gameOver && !game.botThinking && !game.botSearching && game.positionCount == 1,
+            "Chess bot current-position claim");
+    game.initBoard();
+    game.gameOver = false;
+    game.state = ChessActivity::SELECT_PIECE;
+    // Two complete knight cycles except the final return: declare that return.
+    for (unsigned i = 0; i < 7; ++i) {
+      const int moves[4][4] = {{7, 6, 5, 5}, {0, 6, 2, 5}, {5, 5, 7, 6}, {2, 5, 0, 6}};
+      const auto& move = moves[i % 4];
+      game.doMove(move[0], move[1], move[2], move[3]);
+      game.whiteTurn = !game.whiteTurn;
+      game.recordPosition();
+    }
+    game.selectedY = 2;
+    game.selectedX = 5;
+    game.cursorY = 0;
+    game.cursorX = 6;
+    game.computeValidMoves(2, 5);
+    game.state = ChessActivity::SELECT_TARGET;
+    require(game.intendedDrawReason() == 2 && !game.whiteTurn && game.positionCount == 8 &&
+                game.board[2][5] == ChessActivity::B_KNIGHT && game.board[0][6] == ChessActivity::EMPTY,
+            "Chess intended threefold claim/restoration");
+    require(game.claimDraw() && game.gameOver, "Chess intended threefold completion");
+    game.initBoard();
     game.gameOver = false;
     game.state = ChessActivity::SELECT_PIECE;
     game.quietHalfmoves = 149;

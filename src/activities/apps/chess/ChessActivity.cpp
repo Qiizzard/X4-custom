@@ -463,6 +463,7 @@ int ChessActivity::bestReplyScore() {
 }
 
 bool ChessActivity::botMove() {
+  if (gameOver || claimDraw(true)) return true;
   if (!botSearching) {
     botSearching = true;
     botSquare = botTarget = 0;
@@ -518,11 +519,46 @@ void ChessActivity::onEnter() {
   requestUpdate();
 }
 
-bool ChessActivity::claimDraw() {
-  if (gameOver || state != SELECT_PIECE || (quietHalfmoves < 100 && repetitions < 3) || botThinking) return false;
+unsigned ChessActivity::intendedDrawReason() {
+  if (selectedY < 0 || selectedY > 7 || selectedX < 0 || selectedX > 7 || cursorY < 0 || cursorY > 7 || cursorX < 0 ||
+      cursorX > 7 ||
+      std::find(validMoves.begin(), validMoves.end(), std::pair<int, int>{cursorY, cursorX}) == validMoves.end())
+    return 0;
+  const auto piece = board[selectedY][selectedX];
+  // Pawn moves and captures cannot complete either claim condition.
+  if (!isOwnPiece(piece) || piece == W_PAWN || piece == B_PAWN || board[cursorY][cursorX] != EMPTY) return 0;
+  uint8_t savedBoard[8][8], position[34];
+  memcpy(savedBoard, board, sizeof(board));
+  const auto savedQuiet = quietHalfmoves;
+  const auto savedRights = castleRights;
+  const auto savedRow = enPassantRow, savedCol = enPassantCol;
+  doMove(selectedY, selectedX, cursorY, cursorX);
+  whiteTurn = !whiteTurn;
+  encodePosition(position);
+  unsigned matches = 1;
+  for (unsigned i = 0; i < positionCount; ++i)
+    if (memcmp(positions[i], position, sizeof(position)) == 0) ++matches;
+  const unsigned reason = matches >= 3 ? 2 : quietHalfmoves >= 100 ? 1 : 0;
+  whiteTurn = !whiteTurn;
+  memcpy(board, savedBoard, sizeof(board));
+  quietHalfmoves = savedQuiet;
+  castleRights = savedRights;
+  enPassantRow = savedRow;
+  enPassantCol = savedCol;
+  return reason;
+}
+
+bool ChessActivity::claimDraw(bool forBot) {
+  if (gameOver || (state != SELECT_PIECE && state != SELECT_TARGET) || (botThinking && !forBot)) return false;
+  const unsigned reason = state == SELECT_TARGET  ? intendedDrawReason()
+                          : repetitions >= 3      ? 2
+                          : quietHalfmoves >= 100 ? 1
+                                                  : 0;
+  if (!reason) return false;
   gameOver = true;
   state = GAME_OVER;
-  gameOverMsg = repetitions >= 3 ? tr(STR_CHESS_REPETITION_DRAW) : tr(STR_CHESS_50_DRAW);
+  gameOverMsg = reason == 2 ? tr(STR_CHESS_REPETITION_DRAW) : tr(STR_CHESS_50_DRAW);
+  botThinking = botSearching = false;
   validMoves.clear();
   return true;
 }
@@ -610,8 +646,8 @@ void ChessActivity::loop() {
     return;
   }
 
-  if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) && mappedInput.getHeldTime() >= 500 && claimDraw()) {
-    requestUpdate();
+  if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) && mappedInput.getHeldTime() >= 500) {
+    if (claimDraw()) requestUpdate();
     return;
   }
 
