@@ -106,3 +106,8 @@ At 99 quiet half-moves, hold Confirm on a legal non-pawn, non-capture target;
 verify unchanged board and draw result. Pawn/capture targets must not claim.
 Bot policy accepts current-position claims immediately, including winning
 positions; it does not assess whether playing on would be preferable.
+
+V1 2026-10-10: native 50-cycle/10-minute entry-screen soak PASS (cycle heap
+delta 0, idle +160 within 4096 slack). Search cap/yield/history boundary and
+768 coordinate fixtures PASS. See V1_CHESS_RESOURCES_2026-10-10.json for C3
+frame measurements and analyzer triage. Hardware validation is still open.

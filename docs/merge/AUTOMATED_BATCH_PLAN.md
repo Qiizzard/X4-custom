@@ -74,7 +74,7 @@ one-batch-per-wakeup restriction, including historical instructions below.
 | P1 | implementation complete; validation deferred | Snake, Minesweeper, Tetris, Sudoku and Maze integrated (wip). Other approved games remain in P7. |
 | P2 | implementation complete; validation deferred | Etch-A-Sketch, file-browser registration, Barcode and Key Bitting Charts integrated. |
 | P3 | actionable implementation complete; validation deferred | Event Logger, Flashcards, Habit Tracker and bounded Transit Alert integrated (wip). Breadcrumb Trail/Vehicle Finder need product/location choices. |
-| P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card still needs its access policy. Hardware crypto/recovery gates remain unverified. |
+| P4 | actionable implementation complete; validation deferred | Password Manager, Authenticator/TOTP QR and Stego Notes integrated (wip). Medical Card skipped by user direction. Hardware crypto/recovery gates remain unverified. |
 | P5 | source implementation complete; validation deferred | Eight migration sites and Settings/KOReader-auth/OPDS/Calibre parents integrated (wip). Every picker caller passes a station token; legacy fallback removed. OTA/recovery and radio lifecycle hardware gates remain open. |
 | P6 | actionable source implementation complete; validation deferred | Tools WiFi Networks entry integrated (wip), reusing the existing picker with its own bounded-lifetime radio hold. WiFi Scanner snapshot/detail and channel-count view integrated (wip); CSV export integrated; passive signal history integrated; DNS Lookup and bounded mDNS Browser with all-services/IPv6/CSV integrated (wip); Ping (TCP) and Host Scanner integrated (wip); HTTP Client integrated (wip); Packet Monitor/Probe Sniffer/Deauth Detector bounded views/exports integrated (wip); AP History/Wardriving/Network Change and Signal Locator/WiFi Heat Map/Perimeter Watch integrated (wip); Crowd Density history/chart and Device Fingerprint metadata integrated (wip). Vendor Lookup needs a dataset/flash decision; Full Sweep needs passive composite scope and BLE availability. Runtime validation deferred. |
 | P7 | actionable implementation complete; validation pending | Matrix Rain, Voronoi, simplified Chess, Screen Decoy and Task Manager diagnostics integrated (wip); Network Monitor passive views, aggregation/rate history and event CSV integrated (wip). Casino six core modes, five slot variants/powerups and explicit saved credits/collection integrated (wip); gameplay/device validation deferred. Real/decoy vault route, authorized setup, bounded vault-file deletion and small-file encryption integrated (wip). Mesh Chat direct transport, peer discovery and opt-in relay integrated (wip). Bulletin Board and small-file Dead Drop bounded AP/server integrated (wip). Authenticated WiFi QR Share integrated (wip). Remaining entries have documented BLE/hardware/product gates. |
@@ -1218,3 +1218,19 @@ this schedule does not declare them completed or permanently blocked.
   heap/stack/latency remain unverified. C1 planned source increments complete;
   V1 resumes with Chess/resource validation. Flash reserve gate remains open.
   Usage start 30%/76%; natural five-hour reset observed, checkpoint 9%/77%.
+
+- 2026-10-10 V1 Chess validation: 768 generated-coordinate fixtures, complete
+  search-yield state, deadline/node exits and history-capacity/new-game tests
+  PASS; combined simulator regression PASS (build 22.41s). Existing C3 image
+  unchanged. Full 50-cycle/600000-ms entry-screen soak PASS, exit 0; cycle
+  heap delta 0, idle +160 bytes within 4096 slack. Logs: firmware-builds/logs/
+  2026-10-10-v1-chess-{bounds-build,bounds-runtime,static,budget,budget-tests}.log
+  and 2026-10-10-v1-chess-soak/chess.log.
+  Resource evidence: V1_CHESS_RESOURCES_2026-10-10.json, C3 object 5736 bytes;
+  representative nested Chess frames sum 1424 bytes, not a whole-task peak.
+  Added measured Chess object to declared RAM manifest; model and 10 self-tests
+  PASS. Analyzer completed with rand-stub and board-index warnings; coordinate
+  producer review plus fixtures establish no reachable bad index, not a clean
+  analyzer pass. Device heap/stack/input and flash reserve gates stay open.
+  Automation updated to V1 and current 1296-byte OTA headroom, cadence retained.
+  Usage start 21%/79%; natural window reset observed; checkpoint 49%/87%.

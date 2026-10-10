@@ -1,0 +1,224 @@
+{
+  "source_commit": "b172005b",
+  "elf_sha256": "281301450f638b245c8fb27b1f3dace0c8cf8c756f647590746b7adc355bab6a",
+  "activity_object_bytes": 5736,
+  "firmware_bin_bytes": 6552304,
+  "ota_spare_bytes": 1296,
+  "method": "C3 objdump function stack-pointer decrements; frames include saved registers and alignment. Representative nested search chain, not whole-task peak proof.",
+  "frames": {
+    "ChessActivity::isOwnPiece(unsigned char) const [clone .isra.0]": {
+      "frame_adjustments_bytes": [],
+      "code_bytes": 14
+    },
+    "ChessActivity::MoveList::push_back(std::pair<int, int>)": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 62
+    },
+    "ChessActivity::computeValidMoves(int, int)": {
+      "frame_adjustments_bytes": [
+        288
+      ],
+      "code_bytes": 178
+    },
+    "ChessActivity::loop()": {
+      "frame_adjustments_bytes": [
+        64
+      ],
+      "code_bytes": 946
+    },
+    "ChessActivity::addSlidingMoves(int, int, int, int, ChessActivity::MoveList&) const": {
+      "frame_adjustments_bytes": [
+        64
+      ],
+      "code_bytes": 176
+    },
+    "ChessActivity::render(RenderLock&&)": {
+      "frame_adjustments_bytes": [
+        288
+      ],
+      "code_bytes": 1392
+    },
+    "ChessActivity::~ChessActivity()": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 34
+    },
+    "ChessActivity::canCastle(bool)": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 220
+    },
+    "ChessActivity::findKing(bool, int&, int&) const": {
+      "frame_adjustments_bytes": [],
+      "code_bytes": 60
+    },
+    "ChessActivity::scoreBotMove(int, int, int, int, bool)": {
+      "frame_adjustments_bytes": [
+        112
+      ],
+      "code_bytes": 562
+    },
+    "ChessActivity::isSquareAttacked(int, int, bool)": {
+      "frame_adjustments_bytes": [
+        320
+      ],
+      "code_bytes": 320
+    },
+    "ChessActivity::intendedDrawReason()": {
+      "frame_adjustments_bytes": [
+        176
+      ],
+      "code_bytes": 384
+    },
+    "ChessActivity::wouldBeInCheck(int, int, int, int)": {
+      "frame_adjustments_bytes": [
+        96
+      ],
+      "code_bytes": 398
+    },
+    "ChessActivity::checkGameState()": {
+      "frame_adjustments_bytes": [
+        32
+      ],
+      "code_bytes": 266
+    },
+    "ChessActivity::insufficientMaterial() const": {
+      "frame_adjustments_bytes": [],
+      "code_bytes": 140
+    },
+    "ChessActivity::finishHumanMove()": {
+      "frame_adjustments_bytes": [
+        32
+      ],
+      "code_bytes": 122
+    },
+    "ChessActivity::encodePosition(unsigned char (&) [34])": {
+      "frame_adjustments_bytes": [
+        64
+      ],
+      "code_bytes": 316
+    },
+    "ChessActivity::addCandidates(int, int, ChessActivity::MoveList&)": {
+      "frame_adjustments_bytes": [
+        48
+      ],
+      "code_bytes": 148
+    },
+    "ChessActivity::initBoard()": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 150
+    },
+    "ChessActivity::claimDraw(bool)": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 162
+    },
+    "ChessActivity::hasAnyLegalMove()": {
+      "frame_adjustments_bytes": [
+        288
+      ],
+      "code_bytes": 202
+    },
+    "ChessActivity::addMovesForPiece(int, int, ChessActivity::MoveList&) const": {
+      "frame_adjustments_bytes": [
+        80
+      ],
+      "code_bytes": 674
+    },
+    "ChessActivity::bestReplyScore()": {
+      "frame_adjustments_bytes": [
+        320
+      ],
+      "code_bytes": 328
+    },
+    "ChessActivity::botMove()": {
+      "frame_adjustments_bytes": [
+        288
+      ],
+      "code_bytes": 514
+    },
+    "ChessActivity::pieceChar(unsigned char) const": {
+      "frame_adjustments_bytes": [],
+      "code_bytes": 142
+    },
+    "ChessActivity::onEnter()": {
+      "frame_adjustments_bytes": [
+        16
+      ],
+      "code_bytes": 54
+    },
+    "ChessActivity::recordPosition()": {
+      "frame_adjustments_bytes": [
+        32
+      ],
+      "code_bytes": 198
+    },
+    "ChessActivity::doMove(int, int, int, int, unsigned int)": {
+      "frame_adjustments_bytes": [],
+      "code_bytes": 546
+    }
+  },
+  "representative_chain": [
+    "ChessActivity::loop()",
+    "ChessActivity::botMove()",
+    "ChessActivity::scoreBotMove(int, int, int, int, bool)",
+    "ChessActivity::bestReplyScore()",
+    "ChessActivity::addCandidates(int, int, ChessActivity::MoveList&)",
+    "ChessActivity::canCastle(bool)",
+    "ChessActivity::wouldBeInCheck(int, int, int, int)",
+    "ChessActivity::isSquareAttacked(int, int, bool)",
+    "ChessActivity::addMovesForPiece(int, int, ChessActivity::MoveList&) const",
+    "ChessActivity::addSlidingMoves(int, int, int, int, ChessActivity::MoveList&) const",
+    "ChessActivity::MoveList::push_back(std::pair<int, int>)"
+  ],
+  "chain_frames_sum_bytes": 1424,
+  "limits": [
+    "Excludes callers outside Chess, SDK/libc/logging, interrupt usage and allocator overhead.",
+    "Tail calls may make this conservative; no hardware stack high-water measurement.",
+    "Configured Arduino loop stack is 8192 bytes in sdkconfig.default; this does not establish margin for every path."
+  ],
+  "static_analysis": {
+    "tool": "clang-tidy 22.1.8 clang-analyzer-* with simulator compilation database",
+    "exit_code": 0,
+    "findings": [
+      "Simulator Arduino rand stub warning; not device entropy.",
+      "ArrayBound in scoreBotMove board[fromRow][toCol]: analyzer loses generated-target coordinate bounds. No violating producer established; retained for triage."
+    ],
+    "log": "firmware-builds/logs/2026-10-10-v1-chess-static.log",
+    "triage": "Inspected every generator: source rows/columns come from 0..7 loops; all emitted target coordinates are range-checked or fixed castling squares. 768 single-piece/square fixtures pass generated-target bounds. Analyzer trace assumes an invalid target without showing a violating producer. No reachable defect established; this is not a clean analyzer pass."
+  },
+  "simulator_bounds": {
+    "result": "PASS",
+    "coverage": [
+      "768 piece/square generated-coordinate fixtures",
+      "Complete persistent position restoration after search yield",
+      "Time and node cap completion without another root evaluation",
+      "Last repetition-history slot and new-game reset"
+    ],
+    "log": "firmware-builds/logs/2026-10-10-v1-chess-bounds-runtime.log"
+  },
+  "ram_budget": {
+    "declared_model": "PASS",
+    "self_tests_passed": 10,
+    "limitations": "Only declared rows; shared UI/SDK peaks and hardware task high-water are unverified."
+  },
+  "lifecycle_soak": {
+    "result": "PASS",
+    "exit_code": 0,
+    "cycles": 50,
+    "idle_ms": 600000,
+    "cycle_heap_delta_bytes": 0,
+    "idle_heap_delta_bytes": 160,
+    "allowed_slack_bytes": 4096,
+    "log": "firmware-builds/logs/2026-10-10-v1-chess-soak/chess.log",
+    "log_sha256": "ece5f741f6b634ad852a283e1555c65c7d106e2f1d8fcac676be35ead66bbf17",
+    "scope": "Native entry-screen lifecycle only; no device gameplay/stack/peak-RAM claim."
+  }
+}

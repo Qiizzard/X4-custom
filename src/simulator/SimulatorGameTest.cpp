@@ -721,6 +721,49 @@ class SimulatorGameTest {
     game.checkGameState();
     require(game.gameOver && game.inCheck && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
             "Chess mate must precede 75-move draw");
+    // Exercise the coordinate invariant the analyzer loses across reply generation.
+    for (unsigned piece = ChessActivity::W_PAWN; piece <= ChessActivity::B_KING; ++piece)
+      for (int square = 0; square < 64; ++square) {
+        memset(game.board, 0, sizeof(game.board));
+        game.board[square / 8][square % 8] = piece;
+        game.whiteTurn = game.isWhite(piece);
+        game.castleRights = 0;
+        game.enPassantRow = game.enPassantCol = -1;
+        ChessActivity::MoveList candidates;
+        game.addCandidates(square / 8, square % 8, candidates);
+        for (const auto& [row, col] : candidates)
+          require(row >= 0 && row < 8 && col >= 0 && col < 8, "Chess candidate coordinate invariant");
+      }
+    // Simulator-only boundary fixtures: a search yield must preserve all
+    // persistent position state; budget expiry must commit exactly one move.
+    for (bool timeLimit : {false, true}) {
+      game.initBoard();
+      game.gameOver = game.botThinking = game.botSearching = false;
+      game.state = ChessActivity::SELECT_PIECE;
+      uint8_t boardBefore[8][8];
+      memcpy(boardBefore, game.board, sizeof(boardBefore));
+      require(!game.botMove(), "Chess opening search should yield");
+      require(memcmp(boardBefore, game.board, sizeof(boardBefore)) == 0 && game.whiteTurn && game.quietHalfmoves == 0 &&
+                  game.castleRights == 15 && game.enPassantRow == -1 && game.enPassantCol == -1 &&
+                  game.positionCount == 1 && game.repetitions == 1,
+              "Chess search yield corrupts persistent position");
+      if (timeLimit)
+        game.botSearchStart = millis() - 2001;
+      else
+        game.botEvaluated = 128;
+      const unsigned evaluated = game.botEvaluated;
+      require(game.botMove() && !game.botSearching && game.botEvaluated == evaluated && !game.whiteTurn &&
+                  memcmp(boardBefore, game.board, sizeof(boardBefore)) != 0 && game.positionCount <= 2,
+              "Chess search cap must commit without evaluating another root");
+    }
+    game.initBoard();
+    game.positionCount = 150;
+    game.quietHalfmoves = 150;
+    game.recordPosition();
+    require(game.positionCount == 151, "Chess history final bounded slot");
+    game.initBoard();
+    require(game.positionCount == 1 && game.repetitions == 1 && game.quietHalfmoves == 0,
+            "Chess new-game history reset after capacity");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 

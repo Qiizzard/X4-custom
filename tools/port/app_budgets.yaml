@@ -32,6 +32,15 @@
 # are not additive flash budgets. Keep the recovery/expansion gate.
 
 apps:
+  # C1 Chess: compiled object includes exact bounded repetition history.
+  # Own gameplay paths allocate nothing after construction. Shared UI/SDK peaks
+  # and task-stack high-water remain unverified; see V1_CHESS_RESOURCES_2026-10-10.json.
+  - name: Chess
+    tier: c3
+    static_bytes: 0
+    object_bytes: 5736  # compiled C3 DWARF, 2026-10-10
+    peak_heap_bytes: 0  # app-owned buffers only; not a measured whole-screen peak
+
   # ---- Ported & wired into the Tools launcher (safe tier, no radio) ----
   - name: Calculator          # ported by v1, moved into src/ and re-audited; measured sizeof
     tier: c3
