@@ -27,6 +27,7 @@ def main():
         decks = Path(directory) / "fs_" / "crossink" / "flashcards"
         decks.mkdir(parents=True)
         (Path(directory) / "fs_" / "crossink" / "logs").mkdir()
+        (Path(directory) / "fs_" / "crossink" / "transit").mkdir()
         fixtures = {
             "valid.csv": b"front,back\r\n\nquestion,answer,comma",
             "max.csv": ((b"f" * 127) + b"," + (b"b" * 127) + b"\n") * 32,
@@ -46,8 +47,8 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text and "GAME TEST RESULT: PASS event_logger" in text and "GAME TEST RESULT: PASS habits" in text
-    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards/EventLogger/Habits production logic, exit {result.returncode}; {args.log}")
+    ok = result.returncode == 0 and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text and "GAME TEST RESULT: PASS event_logger" in text and "GAME TEST RESULT: PASS habits" in text and "GAME TEST RESULT: PASS transit" in text
+    print(f"{'PASS' if ok else 'FAIL'}: Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards/EventLogger/Habits/Transit production logic, exit {result.returncode}; {args.log}")
     return 0 if ok else 1
 
 

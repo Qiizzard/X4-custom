@@ -18,6 +18,7 @@
 #include "activities/apps/snake/SnakeActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
+#include "activities/apps/transit_alert/TransitAlertActivity.h"
 extern GfxRenderer renderer;
 extern MappedInputManager mappedInputManager;
 
@@ -35,6 +36,86 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void transit() {
+    uint8_t record[71]{};
+    memcpy(record, "TRN1", 4);
+    memset(record + 4, 'A', 31);  // Maximum supported name, terminated at byte 35.
+    record[36] = 5;
+    for (unsigned i = 0; i < 5; ++i) {
+      record[37 + i * 6] = 2;
+      record[38 + i * 6] = i + 1;
+    }
+    auto seal = [](uint8_t* bytes) {
+      uint32_t sum = 2166136261u;
+      for (unsigned i = 0; i < 67; ++i) sum = (sum ^ bytes[i]) * 16777619u;
+      for (unsigned i = 0; i < 4; ++i) bytes[67 + i] = static_cast<uint8_t>(sum >> (8 * i));
+    };
+    auto pathFor = [](unsigned slot, char* path, size_t size) {
+      snprintf(path, size, "fs_/crossink/transit/stop-%02u.dat", slot);
+    };
+    auto write = [&](unsigned slot, const uint8_t* bytes, size_t size) {
+      char path[64];
+      pathFor(slot, path, sizeof(path));
+      FILE* file = fopen(path, "wb");
+      require(file && fwrite(bytes, 1, size, file) == size, "Transit fixture write");
+      require(fclose(file) == 0, "Transit fixture close");
+    };
+    seal(record);
+    TransitAlertActivity game(renderer, mappedInputManager);
+    game.load();
+    require(game.count == 0 && !game.storageError, "Transit empty storage");
+    for (unsigned slot : {0u, 7u, 31u}) write(slot, record, sizeof(record));
+    game.load();
+    require(game.count == 3 && game.slots[0] == 0 && game.slots[1] == 7 && game.slots[2] == 31 &&
+                strlen(game.stops[2].name) == 31 && game.stops[2].count == 5 &&
+                memcmp(game.stops[2].bssids, record + 37, 30) == 0,
+            "Transit sparse slot mapping and maximum fields");
+    for (unsigned slot = 0; slot < 32; ++slot) write(slot, record, sizeof(record));
+    write(32, record, sizeof(record));  // Outside the bounded slot namespace.
+    game.load();
+    require(game.count == 32 && game.slots[31] == 31 && !game.storageError, "Transit bounded 32-stop load");
+    for (unsigned defect = 0; defect < 10; ++defect) {
+      uint8_t bad[71];
+      memcpy(bad, record, sizeof(bad));
+      if (defect == 0) bad[0] = 'X';
+      if (defect == 1) bad[4] = 0;
+      if (defect == 2) bad[35] = 'x';
+      if (defect == 3) bad[5] = 31;
+      if (defect == 4) bad[36] = 0;
+      if (defect == 5) bad[36] = 6;
+      if (defect == 6) memset(bad + 37, 0, 6);
+      if (defect == 7) bad[37] = 3;  // Multicast address.
+      if (defect == 8) memcpy(bad + 43, bad + 37, 6);
+      seal(bad);
+      if (defect == 9) bad[67] ^= 1;
+      write(7, bad, sizeof(bad));
+      game.storageError = false;
+      game.load();
+      require(game.storageError && game.count == 31 && game.slots[7] == 8 && game.slots[30] == 31,
+              "Transit malformed stop skipped without slot aliasing");
+      char path[64];
+      pathFor(7, path, sizeof(path));
+      FILE* file = fopen(path, "rb");
+      uint8_t unchanged[72]{};
+      require(file && fread(unchanged, 1, sizeof(unchanged), file) == 71 && memcmp(unchanged, bad, 71) == 0,
+              "Transit malformed source was modified");
+      require(fclose(file) == 0, "Transit preserved fixture close");
+    }
+    write(7, record, 70);
+    game.load();
+    require(game.count == 31 && game.storageError, "Transit truncated stop accepted");
+    write(7, record, sizeof(record));
+    game.storageError = false;
+    game.load();
+    require(game.count == 32 && !game.storageError, "Transit repaired fixture reload");
+    for (unsigned slot = 0; slot <= 32; ++slot) {
+      char path[64];
+      pathFor(slot, path, sizeof(path));
+      require(remove(path) == 0, "Transit fixture cleanup");
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS transit");
   }
 
   static void habits() {
@@ -866,6 +947,7 @@ class SimulatorGameTest {
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
     eventLogger();
     habits();
+    transit();
     flashcards();
     snake();
     maze();

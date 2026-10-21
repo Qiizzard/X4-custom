@@ -1244,3 +1244,14 @@ this schedule does not declare them completed or permanently blocked.
   Simulator-only friend/tests and runner marker; no shipping behavior change
   or C3 rebuild required. Native disposable filesystem, not SD power-loss,
   sync/close fault injection or device-input validation. Usage start 4%/1%.
+
+- 2026-10-21 V1 Transit saved-stop validation: production loader PASS empty
+  storage, sparse 0/7/31 slot mapping, 31-character names/five BSSIDs, full
+  32-stop capacity and ignored slot 32. Ten malformed cases cover magic,
+  name termination/characters, count bounds, zero/multicast/duplicate BSSIDs
+  and checksum; corrupt files preserved byte-for-byte. Truncation rejected,
+  repaired fixture reload PASS. Simulator build 5.14s and combined regression
+  PASS, exit 0. Logs: firmware-builds/logs/2026-10-21-v1-transit-{build,runtime}.log.
+  Simulator-only access/fixtures; no radio calls or shipping behavior changes,
+  so no C3 rebuild. Scan matching, device SD/input and radio lifecycle remain
+  unverified. Initial usage 1% five-hour/3% weekly.

@@ -13,6 +13,9 @@ class TransitAlertActivity final : public Activity {
   bool preventAutoSleep() override { return monitoring || busy; }
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   struct Stop {
     char name[32]{};
     uint8_t bssids[5][6]{};
