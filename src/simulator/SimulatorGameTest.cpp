@@ -38,6 +38,90 @@ class SimulatorGameTest {
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
   }
 
+  static void casinoPersistence() {
+    const char* paths[] = {"fs_/crossink/casino-a.dat", "fs_/crossink/casino-b.dat"};
+    auto write = [&](int slot, const uint8_t* bytes, size_t size) {
+      FILE* file = fopen(paths[slot], "wb");
+      require(file && fwrite(bytes, 1, size, file) == size, "Casino fixture write");
+      require(fclose(file) == 0, "Casino fixture close");
+    };
+    auto seal = [](uint8_t* bytes) {
+      uint32_t sum = 2166136261u;
+      for (unsigned i = 0; i < 19; ++i) sum = (sum ^ bytes[i]) * 16777619u;
+      for (unsigned i = 0; i < 4; ++i) bytes[19 + i] = uint8_t(sum >> (8 * i));
+    };
+    CasinoActivity game(renderer, mappedInputManager);
+    game.loadProgress();
+    require(!game.saveBlocked && game.saveSlot == -1 && game.credits == 1000, "Casino empty progress");
+    game.credits = game.cap;
+    memset(game.collected, 255, 6);
+    game.collected[6] = 3;
+    game.saveProgress();
+    require(!game.dirty && !game.saveError && game.saveSlot == 0 && game.saveGeneration == 1, "Casino first save");
+    game.credits = 0;
+    game.dirty = true;
+    game.saveProgress();
+    require(!game.dirty && game.saveSlot == 1 && game.saveGeneration == 2, "Casino alternate save");
+    {
+      CasinoActivity loaded(renderer, mappedInputManager);
+      loaded.loadProgress();
+      require(!loaded.saveBlocked && loaded.saveSlot == 1 && loaded.credits == 0 && !loaded.dirty,
+              "Casino newest generation load");
+      for (unsigned i = 0; i < 50; ++i) require(loaded.hasItem(i), "Casino collection round trip");
+    }
+    uint8_t good[23];
+    FILE* file = fopen(paths[1], "rb");
+    require(file && fread(good, 1, sizeof(good), file) == sizeof(good), "Casino snapshot read");
+    require(fclose(file) == 0, "Casino snapshot close");
+    for (unsigned defect = 0; defect < 6; ++defect) {
+      uint8_t bad[23];
+      memcpy(bad, good, sizeof(bad));
+      if (defect == 0) bad[0] = 'X';
+      if (defect == 1) memset(bad + 4, 0, 4);
+      if (defect == 2) memset(bad + 8, 255, 4);
+      if (defect == 3) bad[18] = 4;
+      seal(bad);
+      if (defect == 4) bad[19] ^= 1;
+      write(1, bad, defect == 5 ? 22 : 23);
+      CasinoActivity recovered(renderer, mappedInputManager);
+      recovered.loadProgress();
+      require(recovered.saveError && !recovered.saveBlocked && recovered.saveSlot == 0 &&
+                  recovered.saveGeneration == 1 && recovered.credits == game.cap,
+              "Casino malformed newest slot fallback");
+    }
+    uint8_t bad[] = {1, 2, 3};
+    write(0, bad, sizeof(bad));
+    write(1, bad, sizeof(bad));
+    {
+      CasinoActivity blocked(renderer, mappedInputManager);
+      blocked.loadProgress();
+      blocked.saveProgress();
+      require(blocked.saveBlocked && blocked.saveError && blocked.dirty && blocked.saveSlot == -1,
+              "Casino corrupt saves must block writes");
+      for (const char* path : paths) {
+        file = fopen(path, "rb");
+        uint8_t actual[4]{};
+        require(file && fread(actual, 1, sizeof(actual), file) == 3 && memcmp(actual, bad, 3) == 0,
+                "Casino blocked save changed files");
+        require(fclose(file) == 0, "Casino preservation close");
+      }
+    }
+    memset(good + 4, 255, 4);
+    seal(good);
+    write(0, good, sizeof(good));
+    {
+      CasinoActivity exhausted(renderer, mappedInputManager);
+      exhausted.loadProgress();
+      exhausted.dirty = true;
+      exhausted.saveProgress();
+      require(
+          !exhausted.saveBlocked && exhausted.saveGeneration == UINT32_MAX && exhausted.saveError && exhausted.dirty,
+          "Casino generation wrap prevention");
+    }
+    require(remove(paths[0]) == 0 && remove(paths[1]) == 0, "Casino fixture cleanup");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS casino_save");
+  }
+
   static void transit() {
     uint8_t record[71]{};
     memcpy(record, "TRN1", 4);
@@ -948,6 +1032,7 @@ class SimulatorGameTest {
     eventLogger();
     habits();
     transit();
+    casinoPersistence();
     flashcards();
     snake();
     maze();

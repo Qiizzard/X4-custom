@@ -1255,3 +1255,13 @@ this schedule does not declare them completed or permanently blocked.
   Simulator-only access/fixtures; no radio calls or shipping behavior changes,
   so no C3 rebuild. Scan matching, device SD/input and radio lifecycle remain
   unverified. Initial usage 1% five-hour/3% weekly.
+
+- 2026-10-21 V1 Casino persistence: production loader/saver PASS empty/default
+  state, alternating/newest generation, zero/max credits, all 50 collection
+  bits, six invalid/truncated newest-slot fallbacks, both-corrupt write blocking
+  with byte preservation, and UINT32_MAX generation refusal. Simulator build
+  PASS 4.56s; combined regression PASS, exit 0. Logs:
+  firmware-builds/logs/2026-10-21-v1-casino-save-{build,runtime}.log.
+  Simulator tests/runner only; no shipping behavior change or C3 rebuild.
+  Physical SD faults/power loss, explicit-save UI and broader casino gameplay
+  remain unverified. Usage start 2%/5%, checkpoint 14%/7%; no actual limit.
