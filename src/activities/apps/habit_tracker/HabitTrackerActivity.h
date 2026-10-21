@@ -14,6 +14,9 @@ class HabitTrackerActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   struct Habit {
     char name[32]{};
     bool done = false;

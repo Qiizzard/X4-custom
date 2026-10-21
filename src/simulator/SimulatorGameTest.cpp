@@ -12,6 +12,7 @@
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
+#include "activities/apps/habit_tracker/HabitTrackerActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/snake/SnakeActivity.h"
@@ -34,6 +35,94 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void habits() {
+    const char* paths[] = {"fs_/crossink/habits-a.dat", "fs_/crossink/habits-b.dat"};
+    auto writeSlot = [&](int slot, const uint8_t* bytes, size_t size) {
+      FILE* file = fopen(paths[slot], "wb");
+      require(file && fwrite(bytes, 1, size, file) == size, "Habits fixture write");
+      require(fclose(file) == 0, "Habits fixture close");
+    };
+    HabitTrackerActivity game(renderer, mappedInputManager);
+    game.load();
+    require(!game.blocked && game.count == 0 && game.activeSlot == -1, "Habits empty storage");
+    game.count = 10;
+    for (int i = 0; i < 10; ++i) {
+      snprintf(game.habits[i].name, sizeof(game.habits[i].name), "Habit %d", i);
+      game.habits[i].done = i % 2;
+      game.habits[i].streak = i;
+      game.habits[i].best = i + 2;
+    }
+    game.dirty = true;
+    require(game.save() && game.activeSlot == 0 && game.generation == 1 && !game.dirty, "Habits first save");
+    game.session = 2;
+    game.dirty = true;
+    require(game.save() && game.activeSlot == 1 && game.generation == 2, "Habits alternate slot save");
+    {
+      HabitTrackerActivity loaded(renderer, mappedInputManager);
+      loaded.load();
+      require(!loaded.blocked && loaded.activeSlot == 1 && loaded.session == 2 && loaded.count == 10 &&
+                  strcmp(loaded.habits[9].name, "Habit 9") == 0 && loaded.habits[9].done &&
+                  loaded.habits[9].streak == 9 && loaded.habits[9].best == 11,
+              "Habits newest generation round trip");
+    }
+    // Simulator-only snapshots may exceed embedded stack limits; these never ship.
+    uint8_t good[427];
+    memcpy(good, game.bytes, sizeof(good));
+    for (int defect = 0; defect < 8; ++defect) {
+      memcpy(game.bytes, good, sizeof(good));
+      if (defect == 0) game.bytes[0] = 'X';
+      if (defect == 1) game.bytes[12] = 11;
+      if (defect == 2) game.put32(8, 0);
+      if (defect == 3) game.bytes[13] = 0;
+      if (defect == 4) memset(game.bytes + 13, 'x', 32);
+      if (defect == 5) game.bytes[45] = 2;
+      if (defect == 6) game.put32(50, 0);  // best below streak in the first record
+      if (defect == 6) game.put32(46, 1);
+      game.put32(423, game.checksum(game.bytes, 423));
+      if (defect == 7) game.bytes[423] ^= 1;
+      writeSlot(1, game.bytes, sizeof(game.bytes));
+      HabitTrackerActivity recovered(renderer, mappedInputManager);
+      recovered.load();
+      require(!recovered.blocked && recovered.activeSlot == 0 && recovered.generation == 1 && recovered.session == 1,
+              "Habits corrupt newest slot fallback");
+    }
+    writeSlot(1, good, 100);
+    {
+      HabitTrackerActivity recovered(renderer, mappedInputManager);
+      recovered.load();
+      require(!recovered.blocked && recovered.activeSlot == 0, "Habits truncated newest fallback");
+    }
+    const uint8_t bad[] = {1, 2, 3};
+    writeSlot(0, bad, sizeof(bad));
+    writeSlot(1, bad, sizeof(bad));
+    {
+      HabitTrackerActivity blocked(renderer, mappedInputManager);
+      blocked.load();
+      blocked.dirty = true;
+      require(blocked.blocked && blocked.error && !blocked.save(), "Habits both corrupt must block writes");
+      for (const char* path : paths) {
+        FILE* file = fopen(path, "rb");
+        uint8_t actual[4]{};
+        require(file && fread(actual, 1, sizeof(actual), file) == 3 && memcmp(actual, bad, 3) == 0,
+                "Habits blocked save changed source");
+        require(fclose(file) == 0, "Habits preserved fixture close");
+      }
+    }
+    memcpy(game.bytes, good, sizeof(good));
+    game.put32(4, UINT32_MAX);
+    game.put32(423, game.checksum(game.bytes, 423));
+    writeSlot(0, game.bytes, sizeof(game.bytes));
+    {
+      HabitTrackerActivity exhausted(renderer, mappedInputManager);
+      exhausted.load();
+      exhausted.dirty = true;
+      require(!exhausted.blocked && exhausted.generation == UINT32_MAX && !exhausted.save() && exhausted.dirty,
+              "Habits generation exhaustion");
+    }
+    require(remove(paths[0]) == 0 && remove(paths[1]) == 0, "Habits fixture cleanup");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS habits");
   }
 
   static void eventLogger() {
@@ -776,6 +865,7 @@ class SimulatorGameTest {
     require(CasinoActivity::handValue(bust, 3) == 22, "Blackjack bust value");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS blackjack hand values");
     eventLogger();
+    habits();
     flashcards();
     snake();
     maze();
