@@ -38,6 +38,106 @@ class SimulatorGameTest {
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
   }
 
+  static void casinoGameplay() {
+    CasinoActivity game(renderer, mappedInputManager);
+    for (uint32_t seed = 1; seed <= 64; ++seed) {
+      game.rng = seed;
+      game.position = 52;
+      unsigned ranks[14]{};
+      for (unsigned i = 0; i < 52; ++i) {
+        const auto card = game.drawCard();
+        require(card >= 1 && card <= 13, "Casino deck card bounds");
+        ++ranks[card];
+      }
+      for (unsigned rank = 1; rank <= 13; ++rank) require(ranks[rank] == 4, "Casino deck rank multiplicity");
+      require(game.drawCard() >= 1 && game.position == 1, "Casino exhausted deck reshuffle");
+    }
+    game.mode = 0;
+    game.betIndex = 3;  // 100 credits.
+    game.credits = 99;
+    game.dirty = false;
+    game.rng = 123;
+    game.play();
+    require(game.insufficient && game.credits == 99 && !game.dirty && game.rng == 123,
+            "Casino unaffordable wager mutates funds/RNG");
+    uint64_t rouletteOutcomes = 0;
+    for (unsigned mode : {0u, 2u}) {
+      game.mode = mode;
+      game.choice = mode == 0 ? 1 : 9;
+      game.number = 7;
+      for (uint32_t seed = 1; seed <= 256; ++seed) {
+        game.rng = seed;
+        game.credits = 1000;
+        game.play();
+        const bool expectedWin = game.outcome == (mode == 0 ? 1u : 7u);
+        const unsigned payout = mode == 0 ? 200 : 3600;
+        require(game.won == expectedWin && game.credits == 900 + (expectedWin ? payout : 0) &&
+                    game.state == CasinoActivity::State::Result,
+                "Casino coin/straight roulette settlement");
+        require(game.outcome < (mode == 0 ? 2u : 37u), "Casino outcome range");
+        if (mode == 2) rouletteOutcomes |= uint64_t(1) << game.outcome;
+      }
+    }
+    require(rouletteOutcomes == (uint64_t(1) << 37) - 1, "Casino roulette fixture misses outcomes");
+    game.mode = 1;
+    game.position = 0;
+    game.deck[0] = 7;
+    game.card = 7;
+    game.pot = 100;
+    game.streak = 0;
+    game.state = CasinoActivity::State::HighLow;
+    game.guess(true);
+    require(game.won && game.pot == 150 && game.streak == 1, "Casino equal-rank HighLow win");
+    game.deck[1] = 6;
+    game.guess(true);
+    require(!game.won && game.pot == 0 && game.state == CasinoActivity::State::Result, "Casino HighLow loss");
+    game.credits = game.cap - 1;
+    game.pot = 500;
+    game.cashOut();
+    require(game.credits == game.cap && game.pot == 0 && game.won, "Casino capped cashout");
+    const unsigned payouts[] = {50, 15, 50, 40, 80};
+    game.mode = 4;
+    for (unsigned machine = 0; machine < 5; ++machine) {
+      game.machine = machine;
+      game.credits = 1000;
+      game.freeSpins = 0;
+      game.held = 7;
+      memset(game.reels, 0, sizeof(game.reels));
+      game.doubled = true;
+      game.play();
+      require(game.won && game.outcome == 200 * payouts[machine] && game.credits == 900 + game.outcome &&
+                  !game.doubled && game.held == 0 && game.reelsReady,
+              "Casino held-reel double payout");
+      require(game.freeSpins == (machine == 1 ? 3 : 0), "Casino fruit free-spin award");
+    }
+    game.machine = 0;
+    game.credits = 0;
+    game.freeSpins = 1;
+    game.held = 7;
+    memset(game.reels, 0, sizeof(game.reels));
+    game.play();
+    require(!game.insufficient && game.freeSpins == 0 && game.credits == 5000, "Casino free spin debits credits");
+    for (uint32_t seed = 1; seed <= 64; ++seed) {
+      game.rng = seed;
+      game.choice = 1;
+      game.credits = 450;
+      memset(game.collected, 0, sizeof(game.collected));
+      game.pullLoot();
+      bool rare = false;
+      require(game.pullCount == 5 && !game.insufficient && game.credits <= 100, "Casino five-pull cost/refunds");
+      for (unsigned i = 0; i < game.pullCount; ++i) {
+        require(game.pulls[i] < 50 && game.hasItem(game.pulls[i]), "Casino loot collection bounds");
+        rare |= game.pulls[i] >= 20;
+      }
+      require(rare, "Casino five-pull guaranteed rare missing");
+    }
+    game.credits = 449;
+    game.dirty = false;
+    game.pullLoot();
+    require(game.insufficient && game.credits == 449 && !game.dirty, "Casino insufficient loot purchase");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS casino_gameplay");
+  }
+
   static void casinoPersistence() {
     const char* paths[] = {"fs_/crossink/casino-a.dat", "fs_/crossink/casino-b.dat"};
     auto write = [&](int slot, const uint8_t* bytes, size_t size) {
@@ -1033,6 +1133,7 @@ class SimulatorGameTest {
     habits();
     transit();
     casinoPersistence();
+    casinoGameplay();
     flashcards();
     snake();
     maze();
