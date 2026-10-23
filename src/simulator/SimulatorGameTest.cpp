@@ -38,6 +38,86 @@ class SimulatorGameTest {
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
   }
 
+  static void casinoSettlement() {
+    CasinoActivity game(renderer, mappedInputManager);
+    struct Fixture {
+      uint8_t player[3], dealer[2], count, next, draws;
+      unsigned returned, total;
+    };
+    static constexpr Fixture cases[] = {
+        {{1, 13, 0}, {10, 9}, 2, 5, 0, 250, 21}, {{1, 10, 0}, {1, 13}, 2, 5, 0, 100, 21},
+        {{7, 7, 7}, {1, 10}, 3, 5, 0, 0, 21},    {{10, 9, 0}, {10, 7}, 2, 5, 0, 200, 19},
+        {{10, 9, 3}, {10, 6}, 3, 5, 0, 0, 22},   {{7, 7, 7}, {10, 6}, 3, 5, 1, 100, 21},
+        {{10, 8, 0}, {1, 6}, 2, 5, 0, 200, 18},  {{10, 8, 0}, {10, 6}, 2, 10, 1, 200, 18},
+        {{1, 10, 0}, {10, 6}, 2, 5, 0, 250, 21}, {{10, 7, 0}, {10, 9}, 2, 5, 0, 0, 17},
+    };
+    for (const auto& f : cases) {
+      memcpy(game.player, f.player, sizeof(f.player));
+      memcpy(game.dealer, f.dealer, sizeof(f.dealer));
+      game.playerCount = f.count;
+      game.dealerCount = 2;
+      game.position = 0;
+      game.deck[0] = f.next;
+      game.betIndex = 3;
+      game.credits = 900;  // Wager already deducted by play().
+      game.settleBlackjack(true);
+      require(game.credits == 900 + f.returned && game.won == (f.returned > 100) &&
+                  game.pushed == (f.returned == 100) && game.outcome == f.total && game.position == f.draws &&
+                  game.dealerCount == 2 + f.draws && game.state == CasinoActivity::State::Result,
+              "Casino Blackjack settlement/draw policy");
+    }
+    game.player[0] = 1;
+    game.player[1] = 10;
+    game.playerCount = 2;
+    game.dealer[0] = 10;
+    game.dealer[1] = 9;
+    game.dealerCount = 2;
+    game.betIndex = 1;
+    game.credits = 975;
+    game.settleBlackjack(false);
+    require(game.credits == 1037, "Casino odd natural payout integer rounding");
+    game.credits = game.cap - 1;
+    game.settleBlackjack(false);
+    require(game.credits == game.cap, "Casino Blackjack credit cap");
+
+    // Explicit winning pockets, independent of the production classifier.
+    static constexpr const char* pockets[] = {
+        "1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36,",
+        "2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35,",
+        "1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,",
+        "2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,",
+        "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,",
+        "19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,",
+        "1,2,3,4,5,6,7,8,9,10,11,12,",
+        "13,14,15,16,17,18,19,20,21,22,23,24,",
+        "25,26,27,28,29,30,31,32,33,34,35,36,",
+    };
+    game.mode = 2;
+    game.betIndex = 3;
+    for (unsigned choice = 0; choice < 9; ++choice) {
+      game.choice = choice;
+      uint64_t seen = 0;
+      for (unsigned seed = 1; seed <= 256; ++seed) {
+        game.rng = seed;
+        game.credits = 1000;
+        game.play();
+        require(game.outcome <= 36, "Casino roulette pocket bounds");
+        seen |= uint64_t(1) << game.outcome;
+        bool expected = false;
+        for (const char* cursor = pockets[choice]; *cursor;) {
+          char* end;
+          const unsigned value = std::strtoul(cursor, &end, 10);
+          if (value == game.outcome) expected = true;
+          cursor = end + 1;
+        }
+        require(game.won == expected && game.credits == 900 + (expected ? (choice < 6 ? 200 : 300) : 0),
+                "Casino roulette outside/dozen wager settlement");
+      }
+      require(seen == (uint64_t(1) << 37) - 1, "Casino roulette wager fixture misses pocket");
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS casino_settlement");
+  }
+
   static void casinoGameplay() {
     CasinoActivity game(renderer, mappedInputManager);
     for (uint32_t seed = 1; seed <= 64; ++seed) {
@@ -1134,6 +1214,7 @@ class SimulatorGameTest {
     transit();
     casinoPersistence();
     casinoGameplay();
+    casinoSettlement();
     flashcards();
     snake();
     maze();

@@ -1276,3 +1276,15 @@ this schedule does not declare them completed or permanently blocked.
   Tests/runner only; no shipping behavior change or C3 rebuild. Device input,
   other roulette wager types, Blackjack settlement and statistical fairness
   are not established by these checks. Usage start 2%/8%, checkpoint 14%/10%.
+
+- 2026-10-23 V1 Casino settlement: ten production Blackjack fixtures PASS
+  natural/push/loss/bust, dealer draw and soft-17 stand rules; odd-credit
+  natural payout rounding and credit cap PASS. Nine roulette outside/dozen
+  wagers each cover all 37 pockets with explicit winning-pocket fixtures.
+  Simulator build PASS 5.94s; combined regression PASS exit 0. Logs:
+  firmware-builds/logs/2026-10-23-v1-casino-settle-{build,runtime}.log.
+  Simulator-only tests; firmware unchanged, no C3 rebuild. Device input,
+  physical SD faults and statistical fairness remain unverified. On X4,
+  verify Tools → Casino → Blackjack/roulette wager, result and return flows;
+  no cache reset needed. Continue remaining V1 app workflows/resource coverage.
+  Usage checkpoint 13% five-hour/2% weekly; no actual limit observed.
