@@ -1288,3 +1288,14 @@ this schedule does not declare them completed or permanently blocked.
   verify Tools → Casino → Blackjack/roulette wager, result and return flows;
   no cache reset needed. Continue remaining V1 app workflows/resource coverage.
   Usage checkpoint 13% five-hour/2% weekly; no actual limit observed.
+
+- 2026-10-23 V1 Flashcards directory scanner: production checks PASS filtering
+  non-CSV/uppercase/empty-stem/64-byte names and CSV-named directories, unique
+  discovered entries, 16-deck capacity and clearing the limit after removal.
+  Simulator build PASS 4.92s; combined regression PASS exit 0. Logs:
+  firmware-builds/logs/2026-10-23-v1-flash-scan-{build,runtime}.log.
+  Test-only changes; no firmware expansion or C3 rebuild. The 512-entry work
+  limit, I/O fault injection and physical SD/input remain unverified. On X4,
+  check Tools → Flashcards with more than 16 decks, remove extras and reopen;
+  expect the limit notice to clear. No cache reset needed. V1 remains active.
+  Usage initially 1% five-hour/3% weekly; included usage available.

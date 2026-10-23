@@ -519,6 +519,33 @@ class SimulatorGameTest {
     FlashcardActivity game(renderer, mappedInputManager);
     game.data = makeUniqueNoThrow<FlashcardActivity::DeckData>();
     require(bool(game.data), "Flashcard test allocation");
+    game.scanDecks();
+    require(!game.loadError && !game.scanLimited && game.deckCount == 11,
+            "Flashcard directory extension/name/directory filtering");
+    for (int i = 0; i < game.deckCount; ++i) {
+      require(strcmp(game.data->names[i], "directory.csv") != 0 && strlen(game.data->names[i]) < 64,
+              "Flashcard scanner accepted directory or oversized name");
+      for (int j = 0; j < i; ++j)
+        require(strcmp(game.data->names[i], game.data->names[j]) != 0, "Flashcard scanner duplicated entry");
+    }
+    for (unsigned i = 0; i < 8; ++i) {
+      char path[96];
+      snprintf(path, sizeof(path), "fs_/crossink/flashcards/extra%u.csv", i);
+      FILE* file = fopen(path, "wb");
+      require(file != nullptr, "Flashcard scan fixture creation");
+      require(fputs("a,b", file) >= 0 && fclose(file) == 0, "Flashcard scan fixture write");
+    }
+    game.scanDecks();
+    require(!game.loadError && game.scanLimited && game.deckCount == game.MAX_DECKS,
+            "Flashcard scanner capacity limit");
+    for (unsigned i = 0; i < 8; ++i) {
+      char path[96];
+      snprintf(path, sizeof(path), "fs_/crossink/flashcards/extra%u.csv", i);
+      require(remove(path) == 0, "Flashcard scan fixture removal");
+    }
+    game.scanDecks();
+    require(!game.loadError && !game.scanLimited && game.deckCount == 11,
+            "Flashcard scanner retry clears capacity flag");
     auto load = [&](const char* name) {
       snprintf(game.data->names[0], sizeof(game.data->names[0]), "%s", name);
       return game.loadDeck();

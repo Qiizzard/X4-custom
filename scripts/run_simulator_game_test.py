@@ -37,6 +37,9 @@ def main():
             "long_back.csv": b"front," + b"b" * 128,
             "too_many.csv": b"a,b\n" * 33, "oversize.csv": b"a" * 16385,
         }
+        (decks / "directory.csv").mkdir()
+        for ignored in ("notes.txt", "upper.CSV", ".csv", "x" * 60 + ".csv"):
+            (decks / ignored).write_bytes(b"a,b")
         for name, payload in fixtures.items():
             (decks / name).write_bytes(payload)
         with args.log.open("w") as stream:
