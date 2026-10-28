@@ -28,6 +28,12 @@ def main():
         decks.mkdir(parents=True)
         (Path(directory) / "fs_" / "crossink" / "logs").mkdir()
         (Path(directory) / "fs_" / "crossink" / "transit").mkdir()
+        for count in (0, 511, 512, 513):
+            scan_dir = decks.parent / f"scan{count}"
+            scan_dir.mkdir()
+            for index in range(count):
+                (scan_dir / f"ignored{index}.txt").touch()
+        (decks.parent / "scan_file").write_bytes(b"not a directory")
         fixtures = {
             "valid.csv": b"front,back\r\n\nquestion,answer,comma",
             "max.csv": ((b"f" * 127) + b"," + (b"b" * 127) + b"\n") * 32,

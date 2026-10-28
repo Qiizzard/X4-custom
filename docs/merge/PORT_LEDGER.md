@@ -80,7 +80,7 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | Event Logger | `wip` | Bounded 50-note ring, explicit-submit append, uptime timestamps. P3 compile only; V1 tests deferred. |
-| Flashcards | `wip` | P3 bounded deck port; C3 compile only, full validation deferred. |
+| Flashcards | `wip` | P3 bounded deck port; C3 compile and simulator parser/scanner validation passed, including malformed decks, 16-deck capacity and 512-entry limit boundaries (2026-10-28). Physical SD faults and interactive review/device validation remain open. |
 | Habit Tracker | `wip` | Explicit sessions, fixed habits and alternating checked saves; full validation deferred. |
 | Breadcrumb Trail | `todo` | No GPS on this hardware — decide what it actually records before porting. |
 | Vehicle Finder | `todo` | Same. |

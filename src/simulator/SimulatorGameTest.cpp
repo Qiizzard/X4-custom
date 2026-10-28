@@ -519,6 +519,26 @@ class SimulatorGameTest {
     FlashcardActivity game(renderer, mappedInputManager);
     game.data = makeUniqueNoThrow<FlashcardActivity::DeckData>();
     require(bool(game.data), "Flashcard test allocation");
+    // Native paths refer only to the runner's disposable simulator filesystem.
+    require(rename("fs_/crossink/flashcards", "fs_/crossink/decks_saved") == 0, "Flashcard fixture backup");
+    game.deckCount = 7;
+    game.loadError = game.scanLimited = true;
+    game.scanDecks();
+    require(game.deckCount == 0 && !game.loadError && !game.scanLimited, "Flashcard missing directory clears state");
+    require(rename("fs_/crossink/scan_file", "fs_/crossink/flashcards") == 0, "Flashcard file-path fixture");
+    game.scanDecks();
+    require(game.deckCount == 0 && game.loadError && !game.scanLimited, "Flashcard non-directory rejection");
+    require(rename("fs_/crossink/flashcards", "fs_/crossink/scan_file") == 0, "Flashcard file-path restore");
+    for (unsigned count : {0u, 511u, 512u, 513u}) {
+      char path[64];
+      snprintf(path, sizeof(path), "fs_/crossink/scan%u", count);
+      require(rename(path, "fs_/crossink/flashcards") == 0, "Flashcard scan-limit fixture");
+      game.scanDecks();
+      require(game.deckCount == 0 && !game.loadError && game.scanLimited == (count >= 512),
+              "Flashcard ignored-entry work-limit boundary");
+      require(rename("fs_/crossink/flashcards", path) == 0, "Flashcard scan-limit restore");
+    }
+    require(rename("fs_/crossink/decks_saved", "fs_/crossink/flashcards") == 0, "Flashcard deck fixtures restore");
     game.scanDecks();
     require(!game.loadError && !game.scanLimited && game.deckCount == 11,
             "Flashcard directory extension/name/directory filtering");
