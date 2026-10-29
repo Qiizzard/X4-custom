@@ -512,7 +512,51 @@ class SimulatorGameTest {
     require(game.storageError, "Event logger embedded NUL accepted");
     fixture("4294967295,max\n", strlen("4294967295,max\n"));
     require(!game.storageError && game.count == 1 && game.entry(0).uptime == UINT32_MAX, "Event logger max timestamp");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS event_logger ring append malformed preservation");
+    file = fopen(path, "wb");
+    require(file != nullptr, "Event logger full fixture open");
+    for (size_t i = 0; i < game.MAX_FILE / 4; ++i)
+      require(fwrite("0,a\n", 1, 4, file) == 4, "Event logger full fixture write");
+    require(fclose(file) == 0, "Event logger full fixture close");
+    game.loadEntries();
+    require(!game.storageError && game.count == 50, "Event logger exact file cap rejected");
+    game.saveEntry("overflow");
+    require(game.storageError && game.count == 50, "Event logger full append not blocked");
+    file = fopen(path, "rb");
+    require(file != nullptr, "Event logger full preservation open");
+    char record[4];
+    for (size_t i = 0; i < game.MAX_FILE / 4; ++i)
+      require(fread(record, 1, 4, file) == 4 && memcmp(record, "0,a\n", 4) == 0,
+              "Event logger full append changed bytes");
+    require(fgetc(file) == EOF && !ferror(file), "Event logger full append grew file");
+    require(fclose(file) == 0, "Event logger full preservation close");
+    file = fopen(path, "ab");
+    require(file != nullptr, "Event logger oversized fixture open");
+    require(fwrite("0,b\n", 1, 4, file) == 4, "Event logger oversized fixture write");
+    require(fclose(file) == 0, "Event logger oversized fixture close");
+    game.loadEntries();
+    require(game.storageError && game.count == 0, "Event logger oversized load retained entries");
+    fixture("", 0);
+    char note[129];
+    memset(note, 'x', 127);
+    note[127] = 0;
+    game.saveEntry(note);
+    require(!game.storageError && game.count == 1 && strcmp(game.entry(0).text, note) == 0,
+            "Event logger maximum note round trip");
+    for (const char* rejected : {"line\nbreak", "line\rbreak"}) {
+      game.saveEntry(rejected);
+      require(game.storageError, "Event logger newline append accepted");
+      game.loadEntries();
+      require(!game.storageError && game.count == 1 && strcmp(game.entry(0).text, note) == 0,
+              "Event logger rejected append changed prior note");
+    }
+    note[127] = 'x';
+    note[128] = 0;
+    game.saveEntry(note);
+    require(game.storageError, "Event logger oversized note accepted");
+    game.loadEntries();
+    require(!game.storageError && game.count == 1 && strlen(game.entry(0).text) == 127,
+            "Event logger oversized append recovery");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS event_logger ring append malformed preservation file/note bounds");
   }
 
   static void flashcards() {

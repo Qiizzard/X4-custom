@@ -1310,3 +1310,13 @@ this schedule does not declare them completed or permanently blocked.
   Physical SD errors and interactive review remain open. Device check: Tools →
   Flashcards with an empty folder and 512 non-CSV files; expect empty state and
   limit notice respectively. No cache reset. Usage 8%/1% → 13%/2%.
+
+- 2026-10-29 V1 Event Logger bounds: exact 64-KiB log loads; full-file append
+  rejection preserves every byte; oversized log rejects with no retained entries.
+  127-byte note round trip, 128-byte/newline rejection and reload recovery PASS.
+  Simulator build PASS 4.76s; combined production regression PASS exit 0.
+  Logs: firmware-builds/logs/2026-10-29-v1-event-bounds-{build,runtime}.log.
+  Tests only; firmware unchanged. Physical SD write/sync/close failures and
+  keyboard/input remain unverified. On X4, Tools → Event Logger: submit a
+  maximum-length note, reopen and verify it; a full log must report an error
+  without losing existing notes. No cache reset. Usage 11%/10% → 18%/11%.
