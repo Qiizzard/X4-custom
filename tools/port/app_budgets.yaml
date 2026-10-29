@@ -26,7 +26,7 @@
 # PlatformIO already runs scripts/check_firmware_size.py against the smallest
 # configured app slot. It fails on overflow and warns below the 256 KiB reserve;
 # CROSSINK_FLASH_FAIL_UNDER_RESERVE=1 makes the reserve a hard failure.
-# Batch 7 snapshot: 6,316,352-byte image / 6,553,600-byte slot, 237,248 bytes free.
+# 2026-10-10 snapshot: 6,552,304-byte image / 6,553,600-byte slot, 1,296 bytes free.
 # See docs/merge/verification/BATCH_6_FLASH_2026-09-09.md.
 # Per-app deltas require controlled before/after builds; object-file averages
 # are not additive flash budgets. Keep the recovery/expansion gate.
@@ -211,3 +211,19 @@ apps:
     static_bytes: 0
     object_bytes: 1128  # compiled C3 DWARF, 2026-10-01; excludes other allocations
     peak_heap_bytes: 8192     # estimated shared keyboard/HAL transient, unverified
+
+  # V1 coverage additions: objects measured in V1_C3_OBJECT_SIZES_2026-10-01.json.
+  # These are provisional budgets, not runtime peak measurements.
+  - name: Casino
+    tier: c3
+    static_bytes: 0           # app tables constexpr; no mutable file-scope buffers
+    object_bytes: 392         # C3 DWARF; includes deck, hands and collection bits
+    peak_heap_bytes: 1024     # estimated shared HAL/file transient; app-owned extra buffers: 0
+
+  - name: TransitAlert
+    tier: c3
+    static_bytes: 0           # fixed stop/scan/fingerprint buffers reside in object
+    object_bytes: 3180        # C3 DWARF; includes 32 stops and 20 scan results
+    peak_heap_bytes: 24576    # provisional 16384 SDK scan + 8192 keyboard/HAL allowance
+    # Conservatively sums shared-service estimates; overlap and radio fragmentation
+    # unmeasured. Do not interpret a model PASS as a verified device memory peak.

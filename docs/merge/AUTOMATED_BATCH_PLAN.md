@@ -1320,3 +1320,14 @@ this schedule does not declare them completed or permanently blocked.
   keyboard/input remain unverified. On X4, Tools → Event Logger: submit a
   maximum-length note, reopen and verify it; a full log must report an error
   without losing existing notes. No cache reset. Usage 11%/10% → 18%/11%.
+
+- 2026-10-29 V1 RAM manifest coverage: added missing Casino (392-byte object)
+  and Transit (3180-byte object) from existing C3 DWARF evidence. Fixed buffers
+  are in-object; shared HAL/keyboard/SDK allowances remain explicitly estimated
+  (1024/24576 bytes), not measured peaks. Updated stale flash snapshot to 1296
+  spare bytes. Budget model PASS and all 10 gate self-tests PASS; logs:
+  firmware-builds/logs/2026-10-29-v1-budget-{coverage,selftests}.log.
+  Manifest-only change; no compile required. Remaining app coverage and device
+  memory/recovery gates remain open. On X4 measure free/largest heap and stack
+  while saving Casino and enrolling/scanning Transit, including repeated exits.
+  No cache reset. Initial usage 35% five-hour/14% weekly; included usage available.
