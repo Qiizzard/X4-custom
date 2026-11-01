@@ -1331,3 +1331,13 @@ this schedule does not declare them completed or permanently blocked.
   memory/recovery gates remain open. On X4 measure free/largest heap and stack
   while saving Casino and enrolling/scanning Transit, including repeated exits.
   No cache reset. Initial usage 35% five-hour/14% weekly; included usage available.
+
+- 2026-11-01 V1 Game of Life: all 512 local 3x3 masks at an interior
+  position and wrapped corner PASS (1024 fixtures), including population,
+  generation and ping-pong buffer identity checks. Existing rules helper now
+  runs in the combined production harness. Simulator build PASS 11.26s;
+  post-build combined regression PASS exit 0 with explicit 1024-fixture marker.
+  Logs: firmware-builds/logs/2026-11-01-v1-life-{build,runtime}.log.
+  Simulator-only change, firmware unchanged. Physical input/rendering remain
+  unverified: on X4 open Tools → Game of Life, step/restart/exit and check
+  generation resets and display updates. No cache reset. Usage initially 8%/17%.

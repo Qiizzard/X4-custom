@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "SimulatorGameOfLifeTest.h"
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/event_logger/EventLoggerActivity.h"
@@ -1294,6 +1295,7 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    require(verifySimulatorGameOfLifeRules(renderer, mappedInputManager), "Game of Life production rule fixtures");
     const uint8_t natural[] = {1, 13}, soft[] = {1, 1, 9}, hard[] = {1, 1, 9, 10}, bust[] = {13, 12, 2};
     require(CasinoActivity::handValue(natural, 2) == 21, "Blackjack natural value");
     require(CasinoActivity::handValue(soft, 3) == 21, "Blackjack soft aces");

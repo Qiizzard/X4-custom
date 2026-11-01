@@ -54,10 +54,31 @@ bool verifySimulatorGameOfLifeRules(GfxRenderer& renderer, MappedInputManager& i
       !app->cellAt(app->current.get(), 0, 0) || !app->cellAt(app->current.get(), 1, 0))
     return false;
 
+  // Every 3x3 neighbourhood, at an interior cell and the toroidal corner.
+  // The mask includes the centre bit; the oracle is the Conway truth table.
+  for (int origin : {0, 15}) {
+    for (unsigned mask = 0; mask < 512; ++mask) {
+      clear();
+      for (unsigned bit = 0; bit < 9; ++bit) {
+        const int x = (origin + int(bit % 3) - 1 + app->kGridWidth) % app->kGridWidth;
+        const int y = (origin + int(bit / 3) - 1 + app->kGridHeight) % app->kGridHeight;
+        app->setCellAt(app->current.get(), x, y, (mask & (1u << bit)) != 0);
+      }
+      const unsigned neighbours = __builtin_popcount(mask & ~(1u << 4));
+      const bool expected = neighbours == 3 || (neighbours == 2 && (mask & (1u << 4)));
+      auto* previous = app->current.get();
+      auto* scratch = app->next.get();
+      app->step();
+      if (app->cellAt(app->current.get(), origin, origin) != expected || app->generation != 1 ||
+          app->liveCount != population() || app->current.get() != scratch || app->next.get() != previous)
+        return false;
+    }
+  }
+
   app->rngState = 1;
   app->seedRandom();
   if (app->generation != 0 || app->liveCount != population() || app->liveCount == 0) return false;
-  LOG_INF("SMOKE", "Game of Life block, wrapped blinker and restart counters passed");
+  LOG_INF("SMOKE", "Game of Life block, wrapped blinker and restart counters and 1024 neighbourhood fixtures passed");
   return true;
 }
 #endif
