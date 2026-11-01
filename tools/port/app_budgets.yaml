@@ -227,3 +227,17 @@ apps:
     peak_heap_bytes: 24576    # provisional 16384 SDK scan + 8192 keyboard/HAL allowance
     # Conservatively sums shared-service estimates; overlap and radio fragmentation
     # unmeasured. Do not interpret a model PASS as a verified device memory peak.
+
+  # Fixed-buffer visual apps: compiled C3 object evidence from 2026-10-01.
+  # No app-owned allocations beyond the activity; shared UI peaks not measured.
+  - name: MatrixRain
+    tier: c3
+    static_bytes: 0           # decorative alphabet and timing tables are const
+    object_bytes: 3628        # includes 48 columns and 48x57 character grid
+    peak_heap_bytes: 0        # app-owned buffers only, not whole-screen peak
+
+  - name: Voronoi
+    tier: c3
+    static_bytes: 0
+    object_bytes: 6576        # includes 40 points and 60x100 nearest-cell cache
+    peak_heap_bytes: 0        # app-owned buffers only, not whole-screen peak
