@@ -1341,3 +1341,13 @@ this schedule does not declare them completed or permanently blocked.
   Simulator-only change, firmware unchanged. Physical input/rendering remain
   unverified: on X4 open Tools → Game of Life, step/restart/exit and check
   generation resets and display updates. No cache reset. Usage initially 8%/17%.
+
+- 2026-11-01 V1 Dice Roller: 2688 seeded fixtures across seven die types
+  and one-to-six dice PASS bounds, count, sum/reset, untouched unused slots
+  and repeat-roll totals. Simulator build PASS 4.68s, combined production
+  regression PASS exit 0. Logs: firmware-builds/logs/
+  2026-11-01-v1-dice-{build,runtime}.log. Simulator-only friend/test/runner;
+  no firmware behavior change or C3 rebuild. Statistical fairness and physical
+  input/animation remain unverified. On X4, Tools → Dice Roller: select each
+  die type, roll six dice, then one; verify displayed sum and return navigation.
+  No cache reset. Usage 23%/19% → 33%/21%; V1 remains active.

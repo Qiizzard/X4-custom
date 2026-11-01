@@ -19,6 +19,9 @@ class DiceRollerActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum class State : uint8_t { Select, Rolling, Result };
 
   // d4 through d100. static constexpr => flash, not DRAM (rule 4).

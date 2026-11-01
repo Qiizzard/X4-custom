@@ -11,6 +11,7 @@
 #include "SimulatorGameOfLifeTest.h"
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
+#include "activities/apps/dice_roller/DiceRollerActivity.h"
 #include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/habit_tracker/HabitTrackerActivity.h"
@@ -37,6 +38,42 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void diceRoller() {
+    DiceRollerActivity game(renderer, mappedInputManager);
+    static constexpr unsigned sides[] = {4, 6, 8, 10, 12, 20, 100};
+    for (unsigned type = 0; type < 7; ++type) {
+      game.dieTypeIndex = type;
+      for (unsigned count = 6; count >= 1; --count) {
+        game.dieCount = count;
+        for (unsigned seed = 1; seed <= 64; ++seed) {
+          game.rngState = seed;
+          game.total = UINT32_MAX;
+          game.resultCount = 0;
+          for (auto& result : game.results) result = UINT16_MAX;
+          game.rollAll();
+          unsigned sum = 0;
+          require(game.resultCount == count, "Dice Roller result count");
+          for (unsigned i = 0; i < count; ++i) {
+            require(game.results[i] >= 1 && game.results[i] <= sides[type], "Dice Roller result bounds");
+            sum += game.results[i];
+          }
+          for (unsigned i = count; i < 6; ++i)
+            require(game.results[i] == UINT16_MAX, "Dice Roller wrote beyond selected dice");
+          require(game.total == sum && game.total >= count && game.total <= count * sides[type],
+                  "Dice Roller total/reset");
+          game.rollAll();
+          sum = 0;
+          for (unsigned i = 0; i < count; ++i) {
+            require(game.results[i] >= 1 && game.results[i] <= sides[type], "Dice Roller repeat bounds");
+            sum += game.results[i];
+          }
+          require(game.total == sum, "Dice Roller repeat accumulated old total");
+        }
+      }
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS dice_roller fixtures=2688");
   }
 
   static void casinoSettlement() {
@@ -1295,6 +1332,7 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    diceRoller();
     require(verifySimulatorGameOfLifeRules(renderer, mappedInputManager), "Game of Life production rule fixtures");
     const uint8_t natural[] = {1, 13}, soft[] = {1, 1, 9}, hard[] = {1, 1, 9, 10}, bust[] = {13, 12, 2};
     require(CasinoActivity::handValue(natural, 2) == 21, "Blackjack natural value");
