@@ -10,6 +10,25 @@ ROOT = Path(__file__).resolve().parents[1]
 MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable=1"
 
 
+REQUIRED_MARKERS = {
+    "Sudoku": MARKER,
+    "DiceRoller": "GAME TEST RESULT: PASS dice_roller fixtures=2688",
+    "GameOfLife": "Game of Life block, wrapped blinker and restart counters and 1024 neighbourhood fixtures passed",
+    **{name: f"GAME TEST RESULT: PASS {marker}" for name, marker in (
+        ("Chess", "chess"), ("Blackjack", "blackjack"), ("Tetris", "tetris"),
+        ("Minesweeper", "minesweeper"), ("Maze", "maze"), ("Snake", "snake"),
+        ("Flashcards", "flashcards"), ("EventLogger", "event_logger"),
+        ("Habits", "habits"), ("Transit", "transit"), ("CasinoSave", "casino_save"),
+        ("CasinoGameplay", "casino_gameplay"), ("CasinoSettlement", "casino_settlement"),
+    )},
+}
+
+
+def evaluate_result(returncode, text):
+    missing = [name for name, marker in REQUIRED_MARKERS.items() if marker not in text]
+    return returncode == 0 and not missing, missing
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log", type=Path, required=True)
@@ -56,8 +75,11 @@ def main():
                 print(f"FAIL: timeout; {args.log}")
                 return 1
     text = args.log.read_text(errors="replace")
-    ok = result.returncode == 0 and "GAME TEST RESULT: PASS dice_roller fixtures=2688" in text and MARKER in text and "GAME TEST RESULT: PASS chess" in text and "GAME TEST RESULT: PASS blackjack" in text and "GAME TEST RESULT: PASS tetris" in text and "GAME TEST RESULT: PASS minesweeper" in text and "GAME TEST RESULT: PASS maze" in text and "GAME TEST RESULT: PASS snake" in text and "GAME TEST RESULT: PASS flashcards" in text and "GAME TEST RESULT: PASS event_logger" in text and "GAME TEST RESULT: PASS habits" in text and "GAME TEST RESULT: PASS transit" in text and "GAME TEST RESULT: PASS casino_save" in text and "GAME TEST RESULT: PASS casino_gameplay" in text and "GAME TEST RESULT: PASS casino_settlement" in text
-    print(f"{'PASS' if ok else 'FAIL'}: DiceRoller/Sudoku/Chess/Tetris/Minesweeper/Maze/Snake/Blackjack/Flashcards/EventLogger/Habits/Transit/CasinoSave/CasinoGameplay/CasinoSettlement production logic, exit {result.returncode}; {args.log}")
+    ok, missing = evaluate_result(result.returncode, text)
+    print(f"{'PASS' if ok else 'FAIL'}: {'/'.join(REQUIRED_MARKERS)} production logic, "
+          f"exit {result.returncode}; {args.log}")
+    if missing:
+        print(f"Missing success markers: {', '.join(missing)}")
     return 0 if ok else 1
 
 

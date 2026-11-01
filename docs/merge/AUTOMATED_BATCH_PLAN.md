@@ -1351,3 +1351,14 @@ this schedule does not declare them completed or permanently blocked.
   input/animation remain unverified. On X4, Tools → Dice Roller: select each
   die type, roll six dice, then one; verify displayed sum and return navigation.
   No cache reset. Usage 23%/19% → 33%/21%; V1 remains active.
+
+- 2026-11-01 V1 runner integrity: require Game of Life's 1024-fixture marker
+  alongside all other suites; report missing suites explicitly. Previously an
+  older binary without that suite could satisfy the runner's marker checks.
+  Four runner self-tests PASS, including omission of each of 16 required
+  markers and nonzero exits despite complete output. Updated runner passes
+  against current simulator, exit 0; log firmware-builds/logs/
+  2026-11-01-v1-runner-runtime.log. No C++ changes or rebuild needed.
+  This verifies required output, not binary/source freshness; build completion
+  must still precede execution. Firmware/device gates unchanged. Initial usage
+  2% five-hour/22% weekly. Remaining V1 app workflows/resources stay active.
