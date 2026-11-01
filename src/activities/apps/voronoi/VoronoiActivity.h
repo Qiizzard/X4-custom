@@ -11,6 +11,9 @@ class VoronoiActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   struct Point {
     int x, y;
   };

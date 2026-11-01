@@ -21,6 +21,7 @@
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
 #include "activities/apps/transit_alert/TransitAlertActivity.h"
+#include "activities/apps/voronoi/VoronoiActivity.h"
 extern GfxRenderer renderer;
 extern MappedInputManager mappedInputManager;
 
@@ -38,6 +39,47 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void voronoi() {
+    // The 6-KiB cache belongs on the heap, matching the activity lifecycle.
+    auto game = makeUniqueNoThrow<VoronoiActivity>(renderer, mappedInputManager);
+    require(bool(game), "Voronoi fixture allocation");
+    for (int count = 5; count <= 40; count += 5) {
+      for (unsigned seed = 1; seed <= 8; ++seed) {
+        game->count = count;
+        game->rng = seed;
+        memset(game->nearest, 255, sizeof(game->nearest));
+        game->generate();
+        require(game->width > 0 && game->height > 0 && game->cols > 0 && game->cols <= 100 && game->rows > 0 &&
+                    game->rows <= 60 && game->step >= 8,
+                "Voronoi generated cache dimensions");
+        for (int i = 0; i < count; ++i)
+          require(game->points[i].x >= 0 && game->points[i].x < game->width && game->points[i].y >= 0 &&
+                      game->points[i].y < game->height,
+                  "Voronoi point outside drawable region");
+        for (int y = 0; y < 60; ++y) {
+          for (int x = 0; x < 100; ++x) {
+            const unsigned id = game->nearest[y][x];
+            if (y >= game->rows || x >= game->cols) {
+              require(id == 255, "Voronoi wrote outside active cache");
+              continue;
+            }
+            require(id < unsigned(count), "Voronoi invalid nearest point index");
+            const int px = std::min(x * game->step + game->step / 2, game->width - 1);
+            const int py = std::min(y * game->step + game->step / 2, game->height - 1);
+            auto distance = [&](unsigned i) {
+              const int64_t dx = px - game->points[i].x, dy = py - game->points[i].y;
+              return dx * dx + dy * dy;
+            };
+            for (unsigned i = 0; i < unsigned(count); ++i)
+              require(distance(id) <= distance(i) && (i >= id || distance(id) < distance(i)),
+                      "Voronoi nearest point/tie ordering");
+          }
+        }
+      }
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS voronoi fixtures=64");
   }
 
   static void diceRoller() {
@@ -1332,6 +1374,7 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    voronoi();
     diceRoller();
     require(verifySimulatorGameOfLifeRules(renderer, mappedInputManager), "Game of Life production rule fixtures");
     const uint8_t natural[] = {1, 13}, soft[] = {1, 1, 9}, hard[] = {1, 1, 9, 10}, bust[] = {13, 12, 2};

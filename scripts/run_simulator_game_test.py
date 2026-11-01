@@ -11,6 +11,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
+    "Voronoi": "GAME TEST RESULT: PASS voronoi fixtures=64",
     "Sudoku": MARKER,
     "DiceRoller": "GAME TEST RESULT: PASS dice_roller fixtures=2688",
     "GameOfLife": "Game of Life block, wrapped blinker and restart counters and 1024 neighbourhood fixtures passed",
