@@ -1382,3 +1382,13 @@ this schedule does not declare them completed or permanently blocked.
   Simulator-only access/tests; firmware unchanged. X4: open Tools → Voronoi,
   vary 5–40 points, regenerate and exit; check boundaries and responsiveness.
   No cache reset. Usage initially 0% five-hour/26% weekly; V1 remains active.
+
+- 2026-11-02 V1 Matrix Rain: 6144 production frame updates across eight
+  seeds/three densities PASS grid/drop bounds, alphabet, inactive grid bytes
+  and counters; explicit slow-drop cadence and offscreen retirement PASS.
+  Simulator build PASS 4.65s, combined regression and four runner self-tests
+  PASS. Logs: firmware-builds/logs/2026-11-02-v1-matrix-{build,runtime}.log.
+  Simulator-only access/tests; firmware unchanged. Current simulator geometry,
+  not orientation/display or wall-clock scheduling validation. X4: Tools →
+  Matrix Rain, vary speed/density, pause and exit; verify responsive controls
+  and bounded display area. No cache reset. Usage initially 16%/28%.

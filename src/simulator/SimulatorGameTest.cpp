@@ -15,6 +15,7 @@
 #include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/habit_tracker/HabitTrackerActivity.h"
+#include "activities/apps/matrix_rain/MatrixRainActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/snake/SnakeActivity.h"
@@ -39,6 +40,52 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void matrixRain() {
+    auto game = makeUniqueNoThrow<MatrixRainActivity>(renderer, mappedInputManager);
+    require(bool(game), "Matrix fixture allocation");
+    static constexpr char alphabet[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%&*<>{}|/=+-";
+    for (unsigned seed = 1; seed <= 8; ++seed) {
+      for (int density = 0; density < 3; ++density) {
+        game->rng = seed;
+        game->density = density;
+        game->frameCount = 0;
+        memset(game->grid, '~', sizeof(game->grid));
+        game->initColumns();
+        require(game->cols > 0 && game->cols <= game->MAX_COLS && game->rows > 0 && game->rows <= game->MAX_ROWS,
+                "Matrix grid bounds");
+        for (unsigned frame = 0; frame < 256; ++frame) {
+          game->advanceFrame();
+          require(game->frameCount == frame + 1, "Matrix frame counter");
+          for (int col = 0; col < game->cols; ++col)
+            require(game->dropLength[col] >= 4 && game->dropLength[col] <= 15 && game->dropSpeed[col] >= 1 &&
+                        game->dropSpeed[col] <= 2 && game->dropHead[col] >= -(game->rows / 2) &&
+                        game->dropHead[col] <= game->rows + game->dropLength[col],
+                    "Matrix drop bounds");
+          for (size_t i = 0; i < sizeof(game->grid); ++i)
+            require(i < size_t(game->rows * game->cols) ? game->grid[i] != 0 && strchr(alphabet, game->grid[i])
+                                                        : game->grid[i] == '~',
+                    "Matrix alphabet/inactive grid preservation");
+        }
+      }
+    }
+    game->cols = 1;
+    game->rows = 10;
+    game->dropActive[0] = true;
+    game->dropHead[0] = 0;
+    game->dropLength[0] = 4;
+    game->dropSpeed[0] = 2;
+    game->frameCount = 1;
+    game->advanceFrame();
+    require(game->dropHead[0] == 0, "Matrix slow drop skipped frame");
+    game->advanceFrame();
+    require(game->dropHead[0] == 1, "Matrix slow drop advance");
+    game->dropHead[0] = 13;
+    game->dropSpeed[0] = 1;
+    game->advanceFrame();
+    require(!game->dropActive[0] && game->dropHead[0] == 14, "Matrix offscreen drop retirement");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS matrix_rain frames=6144");
   }
 
   static void voronoi() {
@@ -1374,6 +1421,7 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    matrixRain();
     voronoi();
     diceRoller();
     require(verifySimulatorGameOfLifeRules(renderer, mappedInputManager), "Game of Life production rule fixtures");

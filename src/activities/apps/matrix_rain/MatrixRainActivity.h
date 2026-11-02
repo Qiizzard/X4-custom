@@ -13,6 +13,9 @@ class MatrixRainActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   uint32_t rng = 1;
   uint32_t randomValue() {
     rng ^= rng << 13;
