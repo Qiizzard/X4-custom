@@ -34,6 +34,28 @@ def evaluate_result(returncode, text):
     return returncode == 0 and not missing, missing
 
 
+def validate_etch_bmp(data):
+    """Validate the exact three-pixel export fixture; return dimensions or None."""
+    if len(data) < 62:
+        return None
+    width, height = struct.unpack_from("<II", data, 18)
+    if (width, height) not in ((160, 240), (240, 160)):
+        return None
+    stride = ((width + 31) // 32) * 4
+    expected = bytearray(stride * height)
+    for x, y in ((0, 0), (7, 1), (width - 1, height - 1)):
+        expected[(height - 1 - y) * stride + x // 8] |= 128 >> (x % 8)
+    valid = (data[:2] == b"BM" and len(data) == 62 + len(expected)
+             and struct.unpack_from("<I", data, 2)[0] == len(data)
+             and struct.unpack_from("<I", data, 10)[0] == 62
+             and struct.unpack_from("<I", data, 14)[0] == 40
+             and struct.unpack_from("<HHI", data, 26) == (1, 1, 0)
+             and struct.unpack_from("<I", data, 34)[0] == len(expected)
+             and data[54:62] == b"\xff\xff\xff\0\0\0\0\0"
+             and data[62:] == expected)
+    return (width, height) if valid else None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log", type=Path, required=True)
@@ -86,29 +108,11 @@ def main():
         dimensions = set()
         for drawing in drawings:
             data = drawing.read_bytes()
-            if len(data) < 62:
-                print("FAIL: truncated BMP header")
-                return 1
-            width, height = struct.unpack_from("<II", data, 18)
-            if (width, height) not in ((160, 240), (240, 160)):
-                print("FAIL: BMP dimensions")
-                return 1
-            dimensions.add((width, height))
-            stride = ((width + 31) // 32) * 4
-            expected = bytearray(stride * height)
-            for x, y in ((0, 0), (7, 1), (width - 1, height - 1)):
-                expected[(height - 1 - y) * stride + x // 8] |= 128 >> (x % 8)
-            valid = (data[:2] == b"BM" and len(data) == 62 + len(expected)
-                     and struct.unpack_from("<I", data, 2)[0] == len(data)
-                     and struct.unpack_from("<I", data, 10)[0] == 62
-                     and struct.unpack_from("<I", data, 14)[0] == 40
-                     and struct.unpack_from("<HHI", data, 26) == (1, 1, 0)
-                     and struct.unpack_from("<I", data, 34)[0] == len(expected)
-                     and data[54:62] == b"\xff\xff\xff\0\0\0\0\0"
-                     and data[62:] == expected)
-            if not valid:
+            size = validate_etch_bmp(data)
+            if size is None:
                 print("FAIL: BMP header/palette/pixel/padding mismatch")
                 return 1
+            dimensions.add(size)
         if len(dimensions) != 2:
             print("FAIL: missing BMP orientation")
             return 1
