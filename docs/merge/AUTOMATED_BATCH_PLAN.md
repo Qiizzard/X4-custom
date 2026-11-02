@@ -1392,3 +1392,14 @@ this schedule does not declare them completed or permanently blocked.
   not orientation/display or wall-clock scheduling validation. X4: Tools →
   Matrix Rain, vary speed/density, pause and exit; verify responsive controls
   and bounded display area. No cache reset. Usage initially 16%/28%.
+
+- 2026-11-02 V1 visual orientation coverage: Matrix Rain and Voronoi production
+  fixtures PASS in all four renderer orientations (24576 frame updates and
+  256 Voronoi generations total). Original orientation restored before other
+  suites; dedicated completion marker required. Simulator build PASS 5.73s,
+  combined regression and four runner self-tests PASS. Logs:
+  firmware-builds/logs/2026-11-02-v1-orientations-{build,runtime}.log.
+  Simulator-only change, no firmware expansion. These check computed grids,
+  not rendered pixels/touch or physical bezel alignment. X4: open both apps
+  in each orientation, inspect borders/controls and exit. No cache reset.
+  Initial usage 0% five-hour/30% weekly; remaining V1/device gates stay open.

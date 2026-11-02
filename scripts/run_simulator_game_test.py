@@ -11,6 +11,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
+    "VisualOrientations": "GAME TEST RESULT: PASS visual_orientations count=4",
     "MatrixRain": "GAME TEST RESULT: PASS matrix_rain frames=6144",
     "Voronoi": "GAME TEST RESULT: PASS voronoi fixtures=64",
     "Sudoku": MARKER,

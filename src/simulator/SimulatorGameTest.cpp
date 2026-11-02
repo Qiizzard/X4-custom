@@ -1,6 +1,7 @@
 #ifdef SIMULATOR
 #include "SimulatorGameTest.h"
 
+#include <GfxRenderer.h>
 #include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
@@ -1421,8 +1422,15 @@ class SimulatorGameTest {
 
  public:
   static void run() {
-    matrixRain();
-    voronoi();
+    const auto originalOrientation = renderer.getOrientation();
+    for (auto orientation : {GfxRenderer::Portrait, GfxRenderer::LandscapeClockwise, GfxRenderer::PortraitInverted,
+                             GfxRenderer::LandscapeCounterClockwise}) {
+      renderer.setOrientation(orientation);
+      matrixRain();
+      voronoi();
+    }
+    renderer.setOrientation(originalOrientation);
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS visual_orientations count=4");
     diceRoller();
     require(verifySimulatorGameOfLifeRules(renderer, mappedInputManager), "Game of Life production rule fixtures");
     const uint8_t natural[] = {1, 13}, soft[] = {1, 1, 9}, hard[] = {1, 1, 9, 10}, bust[] = {13, 12, 2};
