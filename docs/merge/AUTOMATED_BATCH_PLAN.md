@@ -1403,3 +1403,14 @@ this schedule does not declare them completed or permanently blocked.
   not rendered pixels/touch or physical bezel alignment. X4: open both apps
   in each orientation, inspect borders/controls and exit. No cache reset.
   Initial usage 0% five-hour/30% weekly; remaining V1/device gates stay open.
+
+- 2026-11-02 V1 Etch export: production saves for 160x240 and 240x160
+  canvases PASS independent Python checks of BMP signature/size/offset/DIB,
+  planes/depth/compression/palette, bottom-up bit ordering, exact pixels and
+  zero row padding. Two distinct files required; invalid pixel coordinates
+  ignored. Simulator build PASS 5.59s, combined regression and four runner
+  self-tests PASS. Logs: firmware-builds/logs/2026-11-02-v1-etch-{build,runtime}.log.
+  Simulator-only changes; firmware unchanged. Physical SD failures, filename
+  collision exhaustion and input remain unverified. X4: draw/save in portrait
+  and landscape, open BMPs on computer and verify orientation. No cache reset.
+  Initial usage 18%/33%; V1/device gates remain open.

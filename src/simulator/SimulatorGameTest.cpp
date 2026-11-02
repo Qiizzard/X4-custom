@@ -13,6 +13,7 @@
 #include "activities/apps/casino/CasinoActivity.h"
 #include "activities/apps/chess/ChessActivity.h"
 #include "activities/apps/dice_roller/DiceRollerActivity.h"
+#include "activities/apps/etch_a_sketch/EtchASketchActivity.h"
 #include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/habit_tracker/HabitTrackerActivity.h"
@@ -41,6 +42,28 @@ class SimulatorGameTest {
     unsigned steps = 0;
     while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
+  }
+
+  static void etchExport() {
+    EtchASketchActivity game(renderer, mappedInputManager);
+    game.canvas = makeUniqueNoThrow<uint8_t[]>(game.CANVAS_BYTES);
+    require(bool(game.canvas), "Etch canvas allocation");
+    for (int width : {160, 240}) {
+      game.canvasW = width;
+      game.canvasH = width == 160 ? 240 : 160;
+      memset(game.canvas.get(), 0, game.CANVAS_BYTES);
+      game.setPixel(0, 0);
+      game.setPixel(7, 1);
+      game.setPixel(width - 1, game.canvasH - 1);
+      game.setPixel(-1, 0);
+      game.setPixel(width, 0);
+      game.setPixel(0, game.canvasH);
+      require(!game.getPixel(-1, 0) && !game.getPixel(width, 0) && !game.getPixel(0, game.canvasH),
+              "Etch out-of-range pixel reads");
+      game.saveToBmp();
+      require(game.saveStatus == EtchASketchActivity::SaveStatus::Saved, "Etch export failed");
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS etch_export count=2");
   }
 
   static void matrixRain() {
@@ -1422,6 +1445,7 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    etchExport();
     const auto originalOrientation = renderer.getOrientation();
     for (auto orientation : {GfxRenderer::Portrait, GfxRenderer::LandscapeClockwise, GfxRenderer::PortraitInverted,
                              GfxRenderer::LandscapeCounterClockwise}) {

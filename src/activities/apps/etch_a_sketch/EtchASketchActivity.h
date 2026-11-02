@@ -15,6 +15,9 @@ class EtchASketchActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   // A logical 160x240 (or 240x160) drawing, not another display framebuffer.
   // Retained for this activity only; too large for the task stack.
   static constexpr size_t CANVAS_BYTES = 160 * 240 / 8;
