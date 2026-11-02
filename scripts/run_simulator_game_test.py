@@ -12,7 +12,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
-    "EtchExport": "GAME TEST RESULT: PASS etch_export count=2",
+    "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
     "VisualOrientations": "GAME TEST RESULT: PASS visual_orientations count=4",
     "MatrixRain": "GAME TEST RESULT: PASS matrix_rain frames=6144",
     "Voronoi": "GAME TEST RESULT: PASS voronoi fixtures=64",

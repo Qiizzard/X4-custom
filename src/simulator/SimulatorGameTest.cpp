@@ -62,8 +62,26 @@ class SimulatorGameTest {
               "Etch out-of-range pixel reads");
       game.saveToBmp();
       require(game.saveStatus == EtchASketchActivity::SaveStatus::Saved, "Etch export failed");
+      if (width == 160) {
+        // Preserve the first export while exercising a path obstruction.
+        require(rename("fs_/crossink/drawings", "fs_/crossink/drawings_saved") == 0, "Etch fixture directory backup");
+        FILE* blocker = fopen("fs_/crossink/drawings", "wb");
+        require(blocker != nullptr, "Etch blocker creation");
+        require(fwrite("preserve", 1, 8, blocker) == 8, "Etch blocker write");
+        require(fclose(blocker) == 0, "Etch blocker close");
+        game.saveToBmp();
+        require(game.saveStatus == EtchASketchActivity::SaveStatus::Failed, "Etch blocked path reports success");
+        blocker = fopen("fs_/crossink/drawings", "rb");
+        require(blocker != nullptr, "Etch blocker preservation open");
+        char bytes[9]{};
+        require(fread(bytes, 1, sizeof(bytes), blocker) == 8 && memcmp(bytes, "preserve", 8) == 0 && !ferror(blocker),
+                "Etch failed save changed existing file");
+        require(fclose(blocker) == 0, "Etch blocker preservation close");
+        require(remove("fs_/crossink/drawings") == 0, "Etch blocker removal");
+        require(rename("fs_/crossink/drawings_saved", "fs_/crossink/drawings") == 0, "Etch fixture directory restore");
+      }
     }
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS etch_export count=2");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS etch_export count=2 recovery=1");
   }
 
   static void matrixRain() {
