@@ -802,7 +802,7 @@ class SimulatorGameTest {
 
   static void snake() {
     SnakeActivity game(renderer, mappedInputManager);
-    game.snake = makeUniqueNoThrow<SnakeActivity::Point[]>(game.MAX_CELLS);
+    game.snake = makeUniqueNoThrow<SnakeActivity::Point[]>(game.MAX_CELLS + 1);
     require(bool(game.snake), "Snake test allocation");
     game.gridW = 32;
     game.gridH = 48;
@@ -850,7 +850,36 @@ class SimulatorGameTest {
     game.snake[game.snakeLength++] = {31, 47};
     game.spawnFood();
     require(game.state == SnakeActivity::GAME_OVER, "Snake full-board completion");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS snake movement growth tail collisions food full");
+    // Native-only extra element detects writes past the shipping buffer limit.
+    for (const int width : {3, 32}) {
+      for (const int height : {3, 48}) {
+        game.gridW = width;
+        game.gridH = height;
+        const int cells = width * height;
+        game.snakeLength = cells - 1;
+        // Reverse a serpentine path, leaving its last cell as the food.
+        for (int i = 0; i < cells - 1; ++i) {
+          const int index = cells - 2 - i;
+          const int y = index / width;
+          const int x = y % 2 ? width - 1 - index % width : index % width;
+          game.snake[i] = {static_cast<int16_t>(x), static_cast<int16_t>(y)};
+        }
+        game.snake[cells] = {-123, -456};
+        game.food = {static_cast<int16_t>(height % 2 ? width - 1 : 0), static_cast<int16_t>(height - 1)};
+        game.nextDirX = game.food.x - game.snake[0].x;
+        game.nextDirY = 0;
+        game.state = SnakeActivity::PLAYING;
+        game.score = 70;
+        game.step();
+        require(game.state == SnakeActivity::GAME_OVER && game.snakeLength == cells && game.score == 80,
+                "Snake final growth completion or score");
+        require(game.snake[cells].x == -123 && game.snake[cells].y == -456,
+                "Snake final growth wrote beyond board capacity");
+        for (int y = 0; y < height; ++y)
+          for (int x = 0; x < width; ++x) require(game.isSnakeAt(x, y), "Snake final growth lost a board cell");
+      }
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS snake movement growth tail collisions food full final-growth=4");
   }
 
   static void maze() {
