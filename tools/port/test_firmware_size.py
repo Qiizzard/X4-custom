@@ -28,6 +28,8 @@ class FirmwareSizeTest(unittest.TestCase):
     def test_fit_reserve_and_overflow_use_smallest_app_slot(self):
         cases = (
             ("fits", 700000, False, 0, "bytes free"),
+            ("exact reserve strict", 786432, True, 0, "262144 bytes free"),
+            ("one byte below reserve", 786433, True, 1, "FLASH HEADROOM LOW"),
             ("reserve warning", 900000, False, 0, "WARNING: FLASH HEADROOM LOW"),
             ("strict reserve", 900000, True, 1, "FLASH HEADROOM LOW"),
             ("oversized", 1048577, False, 1, "over by 1 bytes"),
@@ -57,6 +59,27 @@ class FirmwareSizeTest(unittest.TestCase):
                             except SystemExit as error:
                                 code = error.code
                     self.assertEqual(code, expected, output.getvalue())
+                    self.assertIn(marker, output.getvalue())
+
+    def test_missing_or_non_app_partition_table_fails_closed(self):
+        with tempfile.TemporaryDirectory(prefix="crossink-flash-gate-") as directory:
+            root = Path(directory)
+            firmware = root / "firmware.bin"
+            firmware.write_bytes(b"test")
+            table = root / "partitions.csv"
+            for contents, marker in (
+                (None, "Unable to find partition table"),
+                ("", "No app partition found"),
+                ("nvs,data,nvs,0x9000,20K\n", "No app partition found"),
+            ):
+                with self.subTest(contents=contents):
+                    if contents is not None:
+                        table.write_text(contents)
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                        with self.assertRaises(SystemExit) as raised:
+                            GATE["check_firmware_size"]([], [firmware], FakeEnv(PROJECT_DIR=directory))
+                    self.assertEqual(raised.exception.code, 1)
                     self.assertIn(marker, output.getvalue())
 
 
