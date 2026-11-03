@@ -991,6 +991,28 @@ class SimulatorGameTest {
         for (int col = 0; col < 10; ++col)
           require(game.board[row][col] == (row == 19 && col == 2), "Tetris line compaction lost cells");
     }
+    // Every pair includes separated, adjacent, top and bottom clears. Partial
+    // rows encode their original index so compaction must preserve row order.
+    for (int first = 0; first < 20; ++first) {
+      for (int second = first + 1; second < 20; ++second) {
+        for (int row = 0; row < 20; ++row)
+          for (int col = 0; col < 10; ++col)
+            game.board[row][col] = (row == first || row == second) ? 1 : ((row + 1) >> col) & 1;
+        require(game.clearLines() == 2, "Tetris pair clear count");
+        int destination = 19;
+        for (int source = 19; source >= 0; --source) {
+          if (source == first || source == second) continue;
+          for (int col = 0; col < 10; ++col)
+            require(game.board[destination][col] == (((source + 1) >> col) & 1),
+                    "Tetris pair compaction changed surviving row order");
+          --destination;
+        }
+        for (int row = 0; row < 2; ++row)
+          for (int col = 0; col < 10; ++col)
+            require(game.board[row][col] == 0, "Tetris pair compaction did not clear vacated top rows");
+        require(game.clearLines() == 0, "Tetris compacted partial rows cleared again");
+      }
+    }
     memset(game.board, 0, sizeof(game.board));
     for (int row = 16; row < 20; ++row) {
       memset(game.board[row], 1, 10);
@@ -1016,7 +1038,7 @@ class SimulatorGameTest {
     memset(game.board, 1, sizeof(game.board));
     game.spawnPiece();
     require(game.state == TetrisActivity::GAME_OVER, "Tetris blocked spawn must end game");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS tetris shapes collisions lines scoring level spawn");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS tetris shapes collisions lines scoring level spawn pairs=190");
   }
 
   static void chess() {
