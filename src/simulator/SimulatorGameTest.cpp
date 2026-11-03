@@ -1033,12 +1033,47 @@ class SimulatorGameTest {
     for (const auto& row : game.board)
       for (auto cell : row) require(cell == 0, "Tetris four-line clear left cells");
     require(game.getDropInterval() == 730, "Tetris level-two drop interval");
+    static constexpr int scorePerClear[] = {0, 100, 300, 500, 800};
+    static constexpr int testedLevels[] = {1, 2, 9, 10, 100};
+    for (const int startLevel : testedLevels) {
+      for (const int progress : {0, 9}) {
+        for (int count = 0; count <= 4; ++count) {
+          memset(game.board, 0, sizeof(game.board));
+          for (int row = 20 - count; row < 20; ++row) {
+            memset(game.board[row], 1, 10);
+            game.board[row][5] = 0;
+          }
+          game.currentPiece = 0;
+          game.currentRotation = 1;
+          game.pieceX = 3;
+          game.pieceY = 16;
+          game.nextPiece = 1;
+          game.state = TetrisActivity::PLAYING;
+          const int previousLines = (startLevel - 1) * 10 + progress;
+          game.linesCleared = previousLines;
+          game.level = startLevel;
+          game.score = 137;
+          game.step();
+          require(game.score == 137 + scorePerClear[count] * startLevel,
+                  "Tetris score must accumulate using pre-clear level");
+          require(game.linesCleared == previousLines + count && game.level == 1 + (previousLines + count) / 10,
+                  "Tetris line count or level threshold");
+          require(game.currentPiece == 1 && game.state == TetrisActivity::PLAYING,
+                  "Tetris scoring fixture failed to spawn next piece");
+          // The uncleared portion of the vertical I falls to the floor.
+          for (int row = 0; row < 20; ++row)
+            for (int col = 0; col < 10; ++col)
+              require(game.board[row][col] == (col == 5 && row >= 16 + count), "Tetris partial-clear piece remainder");
+        }
+      }
+    }
     game.level = 100;
     require(game.getDropInterval() == 100, "Tetris drop interval minimum");
     memset(game.board, 1, sizeof(game.board));
     game.spawnPiece();
     require(game.state == TetrisActivity::GAME_OVER, "Tetris blocked spawn must end game");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS tetris shapes collisions lines scoring level spawn pairs=190");
+    LOG_INF("GAMETEST",
+            "GAME TEST RESULT: PASS tetris shapes collisions lines scoring level spawn pairs=190 scores=50");
   }
 
   static void chess() {
