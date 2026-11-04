@@ -38,9 +38,16 @@ class SimulatorGameTest {
     }
   }
   static void solve(SudokuActivity& game) {
+    uint8_t original[9][9];  // 81-byte native-test snapshot.
+    memcpy(original, game.board, sizeof(original));
     game.startSolving();
+    require(!memcmp(original, game.board, sizeof(original)), "Sudoku start changed player board");
     unsigned steps = 0;
-    while (game.state == SudokuActivity::SOLVING && steps++ < 65536) game.solveStep();
+    while (game.state == SudokuActivity::SOLVING && steps++ < 65536) {
+      game.solveStep();
+      if (game.state != SudokuActivity::SOLVED)
+        require(!memcmp(original, game.board, sizeof(original)), "Sudoku unfinished solve changed player board");
+    }
     require(game.state != SudokuActivity::SOLVING, "Sudoku solver exceeded bounded test budget");
   }
 
@@ -1696,6 +1703,22 @@ class SimulatorGameTest {
     solve(game);
     require(game.state == SudokuActivity::NO_SOLUTION, "Unsatisfiable board not detected");
     require(!memcmp(clues, game.board, sizeof(clues)), "Unsolvable input changed");
+    // A new solve must discard the failed search's work and index state.
+    memset(game.board, 0, sizeof(game.board));
+    for (unsigned r = 0; r < 9; ++r)
+      for (unsigned c = 0; c < 9; ++c) game.board[r][c] = (r * 3 + r / 3 + c) % 9 + 1;
+    memcpy(clues, game.board, sizeof(clues));
+    game.board[8][8] = 0;
+    memset(game.solving, 255, sizeof(game.solving));
+    game.solveIndex = -1;
+    game.emptyCount = 81;
+    game.startSolving();
+    require(game.state == SudokuActivity::SOLVING && game.solveIndex == 0 && game.emptyCount == 1 &&
+                game.emptyCells[0] == 80 && !memcmp(game.solving, game.board, sizeof(game.board)),
+            "Sudoku restart retained stale solver state");
+    game.solveStep();
+    require(game.state == SudokuActivity::SOLVED && !memcmp(clues, game.board, sizeof(clues)),
+            "Sudoku restart failed known single-cell solution");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable=1");
     std::_Exit(0);
   }

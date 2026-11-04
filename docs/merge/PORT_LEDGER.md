@@ -103,7 +103,7 @@ coherent, working subset.
 | Dice Roller | `done` | Fixed array instead of a per-frame `push_back` vector; `esp_random` replaced with an in-object PRNG so it builds for the simulator too. |
 | Snake | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
 | Minesweeper | `wip` | V1 simulator: 96 boards check mine counts, first-reveal safety, adjacent counts, flood/win behavior, pre-placement flags and reveal-all preservation. Device controls/rendering remain unverified. |
-| Sudoku | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
+| Sudoku | `wip` | V1 simulator: 32 generated puzzles, empty/invalid/unsatisfiable boards, clue preservation, unfinished-step isolation and solver restart pass. Physical input/rendering/cancellation latency remain unverified. |
 | Tetris | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
 | Maze | `wip` | V1 simulator: 48 generated boards, wall/path invariants, unreachable exit, 2400-cell solver capacity and moved-player/already-at-exit restarts pass. Device input/rendering remain unverified. |
 | Game of Life | `wip` | Registered manual-step simulation with two 1,024-byte boards; C3 object measured at 252 bytes. Allocation failure now logged and buffers released in reverse order. Batch 4 simulator checks cover block/wrapped-blinker behavior, generation/population and restart; button step/restart/exit also pass. Physical display/input and C3 peak-memory checks remain. See its PORT_NOTES and session report. |

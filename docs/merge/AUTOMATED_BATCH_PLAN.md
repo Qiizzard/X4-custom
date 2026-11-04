@@ -1505,3 +1505,13 @@ this schedule does not declare them completed or permanently blocked.
   lose a game and inspect board reveal. Device input/rendering unverified;
   no cache reset. Usage 2%/52% initially, 7%/53% at checkpoint. Remaining V1,
   firmware reserve and hardware/product gates remain open.
+
+- 2026-11-04 V1 Sudoku isolation: player board remains byte-identical
+  through every unfinished/failed solver step across existing fixtures. A new
+  single-cell solve discards stale scratch/index state and restores the exact
+  known solution. Simulator build PASS 5.557s; combined regression PASS exit 0.
+  Logs: firmware-builds/logs/2026-11-04-v1-sudoku-isolation-{build,runtime}.log.
+  Test-only; shipping firmware unchanged. X4: start auto-solve, press Back
+  while solving, verify entries preserved, then solve again. Physical cancel
+  input/latency remains unverified; no cache reset. Usage 11%/53% initially,
+  16%/54% at checkpoint. V1, reserve and hardware/product gates remain open.
