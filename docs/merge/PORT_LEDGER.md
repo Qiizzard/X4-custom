@@ -102,7 +102,7 @@ coherent, working subset.
 |---|---|---|
 | Dice Roller | `done` | Fixed array instead of a per-frame `push_back` vector; `esp_random` replaced with an in-object PRNG so it builds for the simulator too. |
 | Snake | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
-| Minesweeper | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
+| Minesweeper | `wip` | V1 simulator: 96 boards check mine counts, first-reveal safety, adjacent counts, flood/win behavior, pre-placement flags and reveal-all preservation. Device controls/rendering remain unverified. |
 | Sudoku | `wip` | P1 source port integrated; compile sanity only, full testing deferred to V1. |
 | Tetris | `wip` | Source port integrated in P1; V1 simulator shapes/collision/line-clear/scoring/spawn checks pass. Device controls/rendering remain unverified. |
 | Maze | `wip` | V1 simulator: 48 generated boards, wall/path invariants, unreachable exit, 2400-cell solver capacity and moved-player/already-at-exit restarts pass. Device input/rendering remain unverified. |

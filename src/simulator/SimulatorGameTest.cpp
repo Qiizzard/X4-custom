@@ -998,7 +998,17 @@ class SimulatorGameTest {
         game.rngState = seed;
         game.initGame();
         const int sx = seed % game.cols, sy = seed % game.rows;
+        for (int x = 0; x < game.cols; ++x)
+          for (int y = 0; y < game.rows; ++y)
+            if ((x * game.rows + y + seed) % 7 == 0) game.grid[x][y] |= MinesweeperActivity::FLAGGED;
         game.placeMines(sx, sy);
+        for (int x = 0; x < game.cols; ++x)
+          for (int y = 0; y < game.rows; ++y) {
+            require(game.isFlagged(x, y) == ((x * game.rows + y + seed) % 7 == 0),
+                    "Minesweeper first placement lost pre-existing flags");
+            require(!game.isRevealed(x, y), "Minesweeper placement revealed a cell");
+            game.grid[x][y] &= ~MinesweeperActivity::FLAGGED;
+          }
         unsigned mines = 0;
         for (int x = 0; x < game.cols; ++x) {
           for (int y = 0; y < game.rows; ++y) {
@@ -1023,6 +1033,18 @@ class SimulatorGameTest {
             if (!game.isMine(x, y)) game.reveal(x, y);
           }
         require(game.checkWin(), "Minesweeper revealed safe cells not won");
+        // Native-only snapshot: reveal-all must preserve mines, counts and flags.
+        uint8_t before[10][16] = {};
+        for (int x = 0; x < game.cols; ++x)
+          for (int y = 0; y < game.rows; ++y) {
+            if ((x + y) % 3 == 0) game.grid[x][y] |= MinesweeperActivity::FLAGGED;
+            before[x][y] = game.grid[x][y];
+          }
+        game.revealAll();
+        for (int x = 0; x < game.cols; ++x)
+          for (int y = 0; y < game.rows; ++y)
+            require(game.grid[x][y] == (before[x][y] | MinesweeperActivity::REVEALED),
+                    "Minesweeper reveal-all changed cell payload");
       }
     }
     game.initGame();
