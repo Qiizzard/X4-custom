@@ -964,7 +964,27 @@ class SimulatorGameTest {
       const int x = y % 2 ? game.mazeW - 1 - i % game.mazeW : i % game.mazeW;
       require(game.data->work[i] == y * game.mazeW + x, "Maze full-capacity path order");
     }
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS maze boards=48 walls paths unreachable capacity=2400");
+    // Reuse the completed solver's storage from multiple positions, including
+    // the exit itself: old visited/parent/path state must not leak into a run.
+    for (const int start : {1, 1199, 2398, 2399}) {
+      game.playerY = start / game.mazeW;
+      game.playerX = game.playerY % 2 ? game.mazeW - 1 - start % game.mazeW : start % game.mazeW;
+      game.startSolving();
+      require(!game.solvePathFound && game.solvePathLen == 0 && game.solvePathDrawn == 0,
+              "Maze restart retained prior path");
+      unsigned steps = 0;
+      while (game.state == MazeActivity::SOLVING && steps++ < 4800) game.solveStep();
+      require(game.state == MazeActivity::SOLVE_DONE && game.solvePathFound &&
+                  game.solvePathLen == game.MAX_PATH - start && game.solvePathDrawn == game.solvePathLen,
+              "Maze resumed-position solve length or completion");
+      for (int i = 0; i < game.solvePathLen; ++i) {
+        const int index = start + i;
+        const int y = index / game.mazeW;
+        const int x = y % 2 ? game.mazeW - 1 - index % game.mazeW : index % game.mazeW;
+        require(game.data->work[i] == y * game.mazeW + x, "Maze resumed-position path order");
+      }
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS maze boards=48 walls paths unreachable capacity=2400 restarts=4");
   }
 
   static void minesweeper() {
