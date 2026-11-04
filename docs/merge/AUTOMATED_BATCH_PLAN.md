@@ -1515,3 +1515,13 @@ this schedule does not declare them completed or permanently blocked.
   while solving, verify entries preserved, then solve again. Physical cancel
   input/latency remains unverified; no cache reset. Usage 11%/53% initially,
   16%/54% at checkpoint. V1, reserve and hardware/product gates remain open.
+
+- 2026-11-04 V1 Chess opening replies: each of 20 legal initial moves
+  leaves 20 legal black replies (400 total) after production move execution
+  and explicit turn switch. Simulator build PASS 5.550s; combined regression
+  PASS exit 0. Logs: firmware-builds/logs/2026-11-04-v1-chess-replies-{build,runtime}.log.
+  Test-only; shipping firmware unchanged. This is opening move-generation
+  coverage, not full-game/perft-depth or device proof. X4: play pawn and knight
+  openings in two-player mode and verify black selection/highlights; no cache
+  reset. Usage 2%/55% initially, 7%/56% at checkpoint. Remaining V1, firmware
+  reserve and hardware/product gates remain open.

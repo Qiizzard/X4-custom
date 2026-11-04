@@ -1195,6 +1195,32 @@ class SimulatorGameTest {
         moves += game.validMoves.used;
       }
     require(moves == 20, "Chess initial legal move count differs");
+    unsigned openingBranches = 0, openingReplies = 0;
+    for (int fromRow = 6; fromRow < 8; ++fromRow) {
+      for (int fromCol = 0; fromCol < 8; ++fromCol) {
+        game.initBoard();
+        game.computeValidMoves(fromRow, fromCol);
+        const auto firstMoves = game.validMoves;  // Native-only bounded snapshot.
+        for (unsigned index = 0; index < firstMoves.used; ++index) {
+          const auto destination = firstMoves.values[index];
+          game.initBoard();
+          game.doMove(fromRow, fromCol, destination.first, destination.second);
+          game.whiteTurn = false;
+          unsigned replies = 0;
+          for (int row = 0; row < 8; ++row)
+            for (int col = 0; col < 8; ++col) {
+              if (!game.isOwnPiece(game.board[row][col])) continue;
+              game.computeValidMoves(row, col);
+              replies += game.validMoves.used;
+            }
+          require(replies == 20, "Chess opening move lost or added a black reply");
+          ++openingBranches;
+          openingReplies += replies;
+        }
+      }
+    }
+    require(openingBranches == 20 && openingReplies == 400, "Chess opening two-ply move count");
+    game.initBoard();
     memset(game.board, 0, sizeof(game.board));
     game.board[7][4] = ChessActivity::W_KING;
     game.board[6][4] = ChessActivity::W_ROOK;
