@@ -934,7 +934,37 @@ class SimulatorGameTest {
     game.startSolving();
     game.solveStep();
     require(game.state == MazeActivity::SOLVE_DONE && !game.solvePathFound, "Maze unreachable exit");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS maze boards=48 walls paths unreachable");
+    game.mazeW = game.MAX_W;
+    game.mazeH = game.MAX_H;
+    memset(game.data->maze, 15, sizeof(game.data->maze));
+    // One serpentine corridor visits all 2400 cells, filling both work uses.
+    for (int y = 0; y < game.mazeH; ++y) {
+      for (int x = 0; x + 1 < game.mazeW; ++x) {
+        game.data->maze[y][x] &= ~2;
+        game.data->maze[y][x + 1] &= ~8;
+      }
+      if (y + 1 < game.mazeH) {
+        const int x = y % 2 ? 0 : game.mazeW - 1;
+        game.data->maze[y][x] &= ~4;
+        game.data->maze[y + 1][x] &= ~1;
+      }
+    }
+    game.playerX = 0;
+    game.playerY = 0;
+    game.exitX = 0;
+    game.exitY = game.mazeH - 1;
+    game.startSolving();
+    unsigned capacitySteps = 0;
+    while (game.state == MazeActivity::SOLVING && capacitySteps++ < 4800) game.solveStep();
+    require(game.state == MazeActivity::SOLVE_DONE && game.solvePathFound && game.solvePathLen == game.MAX_PATH &&
+                game.solvePathDrawn == game.MAX_PATH && game.solveQueueTail == game.MAX_PATH,
+            "Maze full-capacity solver completion");
+    for (int i = 0; i < game.MAX_PATH; ++i) {
+      const int y = i / game.mazeW;
+      const int x = y % 2 ? game.mazeW - 1 - i % game.mazeW : i % game.mazeW;
+      require(game.data->work[i] == y * game.mazeW + x, "Maze full-capacity path order");
+    }
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS maze boards=48 walls paths unreachable capacity=2400");
   }
 
   static void minesweeper() {
