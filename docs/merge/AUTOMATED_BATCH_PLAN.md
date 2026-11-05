@@ -1536,3 +1536,13 @@ this schedule does not declare them completed or permanently blocked.
   Nf6 Qxf7#; verify terminal message and turn display. Physical input/rendering
   unverified; no cache reset. Usage 1%/0% initially, 6%/1% at checkpoint.
   Remaining V1, firmware reserve and hardware/product gates stay open.
+
+- 2026-11-05 V1 Chess fivefold game: 16 legal knight plies through human
+  move completion PASS exact turn/history/quiet-count updates, continued play
+  at third/fourth occurrence and automatic draw at fifth. Simulator build PASS
+  23.281s; combined regression PASS exit 0. Logs: firmware-builds/logs/
+  2026-11-05-v1-chess-fivefold-{build,runtime}.log. Test-only; firmware unchanged.
+  X4: repeat Nf3 Nf6 Ng1 Ng8 four times in two-player mode; verify optional
+  claim at third occurrence and automatic draw at fifth. Physical controls/
+  rendering remain unverified; no cache reset. Usage 2%/2% initially, 9%/3%
+  at checkpoint. V1, firmware reserve and hardware/product gates remain open.
