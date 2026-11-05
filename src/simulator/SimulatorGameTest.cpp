@@ -1649,6 +1649,36 @@ class SimulatorGameTest {
     game.initBoard();
     require(game.positionCount == 1 && game.repetitions == 1 && game.quietHalfmoves == 0,
             "Chess new-game history reset after capacity");
+    // Complete human-move flows: f3 e5 g4 Qh4#, and e4 e5 Bc4 Nc6 Qh5 Nf6 Qxf7#.
+    static constexpr uint8_t mateGames[2][7][4] = {
+        {{6, 5, 5, 5}, {1, 4, 3, 4}, {6, 6, 4, 6}, {0, 3, 4, 7}},
+        {{6, 4, 4, 4}, {1, 4, 3, 4}, {7, 5, 4, 2}, {0, 1, 2, 2}, {7, 3, 3, 7}, {0, 6, 2, 5}, {3, 7, 1, 5}}};
+    for (unsigned fixture = 0; fixture < 2; ++fixture) {
+      game.initBoard();
+      game.vsBot = false;
+      game.gameOver = game.botThinking = game.botSearching = false;
+      const unsigned plies = fixture == 0 ? 4 : 7;
+      for (unsigned ply = 0; ply < plies; ++ply) {
+        const auto& move = mateGames[fixture][ply];
+        require(game.whiteTurn == (ply % 2 == 0), "Chess game flow wrong side to move");
+        game.computeValidMoves(move[0], move[1]);
+        bool legal = false;
+        for (const auto& destination : game.validMoves)
+          legal |= destination.first == move[2] && destination.second == move[3];
+        require(legal, "Chess mating sequence move rejected");
+        game.selectedY = move[0];
+        game.selectedX = move[1];
+        game.cursorY = move[2];
+        game.cursorX = move[3];
+        game.state = ChessActivity::SELECT_TARGET;
+        game.finishHumanMove();
+        require(game.whiteTurn == (ply % 2 != 0) && game.validMoves.empty() && !game.botThinking,
+                "Chess human move completion state");
+        require(game.gameOver == (ply + 1 == plies), "Chess game ended at incorrect move");
+      }
+      require(game.inCheck && !game.hasAnyLegalMove() && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
+              "Chess complete game did not report checkmate");
+    }
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 
