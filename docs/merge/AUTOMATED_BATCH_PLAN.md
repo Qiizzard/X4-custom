@@ -1557,3 +1557,13 @@ this schedule does not declare them completed or permanently blocked.
   check terminal message and unchanged pieces. Physical controls/rendering
   unverified; no cache reset. Usage 12%/8% initially, 19%/9% at checkpoint.
   Remaining V1, firmware reserve and hardware/product gates stay open.
+
+- 2026-11-07 V1 Chess history reset: after twelve human knight plies
+  produce four occurrences, legal e4 resets quiet count and history to the
+  exact current position, changes turn and rejects the obsolete draw claim.
+  Simulator build PASS 4.517s; combined regression PASS exit 0. Logs:
+  firmware-builds/logs/2026-11-07-v1-chess-history-{build,runtime}.log.
+  Test-only; firmware unchanged. X4: repeat Nf3 Nf6 Ng1 Ng8 three times,
+  play e4, verify claim is no longer available and black can continue. Physical
+  input/rendering unverified; no cache reset. Usage 3%/10% initially, 9%/11%
+  at checkpoint. Remaining V1, reserve and hardware/product gates stay open.

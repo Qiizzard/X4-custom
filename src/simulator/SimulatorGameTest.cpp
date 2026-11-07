@@ -1679,7 +1679,7 @@ class SimulatorGameTest {
       require(game.inCheck && !game.hasAnyLegalMove() && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
               "Chess complete game did not report checkmate");
     }
-    for (const unsigned plies : {8u, 16u}) {
+    for (const unsigned plies : {8u, 12u, 16u}) {
       game.initBoard();
       game.vsBot = false;
       game.gameOver = game.botThinking = game.botSearching = false;
@@ -1701,6 +1701,28 @@ class SimulatorGameTest {
                 "Chess repetition game history or turn mismatch");
         require(game.gameOver == (ply == 15), "Chess repetition game ended before fifth occurrence");
         if (ply % 4 == 3) require(game.repetitions == (ply + 1) / 4 + 1, "Chess repetition game occurrence count");
+      }
+      if (plies == 12) {
+        require(game.repetitions == 4 && !game.gameOver, "Chess pawn-reset fixture lacks repeated history");
+        game.selectedY = 6;
+        game.selectedX = 4;
+        game.cursorY = 4;
+        game.cursorX = 4;
+        game.computeValidMoves(6, 4);
+        bool legal = false;
+        for (const auto& destination : game.validMoves) legal |= destination.first == 4 && destination.second == 4;
+        require(legal, "Chess pawn-reset move rejected");
+        game.state = ChessActivity::SELECT_TARGET;
+        game.finishHumanMove();
+        require(game.board[6][4] == ChessActivity::EMPTY && game.board[4][4] == ChessActivity::W_PAWN &&
+                    !game.whiteTurn && game.positionCount == 1 && game.repetitions == 1 && game.quietHalfmoves == 0 &&
+                    !game.gameOver && !game.claimDraw(),
+                "Chess pawn move retained obsolete repetition claim");
+        uint8_t currentPosition[34];
+        game.encodePosition(currentPosition);
+        require(!memcmp(currentPosition, game.positions[0], sizeof(currentPosition)),
+                "Chess reset history omitted current position");
+        continue;
       }
       if (plies == 8) {
         uint8_t beforeClaim[34];
