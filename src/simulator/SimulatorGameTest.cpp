@@ -1679,31 +1679,45 @@ class SimulatorGameTest {
       require(game.inCheck && !game.hasAnyLegalMove() && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
               "Chess complete game did not report checkmate");
     }
-    game.initBoard();
-    game.vsBot = false;
-    game.gameOver = game.botThinking = game.botSearching = false;
-    static constexpr uint8_t knightCycle[4][4] = {{7, 6, 5, 5}, {0, 6, 2, 5}, {5, 5, 7, 6}, {2, 5, 0, 6}};
-    for (unsigned ply = 0; ply < 16; ++ply) {
-      const auto& move = knightCycle[ply % 4];
-      game.computeValidMoves(move[0], move[1]);
-      bool legal = false;
-      for (const auto& destination : game.validMoves)
-        legal |= destination.first == move[2] && destination.second == move[3];
-      require(legal, "Chess repetition game rejected knight move");
-      game.selectedY = move[0];
-      game.selectedX = move[1];
-      game.cursorY = move[2];
-      game.cursorX = move[3];
-      game.state = ChessActivity::SELECT_TARGET;
-      game.finishHumanMove();
-      require(game.positionCount == ply + 2 && game.quietHalfmoves == ply + 1 && game.whiteTurn == (ply % 2 != 0),
-              "Chess repetition game history or turn mismatch");
-      require(game.gameOver == (ply == 15), "Chess repetition game ended before fifth occurrence");
-      if (ply % 4 == 3) require(game.repetitions == (ply + 1) / 4 + 1, "Chess repetition game occurrence count");
+    for (const unsigned plies : {8u, 16u}) {
+      game.initBoard();
+      game.vsBot = false;
+      game.gameOver = game.botThinking = game.botSearching = false;
+      static constexpr uint8_t knightCycle[4][4] = {{7, 6, 5, 5}, {0, 6, 2, 5}, {5, 5, 7, 6}, {2, 5, 0, 6}};
+      for (unsigned ply = 0; ply < plies; ++ply) {
+        const auto& move = knightCycle[ply % 4];
+        game.computeValidMoves(move[0], move[1]);
+        bool legal = false;
+        for (const auto& destination : game.validMoves)
+          legal |= destination.first == move[2] && destination.second == move[3];
+        require(legal, "Chess repetition game rejected knight move");
+        game.selectedY = move[0];
+        game.selectedX = move[1];
+        game.cursorY = move[2];
+        game.cursorX = move[3];
+        game.state = ChessActivity::SELECT_TARGET;
+        game.finishHumanMove();
+        require(game.positionCount == ply + 2 && game.quietHalfmoves == ply + 1 && game.whiteTurn == (ply % 2 != 0),
+                "Chess repetition game history or turn mismatch");
+        require(game.gameOver == (ply == 15), "Chess repetition game ended before fifth occurrence");
+        if (ply % 4 == 3) require(game.repetitions == (ply + 1) / 4 + 1, "Chess repetition game occurrence count");
+      }
+      if (plies == 8) {
+        uint8_t beforeClaim[34];
+        game.encodePosition(beforeClaim);
+        require(game.repetitions == 3 && !game.gameOver && game.claimDraw(),
+                "Chess third-occurrence human claim failed");
+        uint8_t afterClaim[34];
+        game.encodePosition(afterClaim);
+        require(!memcmp(beforeClaim, afterClaim, sizeof(beforeClaim)) && game.positionCount == 9 &&
+                    game.quietHalfmoves == 8 && game.whiteTurn,
+                "Chess threefold claim altered position or history");
+        require(!game.claimDraw(), "Chess completed threefold claim accepted twice");
+      }
+      require(game.state == ChessActivity::GAME_OVER && !game.inCheck &&
+                  strcmp(game.gameOverMsg, tr(STR_CHESS_REPETITION_DRAW)) == 0,
+              "Chess repetition game terminal state");
     }
-    require(game.state == ChessActivity::GAME_OVER && !game.inCheck &&
-                strcmp(game.gameOverMsg, tr(STR_CHESS_REPETITION_DRAW)) == 0,
-            "Chess fivefold game terminal state");
     LOG_INF("GAMETEST", "GAME TEST RESULT: PASS chess initial pin king pawn promotion mate stalemate");
   }
 
