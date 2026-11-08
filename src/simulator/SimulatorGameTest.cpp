@@ -1707,30 +1707,37 @@ class SimulatorGameTest {
                 game.board[0][4] == ChessActivity::EMPTY && game.board[0][7] == ChessActivity::EMPTY &&
                 game.castleRights == 0 && game.quietHalfmoves == 6,
             "Chess both-color castling game final board or rights");
-    game.initBoard();
-    game.vsBot = false;
-    game.gameOver = game.botThinking = game.botSearching = false;
-    // e4 a6 e5 d5 exd6 en passant.
-    static constexpr uint8_t epGame[5][4] = {{6, 4, 4, 4}, {1, 0, 2, 0}, {4, 4, 3, 4}, {1, 3, 3, 3}, {3, 4, 2, 3}};
-    for (unsigned ply = 0; ply < 5; ++ply) {
-      const auto& move = epGame[ply];
-      game.computeValidMoves(move[0], move[1]);
-      bool legal = false;
-      for (const auto& destination : game.validMoves)
-        legal |= destination.first == move[2] && destination.second == move[3];
-      require(legal, "Chess en passant game rejected legal move");
-      game.selectedY = move[0];
-      game.selectedX = move[1];
-      game.cursorY = move[2];
-      game.cursorX = move[3];
-      game.state = ChessActivity::SELECT_TARGET;
-      game.finishHumanMove();
-      require(!game.gameOver && game.whiteTurn == (ply % 2 != 0) && game.quietHalfmoves == 0 && game.positionCount == 1,
-              "Chess en passant game turn/history state");
+    for (unsigned color = 0; color < 2; ++color) {
+      game.initBoard();
+      game.vsBot = false;
+      game.gameOver = game.botThinking = game.botSearching = false;
+      // White: e4 a6 e5 d5 exd6. Black: g3 e5 a3 e4 d4 exd3.
+      static constexpr uint8_t epGames[2][6][4] = {
+          {{6, 4, 4, 4}, {1, 0, 2, 0}, {4, 4, 3, 4}, {1, 3, 3, 3}, {3, 4, 2, 3}},
+          {{6, 6, 5, 6}, {1, 4, 3, 4}, {6, 0, 5, 0}, {3, 4, 4, 4}, {6, 3, 4, 3}, {4, 4, 5, 3}}};
+      for (unsigned ply = 0; ply < 5 + color; ++ply) {
+        const auto& move = epGames[color][ply];
+        game.computeValidMoves(move[0], move[1]);
+        bool legal = false;
+        for (const auto& destination : game.validMoves)
+          legal |= destination.first == move[2] && destination.second == move[3];
+        require(legal, "Chess en passant game rejected legal move");
+        game.selectedY = move[0];
+        game.selectedX = move[1];
+        game.cursorY = move[2];
+        game.cursorX = move[3];
+        game.state = ChessActivity::SELECT_TARGET;
+        game.finishHumanMove();
+        require(
+            !game.gameOver && game.whiteTurn == (ply % 2 != 0) && game.quietHalfmoves == 0 && game.positionCount == 1,
+            "Chess en passant game turn/history state");
+      }
+      require(game.board[color == 0 ? 2 : 5][3] == (color == 0 ? ChessActivity::W_PAWN : ChessActivity::B_PAWN) &&
+                  game.board[color == 0 ? 3 : 4][3] == ChessActivity::EMPTY &&
+                  game.board[color == 0 ? 3 : 4][4] == ChessActivity::EMPTY && game.enPassantRow == -1 &&
+                  game.enPassantCol == -1,
+              "Chess en passant game capture or target reset");
     }
-    require(game.board[2][3] == ChessActivity::W_PAWN && game.board[3][3] == ChessActivity::EMPTY &&
-                game.board[3][4] == ChessActivity::EMPTY && game.enPassantRow == -1 && game.enPassantCol == -1,
-            "Chess en passant game capture or target reset");
     for (const unsigned plies : {8u, 12u, 16u}) {
       game.initBoard();
       game.vsBot = false;

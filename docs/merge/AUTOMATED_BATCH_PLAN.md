@@ -1587,3 +1587,13 @@ this schedule does not declare them completed or permanently blocked.
   pawn lands on d6. Physical input/rendering unverified; no cache reset.
   Usage 4%/14% initially, 11%/15% at checkpoint. Remaining V1, firmware reserve
   and hardware/product gates remain open.
+
+- 2026-11-08 V1 Black en passant: g3 e5 a3 e4 d4 exd3 PASS legal
+  selection, human completion, opposite-direction capture, cleared target and
+  turn/history updates. Shared white fixture also passes. Simulator build PASS
+  4.515s; combined regression PASS exit 0. Logs: firmware-builds/logs/
+  2026-11-08-v1-chess-black-ep-{build,runtime}.log. Test-only; firmware unchanged.
+  X4: replay sequence, verify white d4 pawn disappears and black pawn lands
+  on d3, with White to move. Physical input/rendering unverified; no cache
+  reset. Usage 2%/16% initially, 8%/17% at checkpoint. Remaining V1, reserve
+  and hardware/product gates remain open.
