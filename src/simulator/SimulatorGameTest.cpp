@@ -1707,7 +1707,8 @@ class SimulatorGameTest {
                 game.board[0][4] == ChessActivity::EMPTY && game.board[0][7] == ChessActivity::EMPTY &&
                 game.castleRights == 0 && game.quietHalfmoves == 6,
             "Chess both-color castling game final board or rights");
-    for (unsigned color = 0; color < 2; ++color) {
+    for (unsigned variant = 0; variant < 4; ++variant) {
+      const unsigned color = variant % 2;
       game.initBoard();
       game.vsBot = false;
       game.gameOver = game.botThinking = game.botSearching = false;
@@ -1722,6 +1723,32 @@ class SimulatorGameTest {
         for (const auto& destination : game.validMoves)
           legal |= destination.first == move[2] && destination.second == move[3];
         require(legal, "Chess en passant game rejected legal move");
+        if (variant >= 2 && ply == 4 + color) {
+          for (unsigned waitingMove = 0; waitingMove < 2; ++waitingMove) {
+            const int row = game.whiteTurn ? 7 : 0;
+            const int targetRow = game.whiteTurn ? 5 : 2;
+            game.computeValidMoves(row, 6);
+            bool knightLegal = false;
+            for (const auto& target : game.validMoves) knightLegal |= target.first == targetRow && target.second == 5;
+            require(knightLegal, "Chess en passant decline waiting move rejected");
+            game.selectedY = row;
+            game.selectedX = 6;
+            game.cursorY = targetRow;
+            game.cursorX = 5;
+            game.state = ChessActivity::SELECT_TARGET;
+            game.finishHumanMove();
+            require(game.enPassantRow == -1 && game.enPassantCol == -1 && !game.gameOver,
+                    "Chess declined en passant target persisted");
+          }
+          game.computeValidMoves(move[0], move[1]);
+          for (const auto& target : game.validMoves)
+            require(target.first != move[2] || target.second != move[3], "Chess expired en passant still legal");
+          require(game.board[move[0]][4] == (color == 0 ? ChessActivity::W_PAWN : ChessActivity::B_PAWN) &&
+                      game.board[move[0]][3] == (color == 0 ? ChessActivity::B_PAWN : ChessActivity::W_PAWN) &&
+                      game.whiteTurn == (color == 0),
+                  "Chess declined capture changed pawns or turn");
+          break;
+        }
         game.selectedY = move[0];
         game.selectedX = move[1];
         game.cursorY = move[2];
@@ -1732,6 +1759,7 @@ class SimulatorGameTest {
             !game.gameOver && game.whiteTurn == (ply % 2 != 0) && game.quietHalfmoves == 0 && game.positionCount == 1,
             "Chess en passant game turn/history state");
       }
+      if (variant >= 2) continue;
       require(game.board[color == 0 ? 2 : 5][3] == (color == 0 ? ChessActivity::W_PAWN : ChessActivity::B_PAWN) &&
                   game.board[color == 0 ? 3 : 4][3] == ChessActivity::EMPTY &&
                   game.board[color == 0 ? 3 : 4][4] == ChessActivity::EMPTY && game.enPassantRow == -1 &&

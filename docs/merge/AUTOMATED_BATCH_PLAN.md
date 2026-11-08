@@ -1597,3 +1597,14 @@ this schedule does not declare them completed or permanently blocked.
   on d3, with White to move. Physical input/rendering unverified; no cache
   reset. Usage 2%/16% initially, 8%/17% at checkpoint. Remaining V1, reserve
   and hardware/product gates remain open.
+
+- 2026-11-08 V1 en passant expiry: both colors decline a legal capture
+  with Nf3/Nf6, then receive the turn again. Target clears immediately, old
+  capture is absent from legal moves, both pawns stay put and play continues.
+  Simulator build PASS 5.502s; combined regression PASS exit 0. Logs:
+  firmware-builds/logs/2026-11-08-v1-chess-ep-expiry-{build,runtime}.log.
+  Test-only; firmware unchanged. X4: set up either recorded en passant game,
+  play the two knight waiting moves instead of capturing, verify old diagonal
+  capture is unavailable. Physical controls/rendering unverified; no cache
+  reset. Usage 16%/19% initially, 22%/20% at checkpoint. Remaining V1, reserve
+  and hardware/product gates stay open.
