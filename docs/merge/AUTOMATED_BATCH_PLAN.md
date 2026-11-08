@@ -1577,3 +1577,13 @@ this schedule does not declare them completed or permanently blocked.
   mode and inspect king/rook motion and next turn. Physical input/rendering
   unverified; no cache reset. Usage 16%/12% initially, 22%/13% at checkpoint.
   Remaining V1, firmware reserve and hardware/product gates remain open.
+
+- 2026-11-08 V1 Chess en passant game: e4 a6 e5 d5 exd6 PASS through
+  legal selection/human completion, captured-pawn removal, vacated source,
+  next turn, quiet/history reset and cleared en passant target. Simulator
+  build PASS 4.508s; combined regression PASS exit 0. Logs: firmware-builds/logs/
+  2026-11-08-v1-chess-ep-{build,runtime}.log. Test-only; firmware unchanged.
+  X4: replay sequence in two-player mode, verify d5 pawn disappears and white
+  pawn lands on d6. Physical input/rendering unverified; no cache reset.
+  Usage 4%/14% initially, 11%/15% at checkpoint. Remaining V1, firmware reserve
+  and hardware/product gates remain open.
