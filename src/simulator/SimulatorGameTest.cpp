@@ -1679,6 +1679,34 @@ class SimulatorGameTest {
       require(game.inCheck && !game.hasAnyLegalMove() && strcmp(game.gameOverMsg, tr(STR_CHESS_MATE)) == 0,
               "Chess complete game did not report checkmate");
     }
+    game.initBoard();
+    game.vsBot = false;
+    game.gameOver = game.botThinking = game.botSearching = false;
+    // e4 e5 Nf3 Nf6 Bc4 Bc5 O-O O-O, through the human completion path.
+    static constexpr uint8_t castleGame[8][4] = {{6, 4, 4, 4}, {1, 4, 3, 4}, {7, 6, 5, 5}, {0, 6, 2, 5},
+                                                 {7, 5, 4, 2}, {0, 5, 3, 2}, {7, 4, 7, 6}, {0, 4, 0, 6}};
+    for (unsigned ply = 0; ply < 8; ++ply) {
+      const auto& move = castleGame[ply];
+      game.computeValidMoves(move[0], move[1]);
+      bool legal = false;
+      for (const auto& destination : game.validMoves)
+        legal |= destination.first == move[2] && destination.second == move[3];
+      require(legal, "Chess castling game rejected legal move");
+      game.selectedY = move[0];
+      game.selectedX = move[1];
+      game.cursorY = move[2];
+      game.cursorX = move[3];
+      game.state = ChessActivity::SELECT_TARGET;
+      game.finishHumanMove();
+      require(!game.gameOver && !game.botThinking && game.whiteTurn == (ply % 2 != 0),
+              "Chess castling game completion state");
+    }
+    require(game.board[7][6] == ChessActivity::W_KING && game.board[7][5] == ChessActivity::W_ROOK &&
+                game.board[0][6] == ChessActivity::B_KING && game.board[0][5] == ChessActivity::B_ROOK &&
+                game.board[7][4] == ChessActivity::EMPTY && game.board[7][7] == ChessActivity::EMPTY &&
+                game.board[0][4] == ChessActivity::EMPTY && game.board[0][7] == ChessActivity::EMPTY &&
+                game.castleRights == 0 && game.quietHalfmoves == 6,
+            "Chess both-color castling game final board or rights");
     for (const unsigned plies : {8u, 12u, 16u}) {
       game.initBoard();
       game.vsBot = false;
