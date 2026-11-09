@@ -1841,7 +1841,15 @@ class SimulatorGameTest {
     deletion.removeVaultFiles();
     require(deletion.removed == 0 && deletion.failed == 0 && deletion.notFound == 9,
             "Vault deletion absent-file counts");
-    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS vault_delete removed=9 absent=9");
+    require(rename("fs_/crossink/vaults/nested", "fs_/crossink/vaults/passwords.bin") == 0,
+            "Vault deletion obstruction setup");
+    deletion.removed = deletion.failed = deletion.notFound = 0;
+    deletion.removeVaultFiles();
+    require(deletion.removed == 0 && deletion.failed == 1 && deletion.notFound == 8,
+            "Vault deletion obstruction not reported accurately");
+    require(rename("fs_/crossink/vaults/passwords.bin", "fs_/crossink/vaults/nested") == 0,
+            "Vault deletion obstruction was removed or changed");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS vault_delete removed=9 absent=9 failed=1");
     etchExport();
     const auto originalOrientation = renderer.getOrientation();
     for (auto orientation : {GfxRenderer::Portrait, GfxRenderer::LandscapeClockwise, GfxRenderer::PortraitInverted,

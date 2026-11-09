@@ -1642,3 +1642,14 @@ this schedule does not declare them completed or permanently blocked.
   Review/Armed/cancel and confirmed deletion scope; physical SD faults, power
   loss and secure erasure are not certified. No cache reset. Usage 4%/25% to
   11%/27%. Remaining V1, reserve and recovery/crypto gates stay open.
+
+- 2026-11-09 V1 Vault Delete failure: nonempty directory obstruction at
+  passwords.bin produces one failed/eight absent results, preserves directory
+  and exact child bytes, and continues checking other paths. Temporary native
+  fixture only; no real vault touched. Simulator build PASS 5.569s, combined
+  regression and seven runner self-tests PASS. Logs: firmware-builds/logs/
+  2026-11-09-v1-vault-failure-{build,runtime}.log. Firmware unchanged.
+  X4: disposable SD fixtures only, verify failure count and preservation on
+  an obstructed path. Native obstruction is not physical SD fault/power-loss
+  or secure-erasure evidence. No cache reset. Usage 2%/28% to 10%/29%.
+  Remaining V1, reserve and recovery/crypto gates stay open.
