@@ -255,3 +255,10 @@ apps:
     static_bytes: 0
     object_bytes: 312         # includes owner[48] and MemoryStats snapshot
     peak_heap_bytes: 0        # formatting uses a 112-byte local buffer
+
+  - name: VaultDelete
+    tier: c3
+    static_bytes: 0           # exact filename list is static constexpr (flash)
+    object_bytes: 248         # C3 DWARF inventory 2026-10-01; state/counters only
+    peak_heap_bytes: 0        # app-owned buffers only; shared SD/UI peaks unmeasured
+    # Result formatting uses a 96-byte local buffer; no crypto operation is invoked.
