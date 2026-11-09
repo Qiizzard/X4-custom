@@ -24,6 +24,7 @@
 #include "activities/apps/sudoku/SudokuActivity.h"
 #include "activities/apps/tetris/TetrisActivity.h"
 #include "activities/apps/transit_alert/TransitAlertActivity.h"
+#include "activities/apps/vault_delete/VaultDeleteActivity.h"
 #include "activities/apps/voronoi/VoronoiActivity.h"
 extern GfxRenderer renderer;
 extern MappedInputManager mappedInputManager;
@@ -1832,6 +1833,15 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    VaultDeleteActivity deletion(renderer, mappedInputManager);
+    deletion.removeVaultFiles();
+    require(deletion.removed == 9 && deletion.failed == 0 && deletion.notFound == 0,
+            "Vault deletion exact fixture counts");
+    deletion.removed = deletion.failed = deletion.notFound = 0;
+    deletion.removeVaultFiles();
+    require(deletion.removed == 0 && deletion.failed == 0 && deletion.notFound == 9,
+            "Vault deletion absent-file counts");
+    LOG_INF("GAMETEST", "GAME TEST RESULT: PASS vault_delete removed=9 absent=9");
     etchExport();
     const auto originalOrientation = renderer.getOrientation();
     for (auto orientation : {GfxRenderer::Portrait, GfxRenderer::LandscapeClockwise, GfxRenderer::PortraitInverted,

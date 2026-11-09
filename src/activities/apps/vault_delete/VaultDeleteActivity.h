@@ -12,6 +12,9 @@ class VaultDeleteActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum class State { Review, Armed, Done };
   State state = State::Review;
   unsigned long armedAt = 0;

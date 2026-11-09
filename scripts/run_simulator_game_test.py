@@ -12,6 +12,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
+    "VaultDelete": "GAME TEST RESULT: PASS vault_delete removed=9 absent=9",
     "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
     "VisualOrientations": "GAME TEST RESULT: PASS visual_orientations count=4",
     "MatrixRain": "GAME TEST RESULT: PASS matrix_rain frames=6144",
@@ -72,6 +73,17 @@ def main():
     with tempfile.TemporaryDirectory(prefix="x4-game-tests-") as directory:
         decks = Path(directory) / "fs_" / "crossink" / "flashcards"
         decks.mkdir(parents=True)
+        vaults = decks.parent / "vaults"
+        vaults.mkdir()
+        removed_names = [f"{name}.{suffix}" for name in ("passwords", "totp", "decoy")
+                         for suffix in ("bin", "next", "previous")]
+        for name in removed_names:
+            (vaults / name).write_bytes(b"disposable fixture")
+        preserved_names = ("passwords.bin.backup", "other.bin", "nested/passwords.bin")
+        (vaults / "nested").mkdir()
+        for name in preserved_names:
+            (vaults / name).write_bytes(b"preserve exact bytes")
+
         (Path(directory) / "fs_" / "crossink" / "logs").mkdir()
         (Path(directory) / "fs_" / "crossink" / "transit").mkdir()
         for count in (0, 511, 512, 513):
@@ -101,6 +113,13 @@ def main():
             except subprocess.TimeoutExpired:
                 print(f"FAIL: timeout; {args.log}")
                 return 1
+        if any((vaults / name).exists() for name in removed_names):
+            print("FAIL: listed vault fixture survived deletion")
+            return 1
+        if any(not (vaults / name).is_file() or (vaults / name).read_bytes() != b"preserve exact bytes"
+               for name in preserved_names):
+            print("FAIL: unrelated vault fixture changed")
+            return 1
         drawings = list((decks.parent / "drawings").glob("*.bmp"))
         if len(drawings) != 2:
             print("FAIL: expected two distinct exported BMP files")
