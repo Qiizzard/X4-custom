@@ -262,3 +262,18 @@ apps:
     object_bytes: 248         # C3 DWARF inventory 2026-10-01; state/counters only
     peak_heap_bytes: 0        # app-owned buffers only; shared SD/UI peaks unmeasured
     # Result formatting uses a 96-byte local buffer; no crypto operation is invoked.
+
+  # Connected diagnostics: measured activity objects, provisional shared costs.
+  # Reuse the TransitAlert model's 16-KiB SDK + 8-KiB child/UI allowance;
+  # these are planning estimates, NOT proven resolver/socket/scan peak bounds.
+  - name: DnsLookup
+    tier: c3
+    static_bytes: 0           # owner tag is constexpr; no app mutable globals
+    object_bytes: 536         # C3 DWARF inventory 2026-10-01
+    peak_heap_bytes: 24576    # WiFi picker/keyboard/SDK overlap unmeasured
+
+  - name: PingTcp
+    tier: c3
+    static_bytes: 0
+    object_bytes: 560         # C3 DWARF inventory 2026-10-01; fixed probe statistics
+    peak_heap_bytes: 24576    # provisional; socket/resolver and child UI peaks unmeasured

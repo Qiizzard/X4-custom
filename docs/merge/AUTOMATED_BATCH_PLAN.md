@@ -1653,3 +1653,15 @@ this schedule does not declare them completed or permanently blocked.
   an obstructed path. Native obstruction is not physical SD fault/power-loss
   or secure-erasure evidence. No cache reset. Usage 2%/28% to 10%/29%.
   Remaining V1, reserve and recovery/crypto gates stay open.
+
+- 2026-11-09 V1 connected diagnostic resources: added DNS Lookup 536-byte
+  and TCP Ping 560-byte C3 objects from recorded DWARF inventory. Both launch
+  WiFi selection/keyboard children; provisional 24576-byte shared allowance
+  follows TransitAlert's existing model, not measured resolver/socket/scan peaks.
+  Budget model and ten self-tests PASS; logs: firmware-builds/logs/
+  2026-11-09-v1-network-budget{,-tests}.log. Manifest/docs only; no compile,
+  firmware change or network probes. X4 on an authorized test network: exercise
+  DNS success/failure and TCP probe success/timeout, cancel child screens and
+  exit; measure internal free/largest heap and confirm radio ownership releases.
+  These runtime/device checks remain open. No cache reset. Initial usage 4%/31%.
+  V1, reserve and hardware/recovery gates remain open.
