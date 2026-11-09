@@ -241,3 +241,17 @@ apps:
     static_bytes: 0
     object_bytes: 6576        # includes 40 points and 60x100 nearest-cell cache
     peak_heap_bytes: 0        # app-owned buffers only, not whole-screen peak
+
+  # Fixed-state diagnostics/display apps; C3 DWARF inventory 2026-10-01.
+  # Extra heap below covers app-owned buffers only, not shared UI/HAL peaks.
+  - name: ScreenDecoy
+    tier: c3
+    static_bytes: 0           # const translation-id table lives in flash
+    object_bytes: 236
+    peak_heap_bytes: 0        # no app-owned buffers beyond the activity
+
+  - name: TaskManager
+    tier: c3
+    static_bytes: 0
+    object_bytes: 312         # includes owner[48] and MemoryStats snapshot
+    peak_heap_bytes: 0        # formatting uses a 112-byte local buffer
