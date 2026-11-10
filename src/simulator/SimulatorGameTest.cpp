@@ -1853,9 +1853,15 @@ class SimulatorGameTest {
         browser.resultServices[i] = i;
       }
       int slot = -1;
+      require(rename("fs_/crossink/mdns", "fs_/crossink/mdns-saved") == 0, "mDNS obstruction directory setup");
+      require(rename("fs_/crossink/mdns-blocker", "fs_/crossink/mdns") == 0, "mDNS obstruction file setup");
+      require(!browser.saveCsv(slot), "mDNS obstructed directory must fail");
+      require(rename("fs_/crossink/mdns", "fs_/crossink/mdns-blocker") == 0, "mDNS obstruction preserved");
+      require(rename("fs_/crossink/mdns-saved", "fs_/crossink/mdns") == 0, "mDNS directory recovery");
       require(browser.saveCsv(slot) && slot == 1, "mDNS CSV first free slot");
       require(browser.saveCsv(slot) && slot == 2, "mDNS CSV repeat must preserve earlier export");
-      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2");
+      require(!browser.saveCsv(slot), "mDNS exhausted slots must fail");
+      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2 failures=2 recovery=1");
     }
     {
       HostScannerActivity scanner(renderer, mappedInputManager);

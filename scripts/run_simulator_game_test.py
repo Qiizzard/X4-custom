@@ -14,7 +14,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
-    "MdnsCsv": "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2",
+    "MdnsCsv": "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2 failures=2 recovery=1",
     "HostCsv": "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1",
     "VaultDelete": "GAME TEST RESULT: PASS vault_delete removed=9 absent=9 failed=1",
     "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
@@ -79,7 +79,9 @@ def main():
         decks.mkdir(parents=True)
         mdns = decks.parent / "mdns"
         mdns.mkdir()
-        (mdns / "services-00.csv").write_bytes(b"existing mDNS export")
+        for slot in (0, *range(3, 100)):
+            (mdns / f"services-{slot:02d}.csv").write_bytes(b"existing mDNS export")
+        (mdns.parent / "mdns-blocker").write_bytes(b"preserve obstruction")
         hosts = decks.parent / "hosts"
         hosts.mkdir()
         for slot in (0, *range(3, 100)):
@@ -141,7 +143,9 @@ def main():
             if not path.is_file() or list(csv.reader(io.StringIO(path.read_text()), strict=True)) != rows:
                 print("FAIL: mDNS CSV escaping, formula protection or record mismatch")
                 return 1
-        if (mdns / "services-00.csv").read_bytes() != b"existing mDNS export" or len(list(mdns.iterdir())) != 3:
+        if (any((mdns / f"services-{slot:02d}.csv").read_bytes() != b"existing mDNS export"
+                for slot in (0, *range(3, 100))) or len(list(mdns.iterdir())) != 100
+                or (mdns.parent / "mdns-blocker").read_bytes() != b"preserve obstruction") :
             print("FAIL: mDNS CSV changed existing file or unexpected outputs")
             return 1
         ports = b"21;22;23;25;53;80;139;443;445;993;3389;5900;8080;8443"
