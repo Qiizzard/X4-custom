@@ -291,3 +291,10 @@ apps:
     object_bytes: 1840        # C3 DWARF 2026-10-01; fixed result/service arrays
     peak_heap_bytes: 24576    # provisional 16-KiB SDK + 8-KiB picker/UI allowance
     # Query-result SDK allocations and CSV/SD transients are not measured peaks.
+
+  - name: HostScanner
+    tier: c3
+    static_bytes: 0           # owner and port list are constexpr
+    object_bytes: 528         # C3 DWARF 2026-10-01; includes 32 eight-byte hosts
+    peak_heap_bytes: 24576    # provisional 16-KiB SDK + 8-KiB picker/UI allowance
+    # Sequential probes reuse fixed results; socket/SD/UI peaks remain unmeasured.
