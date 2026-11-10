@@ -11,6 +11,9 @@ class HostScannerActivity final : public Activity {
   bool preventAutoSleep() override { return state == State::Scanning || state == State::Ports; }
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum class State { Waiting, Ready, Scanning, Hosts, Ports, Failed };
   State state = State::Waiting;
   bool owned = false, partial = false;

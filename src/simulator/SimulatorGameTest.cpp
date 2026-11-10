@@ -17,6 +17,7 @@
 #include "activities/apps/event_logger/EventLoggerActivity.h"
 #include "activities/apps/flashcards/FlashcardActivity.h"
 #include "activities/apps/habit_tracker/HabitTrackerActivity.h"
+#include "activities/apps/host_scanner/HostScannerActivity.h"
 #include "activities/apps/matrix_rain/MatrixRainActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
@@ -1833,6 +1834,17 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    {
+      HostScannerActivity scanner(renderer, mappedInputManager);
+      scanner.count = 32;
+      for (int i = 0; i < scanner.count; ++i)
+        scanner.hosts[i] = {0xC0000201u + uint32_t(i), uint16_t(i % 2 ? 0x3FFF : 0), 0x3FFF};
+      int slot = -1;
+      require(scanner.saveCsv(slot) && slot == 1, "Host CSV first free slot");
+      require(scanner.saveCsv(slot) && slot == 2, "Host CSV distinct second export");
+      require(!scanner.saveCsv(slot), "Host CSV must reject exhausted slots");
+      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1");
+    }
     VaultDeleteActivity deletion(renderer, mappedInputManager);
     deletion.removeVaultFiles();
     require(deletion.removed == 9 && deletion.failed == 0 && deletion.notFound == 0,

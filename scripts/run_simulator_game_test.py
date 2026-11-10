@@ -12,6 +12,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
+    "HostCsv": "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1",
     "VaultDelete": "GAME TEST RESULT: PASS vault_delete removed=9 absent=9 failed=1",
     "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
     "VisualOrientations": "GAME TEST RESULT: PASS visual_orientations count=4",
@@ -73,6 +74,10 @@ def main():
     with tempfile.TemporaryDirectory(prefix="x4-game-tests-") as directory:
         decks = Path(directory) / "fs_" / "crossink" / "flashcards"
         decks.mkdir(parents=True)
+        hosts = decks.parent / "hosts"
+        hosts.mkdir()
+        for slot in (0, *range(3, 100)):
+            (hosts / f"scan-{slot:02d}.csv").write_bytes(b"existing export")
         vaults = decks.parent / "vaults"
         vaults.mkdir()
         removed_names = [f"{name}.{suffix}" for name in ("passwords", "totp", "decoy")
@@ -119,6 +124,19 @@ def main():
         if any(not (vaults / name).is_file() or (vaults / name).read_bytes() != b"preserve exact bytes"
                for name in preserved_names):
             print("FAIL: unrelated vault fixture changed")
+            return 1
+        ports = b"21;22;23;25;53;80;139;443;445;993;3389;5900;8080;8443"
+        expected = b"ipv4,open_tcp_ports,tested_tcp_ports\n"
+        for index in range(32):
+            expected += (f'192.0.2.{index + 1},"'.encode()
+                         + (ports if index % 2 else b"") + b'","' + ports + b'"\n')
+        for slot in range(100):
+            path = hosts / f"scan-{slot:02d}.csv"
+            if not path.is_file() or path.read_bytes() != (expected if slot in (1, 2) else b"existing export"):
+                print(f"FAIL: Host CSV content or preservation mismatch at slot {slot}")
+                return 1
+        if len(list(hosts.iterdir())) != 100:
+            print("FAIL: unexpected Host CSV output")
             return 1
         drawings = list((decks.parent / "drawings").glob("*.bmp"))
         if len(drawings) != 2:
