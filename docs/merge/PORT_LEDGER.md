@@ -73,7 +73,7 @@ coherent, working subset.
 | Ping | `wip` | Ping (TCP), matching Biscuit TCP-80 semantics honestly: five attempts, 1-second connect waits, success timing, bounded DNS input, named station hold. Not ICMP; device validation deferred. |
 | DNS Lookup | `wip` | Tools single-host resolver, named station hold, ASCII hostname bound, IPv4/IPv6 result. SDK timeout/cache policy; runtime/device validation deferred. |
 | HTTP Client | `wip` | GET/plain-text POST, 256-byte URL/512-byte body, fixed 1024-byte ASCII preview. TLS via `esp_crt_bundle_attach`; no redirects or embedded credentials. Runtime/TLS/resource/device tests deferred. |
-| mDNS Browser | `wip` | Tools service selection, one 2-second query, up to eight fixed results, named station hold and per-query SDK cleanup. IPv4/IPv6 details and exclusive numbered CSV export integrated; all-services discovery integrated with between-query cancellation and partial-result labels. Runtime/resource/device validation deferred. |
+| mDNS Browser | `wip` | Tools service selection, one 2-second query, up to eight fixed results, named station hold and per-query SDK cleanup. IPv4/IPv6 details and exclusive numbered CSV export integrated; all-services discovery integrated with between-query cancellation and partial-result labels. V1 native CSV escaping/formula-prefix/field-limit and repeated-export preservation checks pass. Live discovery/resource/physical SD/device validation remains open. |
 
 ## Tools → Tracking & logging
 

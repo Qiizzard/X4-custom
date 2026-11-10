@@ -13,6 +13,9 @@ class MdnsBrowserActivity final : public Activity {
   bool preventAutoSleep() override { return state == State::Querying; }
 
  private:
+#ifdef SIMULATOR
+  friend class SimulatorGameTest;
+#endif
   enum class State { Waiting, Select, Querying, Results, Failed };
   State state = State::Waiting;
   bool owned = false;

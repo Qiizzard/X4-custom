@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run production Sudoku, Chess, Tetris, Minesweeper, Maze, Snake and Blackjack logic plus Flashcards/Event Logger file checks in a disposable simulator filesystem."""
 import argparse
+import csv
+import io
 import os
 from pathlib import Path
 import struct
@@ -12,6 +14,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 
 REQUIRED_MARKERS = {
+    "MdnsCsv": "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2",
     "HostCsv": "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1",
     "VaultDelete": "GAME TEST RESULT: PASS vault_delete removed=9 absent=9 failed=1",
     "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
@@ -74,6 +77,9 @@ def main():
     with tempfile.TemporaryDirectory(prefix="x4-game-tests-") as directory:
         decks = Path(directory) / "fs_" / "crossink" / "flashcards"
         decks.mkdir(parents=True)
+        mdns = decks.parent / "mdns"
+        mdns.mkdir()
+        (mdns / "services-00.csv").write_bytes(b"existing mDNS export")
         hosts = decks.parent / "hosts"
         hosts.mkdir()
         for slot in (0, *range(3, 100)):
@@ -124,6 +130,19 @@ def main():
         if any(not (vaults / name).is_file() or (vaults / name).read_bytes() != b"preserve exact bytes"
                for name in preserved_names):
             print("FAIL: unrelated vault fixture changed")
+            return 1
+        names = ["'=SUM(1,2)", "' +formula", "'-formula", "'@formula", "plain,comma", "", '"' * 64, "ordinary"]
+        services = ["_http", "_https", "_printer", "_ipp", "_googlecast", "_sonos", "_homeassistant", "_mqtt"]
+        rows = [["instance", "hostname", "ipv4", "ipv6", "port", "service"]]
+        rows += [[name, f"host-{i}.local", f"192.0.2.{i+1}", f"fe80::{i+1}%3",
+                  str(65535 if i == 7 else 80+i), services[i] + "._tcp"] for i, name in enumerate(names)]
+        for slot in (1, 2):
+            path = mdns / f"services-{slot:02d}.csv"
+            if not path.is_file() or list(csv.reader(io.StringIO(path.read_text()), strict=True)) != rows:
+                print("FAIL: mDNS CSV escaping, formula protection or record mismatch")
+                return 1
+        if (mdns / "services-00.csv").read_bytes() != b"existing mDNS export" or len(list(mdns.iterdir())) != 3:
+            print("FAIL: mDNS CSV changed existing file or unexpected outputs")
             return 1
         ports = b"21;22;23;25;53;80;139;443;445;993;3389;5900;8080;8443"
         expected = b"ipv4,open_tcp_ports,tested_tcp_ports\n"

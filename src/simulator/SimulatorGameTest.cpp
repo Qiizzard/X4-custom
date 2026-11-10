@@ -20,6 +20,7 @@
 #include "activities/apps/host_scanner/HostScannerActivity.h"
 #include "activities/apps/matrix_rain/MatrixRainActivity.h"
 #include "activities/apps/maze/MazeActivity.h"
+#include "activities/apps/mdns_browser/MdnsBrowserActivity.h"
 #include "activities/apps/minesweeper/MinesweeperActivity.h"
 #include "activities/apps/snake/SnakeActivity.h"
 #include "activities/apps/sudoku/SudokuActivity.h"
@@ -1834,6 +1835,28 @@ class SimulatorGameTest {
 
  public:
   static void run() {
+    {
+      MdnsBrowserActivity browser(renderer, mappedInputManager);
+      browser.count = 8;
+      const char* names[] = {"=SUM(1,2)", " +formula", "-formula", "@formula", "plain,comma", "", "quotes", "ordinary"};
+      for (int i = 0; i < browser.count; ++i) {
+        auto& result = browser.results[i];
+        snprintf(result.instance, sizeof(result.instance), "%s", names[i]);
+        if (i == 6) {
+          memset(result.instance, '"', 64);
+          result.instance[64] = 0;
+        }
+        snprintf(result.hostname, sizeof(result.hostname), "host-%d.local", i);
+        snprintf(result.ipv4, sizeof(result.ipv4), "192.0.2.%d", i + 1);
+        snprintf(result.ipv6, sizeof(result.ipv6), "fe80::%d%%3", i + 1);
+        result.port = i == 7 ? 65535 : 80 + i;
+        browser.resultServices[i] = i;
+      }
+      int slot = -1;
+      require(browser.saveCsv(slot) && slot == 1, "mDNS CSV first free slot");
+      require(browser.saveCsv(slot) && slot == 2, "mDNS CSV repeat must preserve earlier export");
+      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2");
+    }
     {
       HostScannerActivity scanner(renderer, mappedInputManager);
       scanner.count = 32;
