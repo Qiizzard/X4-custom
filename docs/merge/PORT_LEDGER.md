@@ -69,7 +69,7 @@ coherent, working subset.
 | App | Status | Notes |
 |---|---|---|
 | WiFi Connect | `wip` | Tools WiFi Networks entry reuses WifiSelectionActivity with an owned station hold, released at exit. Compile only; runtime validation deferred. |
-| Host Scanner | `wip` | Local /24 slice or smaller IPv4 subnet, TCP 80 discovery, 32 records, selected-host 14-port check, CSV. Cancel between probes; excludes own/network/broadcast addresses. V1 native CSV checks pass: 32 rows, port masks, exact bytes, slot selection/preservation and 100-slot exhaustion. Network/heap/physical SD/device validation remains open. |
+| Host Scanner | `wip` | Local /24 slice or smaller IPv4 subnet, TCP 80 discovery, 32 records, selected-host 14-port check, CSV. Cancel between probes; excludes own/network/broadcast addresses. V1 native CSV checks pass: 32 rows, port masks, exact bytes, slot selection/preservation, 100-slot exhaustion and obstructed-directory recovery. Network/heap/physical SD/device validation remains open. |
 | Ping | `wip` | Ping (TCP), matching Biscuit TCP-80 semantics honestly: five attempts, 1-second connect waits, success timing, bounded DNS input, named station hold. Not ICMP; device validation deferred. |
 | DNS Lookup | `wip` | Tools single-host resolver, named station hold, ASCII hostname bound, IPv4/IPv6 result. SDK timeout/cache policy; runtime/device validation deferred. |
 | HTTP Client | `wip` | GET/plain-text POST, 256-byte URL/512-byte body, fixed 1024-byte ASCII preview. TLS via `esp_crt_bundle_attach`; no redirects or embedded credentials. Runtime/TLS/resource/device tests deferred. |

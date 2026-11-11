@@ -1723,3 +1723,13 @@ this schedule does not declare them completed or permanently blocked.
   obstructed path/full slots and successful retry after clearing obstruction;
   physical SD fault/power-loss behavior remains unverified. No cache reset.
   Initial usage 9%/40%. Remaining V1, reserve and recovery/crypto gates open.
+
+- 2026-11-11 V1 Host Scanner recovery: disposable file obstructing the
+  export directory causes failure, remains byte-exact, and successful exports
+  resume after restoring the directory. Simulator build PASS (5.484s), combined
+  regression and seven runner tests PASS. Logs: firmware-builds/logs/
+  2026-11-11-v1-host-recovery-{build,runtime}.log. Tests only; firmware unchanged,
+  no network probes. X4 with disposable SD: obstruct /crossink/hosts with a
+  file, verify export failure and preservation, then restore the directory and
+  retry. Physical SD faults/power loss remain unverified; no cache reset.
+  Usage 2%/41% to 6%/42%. Remaining V1, reserve and recovery/crypto gates open.

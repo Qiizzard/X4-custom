@@ -1869,10 +1869,15 @@ class SimulatorGameTest {
       for (int i = 0; i < scanner.count; ++i)
         scanner.hosts[i] = {0xC0000201u + uint32_t(i), uint16_t(i % 2 ? 0x3FFF : 0), 0x3FFF};
       int slot = -1;
+      require(rename("fs_/crossink/hosts", "fs_/crossink/hosts-saved") == 0, "Host obstruction directory setup");
+      require(rename("fs_/crossink/hosts-blocker", "fs_/crossink/hosts") == 0, "Host obstruction file setup");
+      require(!scanner.saveCsv(slot), "Host obstructed directory must fail");
+      require(rename("fs_/crossink/hosts", "fs_/crossink/hosts-blocker") == 0, "Host obstruction preserved");
+      require(rename("fs_/crossink/hosts-saved", "fs_/crossink/hosts") == 0, "Host directory recovery");
       require(scanner.saveCsv(slot) && slot == 1, "Host CSV first free slot");
       require(scanner.saveCsv(slot) && slot == 2, "Host CSV distinct second export");
       require(!scanner.saveCsv(slot), "Host CSV must reject exhausted slots");
-      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1");
+      LOG_INF("GAMETEST", "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1 recovery=1");
     }
     VaultDeleteActivity deletion(renderer, mappedInputManager);
     deletion.removeVaultFiles();

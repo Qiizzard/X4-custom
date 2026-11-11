@@ -15,7 +15,7 @@ MARKER = "GAME TEST RESULT: PASS sudoku seeds=32 empty=1 invalid=4 unsatisfiable
 
 REQUIRED_MARKERS = {
     "MdnsCsv": "GAME TEST RESULT: PASS mdns_csv rows=8 exports=2 failures=2 recovery=1",
-    "HostCsv": "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1",
+    "HostCsv": "GAME TEST RESULT: PASS host_csv rows=32 exports=2 exhausted=1 recovery=1",
     "VaultDelete": "GAME TEST RESULT: PASS vault_delete removed=9 absent=9 failed=1",
     "EtchExport": "GAME TEST RESULT: PASS etch_export count=2 recovery=1",
     "VisualOrientations": "GAME TEST RESULT: PASS visual_orientations count=4",
@@ -84,6 +84,7 @@ def main():
         (mdns.parent / "mdns-blocker").write_bytes(b"preserve obstruction")
         hosts = decks.parent / "hosts"
         hosts.mkdir()
+        (hosts.parent / "hosts-blocker").write_bytes(b"preserve host obstruction")
         for slot in (0, *range(3, 100)):
             (hosts / f"scan-{slot:02d}.csv").write_bytes(b"existing export")
         vaults = decks.parent / "vaults"
@@ -158,7 +159,8 @@ def main():
             if not path.is_file() or path.read_bytes() != (expected if slot in (1, 2) else b"existing export"):
                 print(f"FAIL: Host CSV content or preservation mismatch at slot {slot}")
                 return 1
-        if len(list(hosts.iterdir())) != 100:
+        if (len(list(hosts.iterdir())) != 100
+                or (hosts.parent / "hosts-blocker").read_bytes() != b"preserve host obstruction"):
             print("FAIL: unexpected Host CSV output")
             return 1
         drawings = list((decks.parent / "drawings").glob("*.bmp"))
